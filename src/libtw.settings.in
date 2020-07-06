@@ -29,3 +29,4 @@ Languages:
 Features:
 ---------
                         Parallel: @ENABLE_PARALLEL@
+                 Argobot backend: @ENABLE_ABT@

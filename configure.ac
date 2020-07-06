@@ -31,6 +31,7 @@ AC_DEFUN([UD_MSG_DEBUG],
 
 AH_TEMPLATE([ENABLE_PARALLEL], [Enable MPI support.])
 AH_TEMPLATE([ENABLE_DEBUG], [Debug build.])
+AH_TEMPLATE([ENABLE_ABT], [Enable Argobots integration.])
 
 # Whether to enable parallel build with mpi
 AC_ARG_ENABLE([parallel], [AS_HELP_STRING([--enable-parallel], [Search for MPI-IO and MPI support files])],[enable_parallel=${enableval}], [enable_parallel=no])
@@ -143,7 +144,7 @@ if test "x$enable_parallel" = "xyes"; then
 			 AC_MSG_WARN([A simple MPI program using the MPI_Mprobe and MPI_Imrecv functions could not be compiled and linked.
 										Parallel writes of filtered data will be disabled.])])
 
-		# We are building a parallel library
+	# We are building a parallel library
 	ENABLE_PARALLEL=yes
 	AC_DEFINE(ENABLE_PARALLEL, 1)
 fi
@@ -236,6 +237,7 @@ AC_CHECK_HEADER(sched.h,
 		[AC_CHECK_FUNCS(pthread_yield)]
 )
 
+# ----------------------------------------------------------------------
 # Whether to enable debug build
 AC_ARG_ENABLE([debug], [AS_HELP_STRING([--enable-debug], [Search for MPI-IO and MPI support files])],[enable_debug=${enableval}], [enable_debug=no])
 if test "x$enable_debug" = "xyes"; then
@@ -244,6 +246,74 @@ if test "x$enable_debug" = "xyes"; then
    AC_DEFINE(ENABLE_DEBUG, 1)
 fi
 
+# ----------------------------------------------------------------------
+# Whether to enable argobots
+enable_abt=no
+AC_ARG_WITH([argobots],
+						[AC_HELP_STRING([--with-argobots=DIR],
+														[Enable argobots backend [default=yes]])],[enable_abt=yes],
+						[enable_abt=no])
+if test "x$enable_abt" = "xyes"; then
+	case "$withval" in
+		yes)
+			;;
+		no)
+			enable_abt=no
+			;;
+		*)
+			case "$withval" in
+				*,*)
+					abt_inc="`echo $withval | cut -f1 -d,`"
+					abt_lib="`echo $withval | cut -f2 -d, -s`"
+					;;
+				*)
+					if test -n "$withval"; then
+						abt_inc="$withval/include"
+						abt_lib="$withval/lib"
+					fi
+					;;
+			esac
+
+			## Trying to include -I/usr/include and -L/usr/lib is redundant and
+			## can mess some compilers up.
+			if test "X$abt_inc" = "X/usr/include"; then
+				abt_inc=""
+			fi
+			if test "X$abt_lib" = "X/usr/lib"; then
+				obt_lib=""
+			fi
+
+			if test -n "$abt_inc"; then
+				CPPFLAGS="$CPPFLAGS -I$abt_inc"
+			fi
+
+			AC_CHECK_HEADERS([opa_primitives.h opa_queue.h],, [unset HAVE_OPA])
+
+			if test -n "$abt_lib"; then
+				LDFLAGS="$LDFLAGS -L$abt_lib"
+			fi
+
+			AC_CHECK_LIB([opa], [OPA_Interprocess_lock_init],, [unset HAVE_OPA])
+
+			if test -z "$HAVE_OPA"; then
+				AC_MSG_ERROR([could not find opa library])
+			fi
+			;;
+	esac
+fi
+if test "x$enable_abt" = "xyes"; then
+	ENABLE_ABT="yes"
+
+	AC_CHECK_HEADERS([opa_primitives.h opa_queue.h],, [unset ENABLE_ABT])
+	AC_CHECK_LIB([opa], [OPA_Interprocess_lock_init],, [unset ENABLE_ABT])
+
+	if test -z "$ENABLE_ABT"; then
+		AC_MSG_ERROR([could not find argobots library])
+	fi
+
+	AC_DEFINE(ENABLE_ABT, 1)
+fi
+AM_CONDITIONAL(ENABLE_ABT, [test x$enable_abt = xyes])
 
 AC_SUBST([prefix])
 
@@ -263,6 +333,7 @@ AC_SUBST([enable_shared])
 AC_SUBST([enable_static])
 
 AC_SUBST([ENABLE_PARALLEL])
+AC_SUBST([ENABLE_ABT])
 
 AC_CONFIG_FILES([
 		Makefile 
