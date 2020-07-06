@@ -1,0 +1,39 @@
+# Copyright (C) 2020, Lawrence Berkeley National Laboratory.                
+# All rights reserved.                                                      
+#                                                                           
+# This file is part of TaskEngine. The full TaskEngine copyright notice,    
+# including terms governing use, modification, and redistribution, is       
+# contained in the file COPYING at the root of the source code distribution 
+# tree.                                                                     
+
+SUFFIXES = .o .c
+
+AM_DEFAULT_SOURCE_EXT = .c
+
+AM_CPPFLAGS  = -I$(top_srcdir)/src
+AM_CPPFLAGS += -I../common
+
+LDADD  = $(top_builddir)/src/libtw.la 
+
+TESTPROGRAMS =  init 
+# mutual_dep
+
+# When we need m4
+# M4FLAGS += -I${top_srcdir}/m4
+# $(M4_SRCS:.m4=.c): Makefile
+# .m4.c:
+#   $(M4) $(AM_M4FLAGS) $(M4FLAGS) $< >$@
+# CLEANFILES += $(M4_SRCS:.m4=.c)
+# 
+
+check_PROGRAMS = $(TESTPROGRAMS)
+
+TESTS = $(TESTPROGRAMS)
+TEST_EXTENSIONS = .sh
+LOG_COMPILER = $(srcdir)/log_comp.sh
+SH_LOG_COMPILER =
+
+# build check targets but not invoke
+tests: all $(check_PROGRAMS)
+
+.PHONY:

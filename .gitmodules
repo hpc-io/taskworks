@@ -1,0 +1,4 @@
+[submodule "doc/design"]
+	path = doc/design
+	url = https://git.overleaf.com/5eeb7115f554f10001165f9c
+	branch = master
