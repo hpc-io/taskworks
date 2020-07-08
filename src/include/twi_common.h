@@ -14,6 +14,8 @@
 
 #include <stdint.h>
 
+typedef void *TW_Handle_t;
+
 typedef int64_t ttime_t;  // # microsecond since
 
 ttime_t TWI_Time_now ();

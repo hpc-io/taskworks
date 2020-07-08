@@ -14,11 +14,9 @@ AM_CPPFLAGS  = -I${top_srcdir}/src/include
 noinst_LTLIBRARIES=libtwdispatcher.la
 
 # library sources
-libtwdispatcher_la_SOURCES =  tw.c \
-                                engine.c \
-                                task.c \
-                                event.c \
-                                err.c
+libtwdispatcher_la_SOURCES =    tw.c \
+                                    engine.c \
+                                    err.c
 
 # M4 hook
 # M4_SRCS  = 

@@ -15,13 +15,19 @@
 #include "taskworks.h"
 
 /* No Err */
-#define TW_ERR_SUCCESS 0x0
+#define TW_SUCCESS 0x0
 
-/* Memory related */
-#define TW_Engine_OOM 0x10 /* Out of memory */
+/* Common */
+#define TW_ERR_MEM 0x01 /* Out of memory */
 
-/* Thread related */
-#define TW_Engine_THREAD_CREATE 0x20 /* Cannot create thread */
-#define TW_Engine_THREAD_SIG	0x21 /* Cannot signal thread */
+/* User API related */
+#define TW_ERR_INVAL_BACKEND	   0x10 /* Invalid backend selection */
+#define TW_ERR_INVAL_EVT_BACKEND   0x11 /* Invalid event backend selection */
+#define TW_ERR_INVAL_HANDLE		   0x12 /* Invalid handle */
+#define TW_ERR_INCOMPATIBLE_OBJECT 0x13 /* Objected created by a different backend */
+
+/* Engine driver related */
+#define TW_ERR_THREAD_CREATE 0x100 /* Cannot create thread */
+#define TW_ERR_THREAD_SIG	 0x101 /* Cannot signal thread */
 
 const char *TW_Get_err_msg (terr_t err);

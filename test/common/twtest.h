@@ -6,7 +6,7 @@
 
 #define CHECK_RET(E)                                                                             \
 	{                                                                                            \
-		if (E != TW_ERR_SUCCESS) {                                                               \
+		if (E != TW_SUCCESS) {                                                                   \
 			printf ("Error at line %d in %s: %s (%d)\n", __LINE__, __FILE__, TW_Get_err_msg (E), \
 					E);                                                                          \
 			nerr++;                                                                              \

@@ -16,31 +16,42 @@
 #include "twi_common.h"
 #include "twi_driver.h"
 
-#define TW_Engine_N_ERR_CODE 0x400
+#define TW_N_ERR_CODE 0x400
 
 #ifdef ENABLE_DEBUG
-#define PRINT_ERR(E)
+#define TWI_PRINT_ERR(E)
 printf ("Error at line %d in %s: %s (%d)\n", __LINE__, __FILE__, TW_Get_err_msg (E), E);
 #else
-#define PRINT_ERR(E)
+#define TWI_PRINT_ERR(E)
 #endif
 
-#define TW_Engine_CHECK_RET(R)     \
-	{                              \
-		if (R != TW_ERR_SUCCESS) { \
-			PRINT_ERR (R)          \
-			goto err_out;          \
-		}                          \
+#define CHK_RET(R)             \
+	{                          \
+		if (R != TW_SUCCESS) { \
+			PRINT_ERR (R)      \
+			goto err_out;      \
+		}                      \
 	}
 
-#define TW_Engine_CHECK_ERR TW_Engine_CHECK_RET (err)
+#define CHK_ERR CHK_RET (err)
 
-#define TW_Engine_CHECK_PTR(P)        \
-	{                                 \
-		if (P == NULL) {              \
-			PRINT_ERR (TW_Engine_OOM) \
-			goto err_out;             \
-		}                             \
+#define RET_ERR(R)    \
+	{                 \
+		err = R;      \
+		PRINT_ERR (R) \
+		goto err_out; \
+	}
+
+#define CHK_PTR(P)            \
+	{                         \
+		if (P == NULL) {      \
+			err = TW_ERR_MEM; \
+			PRINT_ERR (err)   \
+			goto err_out;     \
+		}                     \
 	}
 
 typedef void *TWI_Handle_t;
+
+extern TW_Event_driver_handle_t evt_driver;
+extern TW_Driver_handle_t driver;

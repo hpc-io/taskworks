@@ -10,59 +10,106 @@
 
 /* User level engine API */
 
-#include "taskworks_internal.h"
-
-typedef struct TW_Engine_t {
-	int num_workers;
-#ifdef ENABLE_PARALLEL
-	MPI_Comm comm;
-	MPI_Info info;
-#endif
-
-} TW_Engine_t;
+#include "dispatcher.h"
 
 /**
  * @brief  Create a new engine
  * @note
  * @param  num_worker: Number of worker threads int he engine
- * @param  work_driver: Engine backend
+ * @param  engine_driver: Engine backend
  * @param  evt_driver: Event backend
- * @param  *hpool: Handle to engine
- * @retval TW_ERR_SUCCESS on success or error code on failure
+ * @param  *engine: Handle to engine
+ * @retval TW_SUCCESS on success or error code on failure
  */
-terr_t TW_Engine_create (int num_worker,
-						 TW_Driver_handle_t work_driver,
-						 TW_Event_driver_handle_t evt_driver,
-						 TW_Engine_handle_t *hpool) {
-	terr_t err;
-	int i, j;
+terr_t TW_Engine_create (int num_worker, TW_Engine_handle_t *engine) {
+	terr_t err = TW_SUCCESS;
+	TW_Obj_handle_t ep;
+
+	ep		   = (TW_Obj_handle_t)TWI_Malloc (sizeof (TW_Obj_t));
+	ep->driver = TWI_Active_driver;
+
+	err = ep->driver->Engine_create (num_worker, &(ep->driver_obj));
+	CHK_ERR
+
+	*engine = ep;
+
+err_out:;
+	if (err) { TWI_Free (ep); }
+	return err;
 }
 
 /**
- * @brief Stop the task engine and finalize all resource
+ * @brief Stop the engine and free all associated resource
  * @note
- * @param  hpool: Handle to the engine
- * @retval TW_ERR_SUCCESS on success or error code on failure
+ * @param  engine: Handle to the engine
+ * @retval TW_SUCCESS on success or error code on failure
  */
-terr_t TW_Engine_free (TW_Engine_handle_t hpool) {}
+terr_t TW_Engine_free (TW_Engine_handle_t engine) {
+	terr_t err = TW_SUCCESS;
+
+	CHK_HANDLE (engine, TW_Obj_type_engine)
+
+	err = engine->driver->Engine_free (engine->driver_obj);
+	CHK_ERR
+
+	TWI_Free (engine);
+
+err_out:;
+	return err;
+}
 
 /**
- * @brief
+ * @brief Run a single task using the calling thread
  * @note
- * @param  hpool:
- * @retval
+ * @param  engine: Handle to the engine
+ * @retval TW_SUCCESS on success or error code on failure
  */
-terr_t TW_Engine_progress (TW_Engine_handle_t hpool) {
-}  // Run a single task using the calling thread
+terr_t TW_Engine_progress (TW_Engine_handle_t engine) {
+	terr_t err = TW_SUCCESS;
 
-// Draw the task schedular loop as figure figram
+	CHK_HANDLE (engine, TW_Obj_type_engine)
 
-// Control by time, running until exhust the time given?
-terr_t TW_Engine_progress_until (int time, TW_Engine_handle_t hpool) {
-}  // Run a single task using the calling thread
+	err = engine->driver->Engine_do_work (engine->driver_obj, TW_TIMEOUT_NEVER);
 
-terr_t TW_Engine_add_worker (int num_worker, TW_Engine_handle_t hpool) {
-}  // Increase the number of worker by num_worker
+err_out:;
 
-terr_t TW_Engine_rm_worker (int num_worker, TW_Engine_handle_t hpool) {
-}  // Decrease the number of worker by num_worker
+	return err;
+}
+
+/**
+ * @brief Run a single task using the calling thread for a specific time
+ * @note Timeout is checked only after completion of tasks
+ * @param  engine: Handle to the engine
+ * @param  timeout: Time in micro-second
+ * @retval TW_SUCCESS on success or error code on failure
+ */
+terr_t TW_Engine_progress_until (TW_Engine_handle_t engine, int64_t timeout) {
+	terr_t err = TW_SUCCESS;
+
+	CHK_HANDLE (engine, TW_Obj_type_engine)
+
+	err = engine->driver->Engine_do_work (engine->driver_obj, (ttime_t)timeout);
+
+err_out:;
+
+	return err;
+}
+
+/**
+ * @brief  Set the number of worker in an engine
+ * @note   Not supproted by all backends
+ * @param  engine: Handle to the engine
+ * @param  num_worker: Number of workers
+ * @retval TW_SUCCESS on success or error code on failure
+ */
+terr_t TW_Engine_set_num_worker (TW_Engine_handle_t engine, int num_worker) {
+	terr_t err = TW_SUCCESS;
+
+	CHK_HANDLE (engine, TW_Obj_type_engine)
+
+	err = engine->driver->Engine_set_num_workers (engine->driver_obj, num_worker);
+
+err_out:;
+
+	return err;
+}

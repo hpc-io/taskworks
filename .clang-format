@@ -5,9 +5,8 @@ TabWidth: 4
 UseCRLF: false
 
 Language: Cpp
-StatementMacros: ['TWE_CHK_RET', 'TWE_CHK_ERR', 'TWE_CHK_PTR', 'PRINT_ERR', 'PRINT_TEST_RESULT', 'PRINT_TEST_MSG']
+StatementMacros: ['RET_ERR', 'CHK_RET', 'CHK_ERR', 'CHK_PTR', 'PRINT_ERR', 'PRINT_TEST_RESULT', 'PRINT_TEST_MSG', 'CHK_ABTRET', 'CHK_ABTERR']
 TypenameMacros: []
-
 DerivePointerAlignment: false
 PointerAlignment: Left
 ColumnLimit: 100

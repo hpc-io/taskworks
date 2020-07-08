@@ -15,15 +15,20 @@
 const char *TW_Get_err_msg (terr_t err) {
 	switch (err) {
 		/* No Err */
-		case TW_ERR_SUCCESS:
+		case TW_SUCCESS:
 			return "Success";
-		/* Memory related */
-		case TW_Engine_OOM:
+		/* Common */
+		case TW_ERR_MEM:
 			return "Memory allocation fail";
-		/* Thread related */
-		case TW_Engine_THREAD_CREATE:
+		/* User related */
+		case TW_ERR_INVAL_BACKEND:
+			return "Unrecognized engine backend";
+		case TW_ERR_INVAL_EVT_BACKEND:
+			return "Unrecognized event backend";
+		/* Engine related */
+		case TW_ERR_THREAD_CREATE:
 			return "Cannot create thread";
-		case TW_Engine_THREAD_SIG:
+		case TW_ERR_THREAD_SIG:
 			return "Cannot send signal to thread";
 	}
 	return "Unknown error";

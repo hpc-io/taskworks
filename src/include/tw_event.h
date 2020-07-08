@@ -39,7 +39,7 @@ typedef enum TW_Event_type_t {
 	TW_Event_type_mpi,	   // MPI related event
 } TW_Event_type_t;
 
-typedef struct TW_Event_t *TW_Event_handle_t;
+typedef struct TW_Obj_t *TW_Event_handle_t;
 typedef struct TW_Event_attr_t {
 	TW_Event_type_t type;
 	union evt_data {
@@ -60,6 +60,6 @@ extern terr_t TW_Event_create_task (TW_Event_attr_t attr,
 extern terr_t TW_Event_free (TW_Event_handle_t hevt);
 
 // Control
-extern terr_t TW_Event_commit (TW_Engine_handle_t heng,
+extern terr_t TW_Event_commit (TW_Engine_handle_t engine,
 							   TW_Event_handle_t hevt);	  // Commit event, start watching
 extern terr_t TW_Event_retract (TW_Event_handle_t hevt);  // Stop watching
