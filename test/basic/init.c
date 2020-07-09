@@ -1,11 +1,24 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * Copyright (C) 2020, Lawrence Berkeley National Laboratory.                *
+ * All rights reserved.                                                      *
+ *                                                                           *
+ * This file is part of Taskworks. The full Taskworks copyright notice,      *
+ * including terms governing use, modification, and redistribution, is       *
+ * contained in the file COPYING at the root of the source code distribution *
+ * tree.                                                                     *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/* Test init */
+
 #include <twtest.h>
 
 int main (int argc, char *argv[]) {
-	terr_t err, nerr = 0;
+	terr_t err;
+	int nerr = 0;
 
 	PRINT_TEST_MSG ("Check if TaskWork can initialize and finalize properly");
 
-	err = TW_Init (&argc, &argv);
+	err = TW_Init (TW_Backend_argobots, TW_Event_backend_none, &argc, &argv);
 	CHECK_ERR
 	err = TW_Finalize ();
 	CHECK_ERR

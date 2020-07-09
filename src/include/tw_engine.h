@@ -2,7 +2,7 @@
  * Copyright (C) 2020, Lawrence Berkeley National Laboratory.                *
  * All rights reserved.                                                      *
  *                                                                           *
- * This file is part of TaskEngine. The full TaskEngine copyright notice,    *
+ * This file is part of Taskworks. The full Taskworks copyright notice,      *
  * including terms governing use, modification, and redistribution, is       *
  * contained in the file COPYING at the root of the source code distribution *
  * tree.                                                                     *
@@ -22,6 +22,7 @@
 
 typedef struct TW_Obj_t *TW_Engine_handle_t;
 
+/*
 #ifdef ENABLE_PARALLEL
 extern terr_t TW_Engine_init_par (
 	int num_worker,
@@ -31,6 +32,7 @@ extern terr_t TW_Engine_init_par (
 	TW_Engine_Pevent_driver_id_t evt_driver,
 	TW_Engine_handle_t *engine);  // Initialize the task engine with num_worker workers
 #endif
+*/
 
 extern terr_t TW_Engine_create (int num_worker,
 								TW_Engine_handle_t *engine);  // Initialize the task engine

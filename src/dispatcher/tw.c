@@ -2,7 +2,7 @@
  * Copyright (C) 2020, Lawrence Berkeley National Laboratory.                *
  * All rights reserved.                                                      *
  *                                                                           *
- * This file is part of TaskEngine. The full TaskEngine copyright notice,    *
+ * This file is part of Taskworks. The full Taskworks copyright notice,      *
  * including terms governing use, modification, and redistribution, is       *
  * contained in the file COPYING at the root of the source code distribution *
  * tree.                                                                     *
@@ -45,7 +45,7 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 		}
 #ifdef ENABLE_ABT
 		else if (strcmp (env_val, "NATIVE") == 0) {
-			backend = TW_backend_argobot;
+			backend = TW_Backend_argobots;
 		}
 #endif
 		else {
@@ -59,7 +59,7 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 		case TW_Backend_native:
 			break;
 #ifdef ENABLE_ABT
-		case TW_backend_argobot:  // Argobots
+		case TW_Backend_argobots:  // Argobots
 			TWI_Active_driver = &TWABT_Driver;
 			break;
 #endif

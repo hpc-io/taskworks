@@ -2,7 +2,7 @@
  * Copyright (C) 2020, Lawrence Berkeley National Laboratory.                *
  * All rights reserved.                                                      *
  *                                                                           *
- * This file is part of TaskEngine. The full TaskEngine copyright notice,    *
+ * This file is part of Taskworks. The full Taskworks copyright notice,      *
  * including terms governing use, modification, and redistribution, is       *
  * contained in the file COPYING at the root of the source code distribution *
  * tree.                                                                     *
@@ -12,6 +12,10 @@
 
 #pragma once
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "taskworks.h"
 #include "twi_common.h"
 #include "twi_driver.h"
@@ -19,8 +23,13 @@
 #define TW_N_ERR_CODE 0x400
 
 #ifdef ENABLE_DEBUG
+<<<<<<< HEAD
 #define TWI_PRINT_ERR(E)
 printf ("Error at line %d in %s: %s (%d)\n", __LINE__, __FILE__, TW_Get_err_msg (E), E);
+=======
+#define PRINT_ERR(E) \
+	printf ("Error at line %d in %s: %s (%d)\n", __LINE__, __FILE__, TW_Get_err_msg (E), E);
+>>>>>>> Update driver interface for fixed backend; add handle check routine
 #else
 #define TWI_PRINT_ERR(E)
 #endif

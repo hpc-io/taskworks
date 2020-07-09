@@ -1,12 +1,10 @@
-#                                               -*- Autoconf -*-
-# Process this file with autoconf to produce a configure script.
-#
-# Copyright by The HDF Group.
-# All rights reserved.
-#
-# This file is part of AXE.  The full AXE copyright notice, including terms
-# governing use, modification, and redistribution, is contained in the file
-# COPYING at the root of the source code distribution tree.
+# Copyright (C) 2020, Lawrence Berkeley National Laboratory.                
+# All rights reserved.                                                      
+#                                                                           
+# This file is part of Taskworks. The full Taskworks copyright notice,      
+# including terms governing use, modification, and redistribution, is       
+# contained in the file COPYING at the root of the source code distribution 
+# tree.      
 
 AC_PREREQ(2.59)
 AC_INIT([taskwork], [0.1], [])
@@ -280,7 +278,7 @@ if test "x$enable_abt" = "xyes"; then
 				abt_inc=""
 			fi
 			if test "X$abt_lib" = "X/usr/lib"; then
-				obt_lib=""
+				abt_lib=""
 			fi
 
 			if test -n "$abt_inc"; then
@@ -304,8 +302,8 @@ fi
 if test "x$enable_abt" = "xyes"; then
 	ENABLE_ABT="yes"
 
-	AC_CHECK_HEADERS([opa_primitives.h opa_queue.h],, [unset ENABLE_ABT])
-	AC_CHECK_LIB([opa], [OPA_Interprocess_lock_init],, [unset ENABLE_ABT])
+	AC_CHECK_HEADERS([abt.h],, [unset ENABLE_ABT])
+	AC_CHECK_LIB([abt], [ABT_init],, [unset ENABLE_ABT])
 
 	if test -z "$ENABLE_ABT"; then
 		AC_MSG_ERROR([could not find argobots library])
@@ -340,6 +338,7 @@ AC_CONFIG_FILES([
 		src/Makefile 
 		src/libtw.settings
 		src/driver/Makefile 
+		src/driver/argobots/Makefile 
 		src/common/Makefile 
 		src/dispatcher/Makefile 
 		examples/Makefile

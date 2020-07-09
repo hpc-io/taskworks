@@ -2,7 +2,7 @@
  * Copyright (C) 2020, Lawrence Berkeley National Laboratory.                *
  * All rights reserved.                                                      *
  *                                                                           *
- * This file is part of TaskEngine. The full TaskEngine copyright notice,    *
+ * This file is part of Taskworks. The full Taskworks copyright notice,      *
  * including terms governing use, modification, and redistribution, is       *
  * contained in the file COPYING at the root of the source code distribution *
  * tree.                                                                     *
@@ -29,5 +29,6 @@
 /* Engine driver related */
 #define TW_ERR_THREAD_CREATE 0x100 /* Cannot create thread */
 #define TW_ERR_THREAD_SIG	 0x101 /* Cannot signal thread */
+#define TW_ERR_NOT_SUPPORTED 0x102 /* The backend does not support such function*/
 
 const char *TW_Get_err_msg (terr_t err);

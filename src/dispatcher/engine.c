@@ -25,8 +25,9 @@ terr_t TW_Engine_create (int num_worker, TW_Engine_handle_t *engine) {
 	terr_t err = TW_SUCCESS;
 	TW_Obj_handle_t ep;
 
-	ep		   = (TW_Obj_handle_t)TWI_Malloc (sizeof (TW_Obj_t));
-	ep->driver = TWI_Active_driver;
+	ep			= (TW_Obj_handle_t)TWI_Malloc (sizeof (TW_Obj_t));
+	ep->objtype = TW_Obj_type_engine;
+	ep->driver	= TWI_Active_driver;
 
 	err = ep->driver->Engine_create (num_worker, &(ep->driver_obj));
 	CHK_ERR

@@ -2,7 +2,7 @@
  * Copyright (C) 2020, Lawrence Berkeley National Laboratory.                *
  * All rights reserved.                                                      *
  *                                                                           *
- * This file is part of TaskEngine. The full TaskEngine copyright notice,    *
+ * This file is part of Taskworks. The full Taskworks copyright notice,      *
  * including terms governing use, modification, and redistribution, is       *
  * contained in the file COPYING at the root of the source code distribution *
  * tree.                                                                     *
@@ -22,17 +22,13 @@ typedef int terr_t;
 
 typedef enum TW_Backend_t {
 	TW_Backend_default,
-#ifdef ENABLE_ABT
 	TW_Backend_argobots,
-#endif
 	TW_Backend_native
 } TW_Backend_t;
 
 typedef enum TW_Event_backend_t {
 	TW_Event_backend_default,
-#ifdef ENABLE_LIBEVENT
 	TW_Event_backend_libevent,
-#endif
 	TW_Event_backend_none
 } TW_Event_backend_t;
 
