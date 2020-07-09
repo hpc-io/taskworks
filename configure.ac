@@ -7,7 +7,7 @@
 # tree.      
 
 AC_PREREQ(2.59)
-AC_INIT([taskwork], [0.1], [])
+AC_INIT([taskworks], [0.1], [])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/include/taskworks.h])
@@ -24,12 +24,15 @@ AC_DEFUN([UD_MSG_DEBUG],
 				 ]
 )
 
-# Set the prefix to an axe directory in the source root.
-# AC_PREFIX_DEFAULT([`pwd`/taskwork])
+# Set the prefix to an taskworks directory in the source root.
+# AC_PREFIX_DEFAULT([`pwd`/taskworks])
 
 AH_TEMPLATE([ENABLE_PARALLEL], [Enable MPI support.])
 AH_TEMPLATE([ENABLE_DEBUG], [Debug build.])
 AH_TEMPLATE([ENABLE_ABT], [Enable Argobots integration.])
+
+# Make tests
+AM_EXTRA_RECURSIVE_TARGETS([tests])
 
 # Whether to enable parallel build with mpi
 AC_ARG_ENABLE([parallel], [AS_HELP_STRING([--enable-parallel], [Search for MPI-IO and MPI support files])],[enable_parallel=${enableval}], [enable_parallel=no])

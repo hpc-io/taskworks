@@ -26,3 +26,6 @@ libtwdispatcher_la_SOURCES =    tw.c \
 #       $(M4) $(AM_M4FLAGS) $(M4FLAGS) $< >$@
 # BUILT_SOURCES = $(M4_SRCS:.m4=.c)
 # CLEANFILES = $(M4_SRCS:.m4=.c)
+
+# Allow running make tests without make
+tests-local: all

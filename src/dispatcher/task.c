@@ -9,8 +9,10 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* User level Task API */
-
-#include "taskworks_internal.h"
+/// \cond
+// Prevent doxygen from leaking our internal headers
+#include "dispatcher.h"
+/// \endcond
 
 typedef struct TW_task {
 	OPA_int_t status;  // Status of the task

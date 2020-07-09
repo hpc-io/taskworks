@@ -4,18 +4,20 @@
 # This file is part of Taskworks. The full Taskworks copyright notice,    
 # including terms governing use, modification, and redistribution, is       
 # contained in the file COPYING at the root of the source code distribution 
-# tree.                                                                     
+# tree.       
 
 SUFFIXES = .o .c .h .m4
 
 AM_CPPFLAGS  = -I${top_srcdir}/src/include
 
-# Our main target, the task engine library
-noinst_LTLIBRARIES=libtwcommon.la
-
-# library sources
-libtwcommon_la_SOURCES =    mem.c \
-                            time.c 
+# Argobots driver
+noinst_LTLIBRARIES=libtwabt.la
+libtwabt_la_SOURCES =   err.c \
+                        twabt.c \
+                            twabt_engine.c \
+                            twabt_task.c \
+                            twabt_event.c \
+                            twabti_sched.c
 
 # Allow running make tests without make
 tests-local: all

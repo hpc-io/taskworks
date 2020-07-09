@@ -10,8 +10,15 @@
 AUTOMAKE_OPTIONS = foreign
 
 ACLOCAL_AMFLAGS = -I m4
+
 SUBDIRS = src examples test
 
-# Extra files which need to go in the distribution tarball.
+# Files which need to go in the distribution tarball.
+DIST_SUBDIRS = ${SUBDIRS}
 EXTRA_DIST = COPYING.txt README.md
 
+# Build test programs without check
+tests-local:
+	@echo '|'
+	@echo '|  All test programs have been successfully built.'
+	@echo '|'

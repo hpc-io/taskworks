@@ -8,9 +8,15 @@
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* User level engine API */
+/**
+ * @file
+ * @brief  User level engine APIs
+ */
 
+/// \cond
+// Prevent doxygen from leaking our internal headers
 #include "dispatcher.h"
+/// \endcond
 
 /**
  * @brief  Create a new engine

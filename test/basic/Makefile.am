@@ -10,13 +10,13 @@ SUFFIXES = .o .c
 
 AM_DEFAULT_SOURCE_EXT = .c
 
-AM_CPPFLAGS  = -I$(top_srcdir)/src
-AM_CPPFLAGS += -I../common
+AM_CPPFLAGS  = -I$(top_srcdir)/src/include
+AM_CPPFLAGS += -I$(top_srcdir)/test/common
 
 LDADD  = $(top_builddir)/src/libtw.la 
 
-TESTPROGRAMS =  init 
-                # engine
+TESTPROGRAMS =  init \
+                engine
 # mutual_dep
 
 # When we need m4

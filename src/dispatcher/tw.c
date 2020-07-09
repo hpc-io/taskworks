@@ -8,12 +8,18 @@
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Usser level common API */
+/**
+ * @file
+ * @brief  User level common APIs
+ */
 
+/// \cond
+// Prevent doxygen from leaking our internal headers
 #include <stdlib.h>
 #include <string.h>
 
 #include "dispatcher.h"
+/// \endcond
 
 TW_Event_driver_handle_t TWI_Active_evt_driver;
 TW_Driver_handle_t TWI_Active_driver;

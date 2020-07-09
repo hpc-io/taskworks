@@ -1,19 +1,30 @@
 
+# ignore everything
 *
+# except dirs
+!*/
+# except source codes
 !*.c
 !*.cpp
 !*.h
 !*.hpp
 !*.m4
 !*.sh
+!src/libtw.settings.in
+# except build script
 !*.am
 !*.ac
+# except docs
 !*.md
-!src/libtw.settings.in
+!INSTALL
+!COPYING
+# except config files
 !.gitignore
 !.clang-format
 !.gitmodules
 !.gitlab-ci.yml
+!doc/api/config
+# do remove generated source
 aclocal.m4
 config.h
 

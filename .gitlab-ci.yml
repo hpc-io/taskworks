@@ -6,9 +6,12 @@
 # contained in the file COPYING at the root of the source code distribution 
 # tree.                                                                     
 
+variables:
+  SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N1 -t 00:30:00"
 
-/* Test engine*/
-image: gcc
+stages:
+  - build
+  - test
 
 build:
   stage: build
@@ -16,31 +19,40 @@ build:
   # install the necessary build tools when needed
   before_script:
     # Install autotools
-    - apt update && apt -y install make autoconf automake libtool
+    # Don't work on Cori runners, use default
+    # - apt update && apt -y install make autoconf automake libtool
     - autoconf --version
     - automake --version
     - libtool --version
     # Install MPI
-    - apt -y install mpich3
+    # Don't work on Cori runners, use default
+    # - apt -y install mpich3
+    # Make dir to build dependencies
+    - mkdir tw_deps
     # Install OpenPA
-    - git clone https://github.com/pmodels/openpa.git 
-    - pushd  openpa && ./configure && make && make install && popd 
+    - git clone -b v1.0.4 https://github.com/pmodels/openpa.git 
+    - pushd  openpa && ./autogen.sh && ./configure --prefix=${PWD}/../tw_deps && make -j 64 && make -j 64 install && popd 
     # Install Argobots
-    - git clone https://github.com/pmodels/argobots.git
-    - pushd  argobots && ./configure && make && make install && popd
+    - git clone -b v1.0 https://github.com/pmodels/argobots.git 
+    - pushd argobots && ./autogen.sh && ./configure --prefix=${PWD}/../tw_deps && make -j 64 && make -j 64  install && popd
   script:
     - autoreconf -i
-    - /configure --with-opa=yes --enable-parallel --with-argobots=yes
-  #artifacts:
-    #paths:
-      #- mybinary
-      # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
-      # cache:
-      #   paths:
-      #     - "*.o"
+    - ./configure --with-opa=${PWD}/tw_deps --enable-parallel --with-argobots=${PWD}/tw_deps
+    - make -j 64 
+    - make -j 64 tests
+  tags:
+    - cori
+  artifacts:
+    paths:
+      # Autotool metadata will be corrupted by stage init, save the entire repo as artifact
+      - "./"
 
 # run tests using the binary built before
 test:
   stage: test
   script:
+    # - autoreconf -i
+    # - ./configure --with-opa=${PWD}/tw_deps --enable-parallel --with-argobots=${PWD}/tw_deps
     - make check
+  tags:
+    - cori

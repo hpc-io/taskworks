@@ -23,15 +23,10 @@
 #define TW_N_ERR_CODE 0x400
 
 #ifdef ENABLE_DEBUG
-<<<<<<< HEAD
-#define TWI_PRINT_ERR(E)
-printf ("Error at line %d in %s: %s (%d)\n", __LINE__, __FILE__, TW_Get_err_msg (E), E);
-=======
 #define PRINT_ERR(E) \
-	printf ("Error at line %d in %s: %s (%d)\n", __LINE__, __FILE__, TW_Get_err_msg (E), E);
->>>>>>> Update driver interface for fixed backend; add handle check routine
+	{ printf ("Error at line %d in %s: %s (%d)\n", __LINE__, __FILE__, TW_Get_err_msg (E), E); }
 #else
-#define TWI_PRINT_ERR(E)
+#define PRINT_ERR(E)
 #endif
 
 #define CHK_RET(R)             \

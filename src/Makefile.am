@@ -7,7 +7,7 @@
 # tree.                                                                     
 
 SUBDIRS = dispatcher driver common
-DIST_SUBDIRS = dispatcher driver common
+DIST_SUBDIRS = ${SUBDIRS}
 
 # Our main target, the task engine library
 lib_LTLIBRARIES=libtw.la
@@ -26,3 +26,6 @@ include_HEADERS =   include/taskworks.h \
                         include/tw_task.h \
                         include/tw_event.h \
                         include/tw_err.h
+
+# Allow running make tests without make
+tests-local: all
