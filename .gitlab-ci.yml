@@ -39,13 +39,15 @@ build:
     - autoreconf -i
     - ./configure --with-opa=${PWD}/tw_deps --enable-parallel --with-argobots=${PWD}/tw_deps
     - make -j 64 
-    - make -j 64 tests
   tags:
     - cori
+  cache:
+    paths:
+      - "./*"
   artifacts:
     paths:
       # Autotool metadata will be corrupted by stage init, save the entire repo as artifact
-      - "./"
+      # - "./"
 
 # run tests using the binary built before
 test:
@@ -53,6 +55,7 @@ test:
   script:
     # - autoreconf -i
     # - ./configure --with-opa=${PWD}/tw_deps --enable-parallel --with-argobots=${PWD}/tw_deps
+    - make -j 64 tests
     - make check
   tags:
     - cori
