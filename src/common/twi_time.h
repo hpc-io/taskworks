@@ -2,21 +2,23 @@
  * Copyright (C) 2020, Lawrence Berkeley National Laboratory.                *
  * All rights reserved.                                                      *
  *                                                                           *
- * This file is part of Taskworks. The full Taskworks copyright notice,
- *
+ * This file is part of Taskworks. The full Taskworks copyright notice,      *
  * including terms governing use, modification, and redistribution, is       *
  * contained in the file COPYING at the root of the source code distribution *
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Memory wrapper implementations */
+/* Cross-platform monotonic timer */
 
-#include <stdlib.h>
+#pragma once
 
-#include "taskworks_internal.h"
+#include <stdint.h>
 
-void *TWI_Malloc (size_t size) { return malloc (size); }
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
-void *TWI_Realloc (void *old_ptr, size_t size) { return realloc (old_ptr, size); }
-
-void TWI_Free (void *ptr) { free (ptr); }
+typedef int64_t ttime_t;  // # microsecond since
+ttime_t TWI_Time_now ();

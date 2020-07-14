@@ -12,10 +12,10 @@
 
 #include "taskworks_internal.h"
 
-#define CHK_HANDLE(H, T)                                                             \
-	{                                                                                \
-		if (!H || H->objtype != T) { RET_ERR (TW_ERR_INVAL_HANDLE) }                 \
-		if (H->driver != TWI_Active_driver) { RET_ERR (TW_ERR_INCOMPATIBLE_OBJECT) } \
+#define CHK_HANDLE(H, T)                                                                \
+	{                                                                                   \
+		if (!H || H->objtype != T) { ASSIGN_ERR (TW_ERR_INVAL_HANDLE) }                 \
+		if (H->driver != TWI_Active_driver) { ASSIGN_ERR (TW_ERR_INCOMPATIBLE_OBJECT) } \
 	}
 
 typedef enum TW_Obj_type {

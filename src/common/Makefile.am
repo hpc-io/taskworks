@@ -8,14 +8,20 @@
 
 SUFFIXES = .o .c .h .m4
 
-AM_CPPFLAGS  = -I${top_srcdir}/src/include
+AM_CPPFLAGS  =  -I${top_srcdir}/src/include \
+                -I${top_srcdir}/src/common
 
 # Our main target, the task engine library
 noinst_LTLIBRARIES=libtwcommon.la
 
 # library sources
-libtwcommon_la_SOURCES =    mem.c \
-                            time.c 
+libtwcommon_la_SOURCES =    twi_mem.c \
+                            twi_time.c \
+                            twi_mutex.c \
+                            twi_rwlock.c \
+                            twi_vector.c \
+                            twi_list.c
+
 
 # Allow running make tests without make
 tests-local: all

@@ -8,31 +8,15 @@
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* User level Task API */
+/**
+ * @file
+ * @brief  Task related APIs
+ */
+
 /// \cond
 // Prevent doxygen from leaking our internal headers
 #include "dispatcher.h"
 /// \endcond
-
-typedef struct TW_task {
-	OPA_int_t status;  // Status of the task
-
-	TW_Task_handler_t cb;  // Function to run
-	void *cb_data;		   // Input parameters to the task function
-	terr_t ret;			   // Return value of the task function, only meanningfull when
-				 // stat is TW_Task_stat_completed # use void
-
-	TW_Task_dep_handler_t dep_cb;  // Function that decide the status of the task based on
-								   // dependency
-	void *dep_cb_data;			   // Input parameters to the dependency function function
-
-	// TODO: There must be defualt hard-coded dep handler that takes constant time
-
-	int tag;  // Optional tag to be used by the application
-
-	TW_Engine_handle_t engine;	// Engine handling the task
-	void *engine_data;			// Engine specific data
-} TW_task;
 
 /**
  * @brief  Create a new task
@@ -48,23 +32,23 @@ typedef struct TW_task {
 terr_t TW_Task_create (TW_Task_handler_t task_cb,
 					   void *task_data,
 					   TW_Task_dep_handler_t dep_cb,
-					   void *dep_data,
+					   TW_Task_dep_stat_handler_t dep_stat_cb,
 					   int tag,
 					   TW_Task_handle_t *task) {
 	terr_t err = TW_SUCCESS;
-	TW_Task_handle_t tp;
+	TW_Obj_handle_t tp;
 
-	tp = (TW_Task_handle_t)TWI_Malloc (sizeof (TW_task));
-	CHK_PTR (tp)
-	tp->cb		= task_cb;
-	tp->cb_data = task_data;
-	tp->dep_cb	= dep_cb;
-	tp->tag		= tag;
+	tp			= (TW_Obj_handle_t)TWI_Malloc (sizeof (TW_Obj_t));
+	tp->objtype = TW_Obj_type_task;
+	tp->driver	= TWI_Active_driver;
 
-	tp->engine		= NULL;
-	tp->engine_data = NULL;
+	err = tp->driver->Task_create (task_cb, task_data, dep_cb, dep_stat_cb, tag, &(tp->driver_obj));
+	CHK_ERR
+
+	*task = tp;
 
 err_out:;
+	if (err) { TWI_Free (tp); }
 	return err;
 }
 

@@ -8,10 +8,7 @@
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/**
- * @file
- * @brief  Error related APIs
- */
+/* Internal error handling functions */
 
 /// \cond
 // Prevent doxygen from leaking our internal headers
@@ -28,14 +25,11 @@
 
 static char oserr[1024] = "Operating system error:";
 
-/**
- * @brief  Get error message
- * @note The returned char pointer points to a constant string within the library that should not be
- * modified.
- * @param  err: Error code
- * @retval A pointer to error message string.
- */
-const char *TW_Get_err_msg (terr_t err) {
+#ifdef _WIN32
+#else
+#endif
+
+const char *TWI_get_os_err_msg (terr_t err) {
 	switch (err) {
 		/* No Err */
 		case TW_SUCCESS:
@@ -63,8 +57,6 @@ const char *TW_Get_err_msg (terr_t err) {
 
 			return "System call fail";
 		/* User related */
-		case TW_ERR_INVAL:
-			return "Invalid arguments";
 		case TW_ERR_INVAL_BACKEND:
 			return "Unrecognized engine backend";
 		case TW_ERR_INVAL_EVT_BACKEND:

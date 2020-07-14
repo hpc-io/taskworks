@@ -8,8 +8,9 @@
 
 SUFFIXES = .o .c .h .m4
 
-AM_CPPFLAGS  = -I${top_srcdir}/src/include
-
+AM_CPPFLAGS  =  -I${top_srcdir}/src/include \
+                -I${top_srcdir}/src/common
+                
 # Our main target, the task engine library
 noinst_LTLIBRARIES=libtwdispatcher.la
 

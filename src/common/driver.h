@@ -12,12 +12,14 @@
 
 #pragma once
 
-#include <opa_primitives.h>
-
-#include "taskworks.h"
+#include "taskworks_internal.h"
+#include "twi_time.h"
 
 typedef struct TW_Driver_t *TW_Driver_handle_t;
 typedef struct TW_Event_driver_t *TW_Event_driver_handle_t;
+
+extern TW_Event_driver_handle_t evt_driver;
+extern TW_Driver_handle_t driver;
 
 typedef enum TW_Task_inq_type_t {
 	TW_Task_inq_type_status,
@@ -44,6 +46,7 @@ typedef struct TW_Driver_t {
 	terr_t (*Task_create) (TW_Task_handler_t task_cb,
 						   void *task_data,
 						   TW_Task_dep_handler_t dep_cb,
+						   TW_Task_dep_stat_handler_t dep_stat_cb,
 						   int tag,
 						   TW_Handle_t *htask);	 // Create a new task
 

@@ -8,17 +8,11 @@
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Common internal routines */
+/* Internal memory management routine */
 
 #pragma once
 
-#include <stdint.h>
-
-typedef void *TW_Handle_t;
-
-typedef int64_t ttime_t;  // # microsecond since
-
-ttime_t TWI_Time_now ();
+#include <stdlib.h>
 
 void *TWI_Malloc (size_t size);
 void *TWI_Realloc (void *old_ptr, size_t size);

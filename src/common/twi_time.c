@@ -15,7 +15,7 @@
 #include <stdio.h>
 
 #ifdef _WIN32
-#include "windows.h"
+#include <windows.h>
 /* Offset beTW_Engine_en 1/1/1601 and 1/1/1970 in microsecond units */
 #define _W32_FT_OFFSET (11644473600000000LL)
 #else
@@ -24,7 +24,6 @@
 
 #include "taskworks_internal.h"
 
-// TODO: Remove macro, just expose the same name
 #ifdef _WIN32
 ttime_t TWI_Time_now () {
 	FILETIME ftnow;

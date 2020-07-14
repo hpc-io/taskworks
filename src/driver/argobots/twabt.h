@@ -37,6 +37,7 @@
 #define CHK_ABTRET(R)                      \
 	{                                      \
 		if (R != ABT_SUCCESS) {            \
+			TWABTI_PRINT_ERR (R)           \
 			err = TWABT_Err_to_tw_err (R); \
 			PRINT_ERR (err)                \
 			goto err_out;                  \
@@ -44,6 +45,36 @@
 	}
 
 #define CHECK_ABTERR CHK_ABTRET (abterr)
+
+typedef struct TWABT_Engine_t {
+	int ness;				// Number of threads (ES)
+	int ness_alloc;			// Size of schedulers and ess
+	ABT_pool pool;			// Task pool of th engine
+	ABT_sched *schedulers;	// Task scheduler
+	ABT_xstream *ess;		// Threads (ES)
+} TWABT_Engine_t;
+
+typedef struct TWABT_Task_t {
+	TW_Task_handler_t handler;				 // Task handler
+	void *data;								 // Task handler data
+	TW_Task_dep_handler_t dep_cb;			 // Dependency handler
+	TW_Task_dep_stat_handler_t dep_stat_cb;	 // Dependency state handler
+	void *dep_stat;							 // Dependency handler stat
+	ABT_task abt_task;						 // Argobot task handle
+	OPA_int_t status;						 // Status of the task
+	int priority;							 // Priority, currently not used
+	TWI_List_handle_t parents;				 // Tasks it depends on
+	TWI_List_handle_t childs;				 // Tasks depend on it
+	TWABT_Engine_t *ep;						 // Engine it is commited to
+	OPA_int_t nparent;						 // Number of task it depends on
+} TWABT_Task_t;
+
+typedef struct TWABT_Task_dep_t {
+	TWABT_Task_t *parent;  // parent task
+	TWABT_Task_t *child;   // child task
+	OPA_int_t status;	   // Last status of the parent known to the child
+	OPA_int_t ref;		   // Reference count
+} TWABT_Task_dep_t;
 
 /* Init callbacks */
 terr_t TWABT_Init (int *argc, char ***argv);
@@ -64,6 +95,7 @@ terr_t TWABT_Engine_set_num_workers (
 terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 						  void *task_data,
 						  TW_Task_dep_handler_t dep_cb,
+						  TW_Task_dep_stat_handler_t dep_stat_cb,
 						  int tag,
 						  TW_Handle_t *task);		   // Create a new task
 terr_t TWABT_Task_free (TW_Handle_t task);			   // Free up a task
@@ -102,3 +134,8 @@ terr_t TWABT_Err_to_tw_err (int abterr);
 int TWABTI_Sched_init (ABT_sched sched, ABT_sched_config config);
 void TWABTI_Sched_run (ABT_sched sched);
 int TWABTI_Sched_finalize (ABT_sched sched);
+
+/* Task functions */
+void *task_cb (void *task);
+terr_t TWABTI_Task_update_status (TWABT_Task_t *tp, int old_stat, int stat);
+terr_t TWABTI_Task_queue (TWABT_Task_t *tp);

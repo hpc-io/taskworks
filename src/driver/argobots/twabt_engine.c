@@ -12,14 +12,6 @@
 
 #include "twabt.h"
 
-typedef struct TWABT_Engine_t {
-	int ness;				// Number of threads (ES)
-	int ness_alloc;			// Size of schedulers and ess
-	ABT_pool pool;			// Task pool of th engine
-	ABT_sched *schedulers;	// Task scheduler
-	ABT_xstream *ess;		// Threads (ES)
-} TWABT_Engine_t;
-
 // Initialize the task engine
 /**
  * @brief  Create a new engine
@@ -151,8 +143,22 @@ err_out:;
  */
 terr_t TWABT_Engine_do_work (TW_Handle_t engine, ttime_t timeout) {
 	terr_t err = TW_SUCCESS;
+	int abterr;
+	int have_job;
+	ttime_t stoptime;
+	ABT_xstream self_es;
+	TWABT_Engine_t *ep = (TWABT_Engine_t *)engine;
 
-	RET_ERR (TW_ERR_NOT_SUPPORTED)
+	abterr = ABT_xstream_self (&self_es);
+	CHECK_ABTERR
+
+	stoptime = TWI_Time_now () + timeout;
+	do {
+		err = TWABTI_Sched_run_single (ep->pool, &have_job);
+		CHK_ERR
+
+		if (timeout == TW_TIMEOUT_ONCE) break;
+	} while (TWI_Time_now () < stoptime && have_job);
 
 err_out:;
 	return err;
@@ -176,7 +182,7 @@ terr_t TWABT_Engine_set_num_workers (TW_Handle_t engine, int num_worker) {
 	ABT_sched_config sched_cfg;
 	TWABT_Engine_t *ep = (TWABT_Engine_t *)engine;
 
-	RET_ERR (TW_ERR_NOT_SUPPORTED)
+	ASSIGN_ERR (TW_ERR_NOT_SUPPORTED)
 
 	if (num_worker < ep->ness) {
 		for (i = 0; i < num_worker; i++) {

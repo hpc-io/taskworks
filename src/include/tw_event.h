@@ -42,10 +42,12 @@ typedef enum TW_Event_type_t {
 typedef struct TW_Obj_t *TW_Event_handle_t;
 typedef struct TW_Event_attr_t {
 	TW_Event_type_t type;
+	/*
 	union evt_data {
 		int fd;
 		int socket;
 	};
+	*/
 } TW_Event_attr_t;
 
 typedef terr_t (*TW_Event_handler_t) (TW_Event_handle_t hevt, void *data);

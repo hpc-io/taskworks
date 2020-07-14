@@ -8,7 +8,8 @@
 
 SUFFIXES = .o .c .h .m4
 
-AM_CPPFLAGS  = -I${top_srcdir}/src/include
+AM_CPPFLAGS  =  -I${top_srcdir}/src/include \
+                -I${top_srcdir}/src/common
 
 # Argobots driver
 noinst_LTLIBRARIES=libtwabt.la

@@ -10,7 +10,7 @@
 
 /**
  * @file
- * @brief  User level engine APIs
+ * @brief  Engine related APIs
  */
 
 /// \cond

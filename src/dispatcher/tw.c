@@ -55,7 +55,7 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 		}
 #endif
 		else {
-			RET_ERR (TW_ERR_INVAL_BACKEND)
+			ASSIGN_ERR (TW_ERR_INVAL_BACKEND)
 		}
 	}
 
@@ -70,7 +70,7 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 			break;
 #endif
 		default:
-			RET_ERR (TW_ERR_INVAL_BACKEND)
+			ASSIGN_ERR (TW_ERR_INVAL_BACKEND)
 			break;
 	}
 
@@ -88,7 +88,7 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 		}
 #endif
 		else {
-			RET_ERR (TW_ERR_INVAL_BACKEND)
+			ASSIGN_ERR (TW_ERR_INVAL_BACKEND)
 		}
 	}
 
@@ -104,7 +104,7 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 			TWI_Active_evt_driver = NULL;
 			break;
 		default:
-			RET_ERR (TW_ERR_INVAL_EVT_BACKEND)
+			ASSIGN_ERR (TW_ERR_INVAL_EVT_BACKEND)
 			break;
 	}
 

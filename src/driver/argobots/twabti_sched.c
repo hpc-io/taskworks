@@ -21,12 +21,32 @@
  */
 int TWABTI_Sched_init (ABT_sched sched, ABT_sched_config config) { return ABT_SUCCESS; }
 
+terr_t TWABTI_Sched_run_single (ABT_pool pool, int *success) {
+	terr_t err = TW_SUCCESS;
+	int abterr;
+	ABT_unit unit;
+
+	abterr = ABT_pool_pop (pool, &unit);
+	CHECK_ABTERR
+	if (unit != ABT_UNIT_NULL) {
+		abterr = ABT_xstream_run_unit (unit, pool);
+		CHECK_ABTERR
+		*success = 1;
+	} else {
+		*success = 0;
+	}
+
+err_out:;
+	return err;
+}
+
 void TWABTI_Sched_run (ABT_sched sched) {
 	terr_t err;
 	int abterr;
+	int havejob;
 	// uint32_t work_count = 0;
 	ABT_pool pool;
-	ABT_unit unit;
+
 	int target;
 	ABT_bool stop;
 
@@ -34,16 +54,15 @@ void TWABTI_Sched_run (ABT_sched sched) {
 	CHECK_ABTERR
 
 	while (1) {
-		abterr = ABT_pool_pop (pool, &unit);
+		err = TWABTI_Sched_run_single (pool, &havejob);
+		CHK_ERR
+
+		abterr = ABT_xstream_check_events (sched);
 		CHECK_ABTERR
-		if (unit != ABT_UNIT_NULL) { ABT_xstream_run_unit (unit, pool); }
 
 		abterr = ABT_sched_has_to_stop (sched, &stop);
 		CHECK_ABTERR
 		if (stop == ABT_TRUE) { break; }
-
-		abterr = ABT_xstream_check_events (sched);
-		CHECK_ABTERR
 	}
 
 	/* //TODO: CHeck for event
