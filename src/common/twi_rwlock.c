@@ -77,7 +77,7 @@ terr_t TWI_Rwlock_wunlock (TWI_Rwlock_t *l) {
 }
 #else
 terr_t TWI_Rwlock_create (TWI_Rwlock_t *l) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	int perr;
 
 	perr = pthread_rwlock_init (l, NULL);
@@ -87,7 +87,7 @@ err_out:;
 	return err;
 }
 terr_t TWI_Rwlock_free (TWI_Rwlock_t *l) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	int perr;
 
 	perr = pthread_rwlock_destroy (l);
@@ -97,7 +97,7 @@ err_out:;
 	return err;
 }
 terr_t TWI_Rwlock_rlock (TWI_Rwlock_t *l) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	int perr;
 
 	perr = pthread_rwlock_rdlock (l);
@@ -107,7 +107,7 @@ err_out:;
 	return err;
 }
 terr_t TWI_Rwlock_tryrdlock (TWI_Rwlock_t *l, int *success) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	int perr;
 
 	perr = pthread_rwlock_tryrdlock (l);
@@ -123,7 +123,7 @@ err_out:;
 	return err;
 }
 terr_t TWI_Rwlock_wlock (TWI_Rwlock_t *l) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	int perr;
 
 	perr = pthread_rwlock_wrlock (l);
@@ -133,7 +133,7 @@ err_out:;
 	return err;
 }
 terr_t TWI_Rwlock_trywrlock (TWI_Rwlock_t *l, int *success) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	int perr;
 
 	perr = pthread_rwlock_trywrlock (l);
@@ -149,7 +149,7 @@ err_out:;
 	return err;
 }
 terr_t TWI_Rwlock_runlock (TWI_Rwlock_t *l) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	int perr;
 
 	perr = pthread_rwlock_unlock (l);
@@ -159,7 +159,7 @@ err_out:;
 	return err;
 }
 terr_t TWI_Rwlock_wunlock (TWI_Rwlock_t *l) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	int perr;
 
 	perr = pthread_rwlock_unlock (l);

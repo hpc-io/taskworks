@@ -17,6 +17,8 @@ noinst_LTLIBRARIES=libtwdispatcher.la
 # library sources
 libtwdispatcher_la_SOURCES =    tw.c \
                                     engine.c \
+                                    task.c \
+                                    dep.c \
                                     err.c
 
 # M4 hook

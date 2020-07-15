@@ -38,3 +38,11 @@ typedef TW_Obj_t *TW_Obj_handle_t;
 
 extern TW_Event_driver_handle_t TWI_Active_evt_driver;
 extern TW_Driver_handle_t TWI_Active_driver;
+
+extern int TW_Task_dep_all_complete_handler (
+	TW_Task_handle_t task, TW_Task_handle_t parent, int old_status, int new_status, void *dep_stat);
+
+extern int TW_Task_dep_all_complete_init (TW_Task_handle_t task,
+										  int num_deps,
+										  void **dep_stat,
+										  int init);

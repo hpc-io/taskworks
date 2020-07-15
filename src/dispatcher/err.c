@@ -15,14 +15,6 @@
 
 /// \cond
 // Prevent doxygen from leaking our internal headers
-#include <string.h>
-
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <errno.h>
-#endif
-
 #include "dispatcher.h"
 /// \endcond
 
@@ -44,23 +36,6 @@ const char *TW_Get_err_msg (terr_t err) {
 		case TW_ERR_MEM:
 			return "Memory allocation fail";
 		case TW_ERR_OS:
-#ifdef _WIN32
-		{
-			LPVOID msg;
-			DWORD errno;
-
-			errno = GetLastError ();
-
-			FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-							   FORMAT_MESSAGE_IGNORE_INSERTS,
-						   NULL, errno, MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msg, 0,
-						   NULL);
-			sprintf (oserr, "Win32 error: %s", msg);
-		}
-#else
-			sprintf (oserr, "POSIX error: %s\n", strerror (errno));
-#endif
-
 			return "System call fail";
 		/* User related */
 		case TW_ERR_INVAL:

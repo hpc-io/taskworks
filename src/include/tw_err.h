@@ -21,6 +21,8 @@
 #define TW_ERR_MEM		 0x10 /* Out of memory */
 #define TW_ERR_OS		 0x11 /* OS error */
 #define TW_ERR_NOT_FOUND 0x12
+#define TW_ERR_STATUS	 0x13 /* Wrong status */
+#define TW_ERR_TIMEOUT	 0x14 /* Timeout */
 
 /* User API related */
 #define TW_ERR_INVAL			   0x100 /* Invalid argument */

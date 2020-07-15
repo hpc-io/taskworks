@@ -16,7 +16,8 @@ AM_CPPFLAGS += -I$(top_srcdir)/test/common
 LDADD  = $(top_builddir)/src/libtw.la 
 
 TESTPROGRAMS =  init \
-                engine
+                engine \
+                task
 # mutual_dep
 
 # When we need m4

@@ -18,7 +18,8 @@ libtwabt_la_SOURCES =   err.c \
                             twabt_engine.c \
                             twabt_task.c \
                             twabt_event.c \
-                            twabti_sched.c
+                            twabti_sched.c \
+                            twabti_task.c
 
 # Allow running make tests without make
 tests-local: all

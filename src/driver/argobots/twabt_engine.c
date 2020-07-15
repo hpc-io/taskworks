@@ -21,7 +21,7 @@
  * @param  *engine: A pointer to the handle of the created engine
  * @retval TW_SUCCESS on success or translated error code on failure
  */
-terr_t TWABT_Engine_create (int num_worker, TW_Handle_t *engine) {
+terr_t TWABT_Engine_create (int num_worker, void *dispatcher_obj, TW_Handle_t *engine) {
 	terr_t err = TW_SUCCESS;
 	int abterr;
 	int i;
@@ -35,10 +35,11 @@ terr_t TWABT_Engine_create (int num_worker, TW_Handle_t *engine) {
 	// Allocate engine structure
 	ep = (TWABT_Engine_t *)TWI_Malloc (sizeof (TWABT_Engine_t));
 	CHK_PTR (ep)
-	ep->schedulers = NULL;
-	ep->ess		   = NULL;
-	ep->ness	   = num_worker;
-	ep->ness_alloc = ep->ness;
+	ep->schedulers	   = NULL;
+	ep->ess			   = NULL;
+	ep->ness		   = num_worker;
+	ep->ness_alloc	   = ep->ness;
+	ep->dispatcher_obj = dispatcher_obj;
 
 	// Create the task pool
 	abterr = ABT_pool_create_basic (ABT_POOL_FIFO, ABT_POOL_ACCESS_MPMC, ABT_TRUE, &(ep->pool));

@@ -112,6 +112,10 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 
 	// TODO: Init obj list
 
+	/* Assign predefined handlers */
+	TW_Task_dep_all_complete_handler_fn = TW_Task_dep_all_complete_handler;
+	TW_Task_dep_all_complete_init_fn	= TW_Task_dep_all_complete_init;
+
 	// Initialize the drivers
 	err = TWI_Active_driver->Init (argc, argv);
 	CHK_ERR

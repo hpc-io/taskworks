@@ -41,7 +41,7 @@ err_out:;
 }
 
 void TWABTI_Sched_run (ABT_sched sched) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	int abterr;
 	int havejob;
 	// uint32_t work_count = 0;

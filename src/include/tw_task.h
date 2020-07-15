@@ -43,6 +43,12 @@ typedef struct TW_Obj_t *TW_Task_handle_t;
 #define TW_TASK_PRIORITY_LOW	   3
 #define TW_TASK_PRIORITY_LOWEST	   4
 
+/* Predefined dependency handler
+ * We do not use enum because it is not supported by openpa
+ */
+#define TW_TASK_DEP_ALL_COMPLETE	  TW_Task_dep_all_complete_handler_fn
+#define TW_TASK_DEP_ALL_COMPLETE_INIT TW_Task_dep_all_complete_init_fn
+
 /* Callback functions */
 
 /**
@@ -62,10 +68,8 @@ typedef int (*TW_Task_handler_t) (void *data);
  * @dep_stat Internal status of the dependency handler
  * @retval The status of the task
  */
-typedef int (*TW_Task_dep_handler_t) (TW_Task_handle_t task,
-									  TW_Task_handle_t parent,
-									  int new_status,
-									  void *dep_stat);
+typedef int (*TW_Task_dep_handler_t) (
+	TW_Task_handle_t task, TW_Task_handle_t parent, int old_status, int new_status, void *dep_stat);
 
 /**
  * @brief  Callback function to initialize or finalize the dependency state for the dependency
@@ -96,20 +100,21 @@ extern terr_t TW_Task_free (TW_Task_handle_t task);	 // Free up a task
 extern terr_t TW_Task_create_barrier (TW_Engine_handle_t engine,  // Must have option of global
 									  int dep_tag,
 									  int tag,
-									  TW_Task_handle_t taskp);	// Create a new barrier task
+									  TW_Task_handle_t *task);	// Create a new barrier task
 
 // Controls
-extern terr_t TW_Task_commit (TW_Task_handle_t task);	// Put the task into the dag
-extern terr_t TW_Task_retract (TW_Task_handle_t task);	// Remove task form the dag
+extern terr_t TW_Task_commit (TW_Task_handle_t task,
+							  TW_Engine_handle_t engine);  // Put the task into the dag
+extern terr_t TW_Task_retract (TW_Task_handle_t task);	   // Remove task form the dag
 
 // Wait
 extern terr_t TW_Task_wait (TW_Task_handle_t task,
 							int64_t timeout);  // Wait for a single task to complete. The
 											   // calling thread joins the worker on the
 											   // job being waited and all its parents.
-extern terr_t TW_Task_wait_ex (TW_Task_handle_t *tasks,
-							   int num,
-							   int64_t timeout);  // Wait for a multiple task to complete.
+extern terr_t TW_Task_wait_multi (TW_Task_handle_t *tasks,
+								  int num,
+								  int64_t timeout);	 // Wait for a multiple task to complete.
 
 // Task dependency API
 extern terr_t TW_Task_add_dep (TW_Task_handle_t child, TW_Task_handle_t parent);
@@ -119,3 +124,6 @@ extern terr_t TW_Task_rm_dep (TW_Task_handle_t child, TW_Task_handle_t parent);
 extern terr_t TW_Task_get_status (TW_Task_handle_t task, int *statusp);
 extern terr_t TW_Task_get_data (TW_Task_handle_t task, void **datap);
 extern terr_t TW_Task_get_tag (TW_Task_handle_t task, int *tagp);
+
+extern TW_Task_dep_handler_t TW_Task_dep_all_complete_handler_fn;
+extern TW_Task_dep_stat_handler_t TW_Task_dep_all_complete_init_fn;

@@ -25,8 +25,8 @@
 // TODO: Remove macro, just expose the same name
 #ifdef _WIN32
 terr_t TWI_Mutex_create (TWI_Mutex_t *m) {
-	terr_t err;
-	*m = CreateMutex (NULL, FALSE, NULL);
+	terr_t err = TW_SUCCESS;
+	*m		   = CreateMutex (NULL, FALSE, NULL);
 	if (*m == NULL) RET_OS_ERR (GetLastError ())
 err_out:;
 	return err;
@@ -36,7 +36,7 @@ terr_t TWI_Mutex_free (TWI_Mutex_t *m) {
 	return TW_SUCCESS;
 }
 terr_t TWI_Mutex_lock (TWI_Mutex_t *m) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	DWORD ret;
 
 	ret = WaitForSingleObject (*m, INFINITE);
@@ -45,7 +45,7 @@ err_out:;
 	return err;
 }
 terr_t TWI_Mutex_trylock (TWI_Mutex_t *m, int *success) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	DWORD ret;
 
 	ret = WaitForSingleObject (*m, INFINITE);
@@ -60,7 +60,7 @@ err_out:;
 	return err;
 }
 terr_t TWI_Mutex_unlock (TWI_Mutex_t *m) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	BOOL ret;
 
 	ret = ReleaseMutex (*m);
@@ -71,7 +71,7 @@ err_out:;
 }
 #else
 terr_t TWI_Mutex_create (TWI_Mutex_t *m) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	int perr;
 
 	perr = pthread_mutex_init (m, NULL);
@@ -81,7 +81,7 @@ err_out:;
 	return err;
 }
 terr_t TWI_Mutex_free (TWI_Mutex_t *m) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	int perr;
 
 	perr = pthread_mutex_destroy (m);
@@ -91,7 +91,7 @@ err_out:;
 	return err;
 }
 terr_t TWI_Mutex_lock (TWI_Mutex_t *m) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	int perr;
 
 	perr = pthread_mutex_lock (m);
@@ -101,7 +101,7 @@ err_out:;
 	return err;
 }
 terr_t TWI_Mutex_trylock (TWI_Mutex_t *m, int *success) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	int perr;
 
 	perr = pthread_mutex_trylock (m);
@@ -117,7 +117,7 @@ err_out:;
 	return err;
 }
 terr_t TWI_Mutex_unlock (TWI_Mutex_t *m) {
-	terr_t err;
+	terr_t err = TW_SUCCESS;
 	int perr;
 
 	perr = pthread_mutex_unlock (m);

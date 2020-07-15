@@ -13,8 +13,8 @@
 #include <twtest.h>
 
 int main (int argc, char *argv[]) {
-	terr_t err;
-	int nerr = 0;
+	terr_t err = TW_SUCCESS;
+	int nerr   = 0;
 
 	PRINT_TEST_MSG ("Check if TaskWork can initialize and finalize properly");
 

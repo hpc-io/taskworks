@@ -23,6 +23,8 @@ extern TW_Driver_handle_t driver;
 
 typedef enum TW_Task_inq_type_t {
 	TW_Task_inq_type_status,
+	TW_Task_inq_type_data,
+	TW_Task_inq_type_tag,
 } TW_Task_inq_type_t;
 
 typedef struct TW_Driver_t {
@@ -33,6 +35,7 @@ typedef struct TW_Driver_t {
 
 	/* Engine callbacks */
 	terr_t (*Engine_create) (int num_worker,
+							 void *dispatcher_obj,
 							 TW_Handle_t *engine);	// Initialize the task engine
 													// with num_worker workers
 	terr_t (*Engine_free) (TW_Handle_t engine);		// Finalize the task engine
@@ -48,6 +51,7 @@ typedef struct TW_Driver_t {
 						   TW_Task_dep_handler_t dep_cb,
 						   TW_Task_dep_stat_handler_t dep_stat_cb,
 						   int tag,
+						   void *dispatcher_obj,
 						   TW_Handle_t *htask);	 // Create a new task
 
 	terr_t (*Task_free) (TW_Handle_t htask);			// Free up a task
@@ -56,22 +60,25 @@ typedef struct TW_Driver_t {
 								   int tag,
 								   TW_Handle_t *htask);	 // Create a new barrier task
 	terr_t (*Task_commit) (TW_Handle_t htask,
-						   TW_Handle_t engine);		 // Put the task into the dag
-	terr_t (*Task_retract) (TW_Handle_t htask);		 // Remove task form the dag
-	terr_t (*Task_wait_single) (TW_Handle_t htask);	 // Wait for a single task to complete. The
-													 // calling thread joins the worker on the
-													 // job being waited and all its parents.
+						   TW_Handle_t engine);	 // Put the task into the dag
+	terr_t (*Task_retract) (TW_Handle_t htask);	 // Remove task form the dag
+	terr_t (*Task_wait_single) (TW_Handle_t htask,
+								ttime_t timeout);  // Wait for a single task to complete. The
+												   // calling thread joins the worker on the
+												   // job being waited and all its parents.
 	terr_t (*Task_wait) (TW_Handle_t *htasks,
-						 int *num_tasks,
+						 int num_tasks,
 						 ttime_t timeout);	// Wait for a multiple task to complete.
 	terr_t (*Task_add_dep) (TW_Handle_t child, TW_Handle_t parent);
 	terr_t (*Task_rm_dep) (TW_Handle_t child, TW_Handle_t parent);
-	terr_t (*Task_inq) (TW_Handle_t htask, TW_Task_inq_type_t inqtype, int *ret);
+	terr_t (*Task_inq) (TW_Handle_t htask, TW_Task_inq_type_t inqtype, void *ret);
 
 	/* Event callbacks */
 	terr_t (*Event_create) (TW_Event_handler_t evt_cb,
 							void *evt_data,
 							TW_Event_attr_t attr,
+							void *dispatcher_obj,
+
 							TW_Handle_t *hevt);	 // Create a new event
 	terr_t (*Event_free) (TW_Handle_t hevt);
 	terr_t (*Event_commit) (TW_Handle_t engine,

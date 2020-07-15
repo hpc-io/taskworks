@@ -35,7 +35,7 @@ terr_t TW_Engine_create (int num_worker, TW_Engine_handle_t *engine) {
 	ep->objtype = TW_Obj_type_engine;
 	ep->driver	= TWI_Active_driver;
 
-	err = ep->driver->Engine_create (num_worker, &(ep->driver_obj));
+	err = ep->driver->Engine_create (num_worker, ep, &(ep->driver_obj));
 	CHK_ERR
 
 	*engine = ep;

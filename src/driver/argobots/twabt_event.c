@@ -15,6 +15,7 @@
 terr_t TWABT_Event_create (TW_Event_handler_t evt_cb,
 						   void *evt_data,
 						   TW_Event_attr_t attr,
+						   void *dispatcher_obj,
 						   TW_Handle_t *hevt) {}  // Create a new event
 terr_t TWABT_Event_free (TW_Handle_t hevt) {}
 terr_t TWABT_Event_commit (TW_Handle_t engine, TW_Handle_t hevt) {}	 // Commit event, start watching

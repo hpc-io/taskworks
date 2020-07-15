@@ -13,6 +13,10 @@ stages:
   - build
   - test
 
+cache:
+  paths:
+    # - "./*"
+    
 build:
   stage: build
   # instead of calling g++ directly you can also use some build toolkit like make
@@ -41,13 +45,10 @@ build:
     - make -j 64 
   tags:
     - cori
-  cache:
-    paths:
-      - "./*"
   artifacts:
     paths:
       # Autotool metadata will be corrupted by stage init, save the entire repo as artifact
-      # - "./"
+      - "./"
 
 # run tests using the binary built before
 test:

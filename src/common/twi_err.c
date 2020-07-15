@@ -12,6 +12,7 @@
 
 /// \cond
 // Prevent doxygen from leaking our internal headers
+#include <stdlib.h>
 #include <string.h>
 
 #ifdef _WIN32
@@ -20,7 +21,7 @@
 #include <errno.h>
 #endif
 
-#include "dispatcher.h"
+#include "taskworks_internal.h"
 /// \endcond
 
 static char oserr[1024] = "Operating system error:";

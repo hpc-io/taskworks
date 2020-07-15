@@ -24,3 +24,12 @@
 		else                                        \
 			printf ("success\n");                   \
 	}
+
+#define EXP_VAL(V, A, T)                                                                        \
+	{                                                                                           \
+		if (V != A) {                                                                           \
+			printf ("Error at line %d in %s: Expect " #V " = " T ", but got " T "\n", __LINE__, \
+					__FILE__, A, V);                                                            \
+			nerr++;                                                                             \
+		}                                                                                       \
+	}
