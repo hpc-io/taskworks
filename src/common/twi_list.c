@@ -19,7 +19,7 @@ terr_t TWI_List_create (TWI_List_handle_t *l) {
 	terr_t err = TW_SUCCESS;
 
 	*l = (TWI_List_handle_t)TWI_Malloc (sizeof (TWI_List_t));
-	CHK_PTR (*l);
+	CHECK_PTR (*l);
 
 	OPA_store_ptr (&((*l)->head), NULL);
 
@@ -48,7 +48,7 @@ terr_t TWI_List_insert (TWI_List_handle_t l, void *data) {
 	TWI_List_itr_t old_head, cur_head;
 
 	new_node = (TWI_List_itr_t)TWI_Malloc (sizeof (TWI_List_node_t));
-	CHK_PTR (new_node);
+	CHECK_PTR (new_node);
 
 	new_node->data = data;
 
@@ -93,7 +93,7 @@ terr_t TWI_List_erase (TWI_List_handle_t l, void *data) {
 
 	return err;
 }
-TWI_List_itr_t TWI_List_head (TWI_List_handle_t l) {
+TWI_List_itr_t TWI_List_begin (TWI_List_handle_t l) {
 	return (TWI_List_itr_t)OPA_load_ptr (&(l->head));
 }
 TWI_List_itr_t TWI_List_next (TWI_List_itr_t itr) {

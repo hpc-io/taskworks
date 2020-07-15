@@ -14,10 +14,23 @@
 #include <twtest.h>
 
 #define NUM_WORKERS 4
-#define NUM_TASKS	1
+#define NUM_TASKS	10
+
+typedef struct task_data {
+	int tid;
+	int *nerr;
+	int *pre;
+} task_data;
 
 int task_fn (void *data) {
-	++(*((atomic_int *)data));
+	int nerr	  = 0;
+	task_data *dp = (task_data *)data;
+
+	if (dp->tid) { EXP_VAL (*(dp->pre), dp->tid - 1, "%d") }
+
+	*(dp->pre) = dp->tid;
+	*(dp->nerr) += nerr;
+
 	return 0;
 }
 
@@ -26,7 +39,8 @@ int main (int argc, char *argv[]) {
 	int nerr   = 0;
 	int i;
 	int status;
-	atomic_int ctr;
+	task_data datas[NUM_TASKS];
+	int last = NUM_TASKS;
 	TW_Engine_handle_t eng;
 	TW_Task_handle_t task[NUM_TASKS];
 
@@ -38,17 +52,37 @@ int main (int argc, char *argv[]) {
 	err = TW_Engine_create (NUM_WORKERS, &eng);
 	CHECK_ERR
 
-	ctr = 0;
 	for (i = 0; i < NUM_TASKS; i++) {
-		err = TW_Task_create (task_fn, &ctr, TW_TASK_DEP_ALL_COMPLETE,
-							  TW_TASK_DEP_ALL_COMPLETE_INIT, 0, task + i);
+		datas[i].tid  = i;
+		datas[i].pre  = &last;
+		datas[i].nerr = &nerr;
+		err			  = TW_Task_create (task_fn, datas + i, TW_TASK_DEP_ALL_COMPLETE,
+								TW_TASK_DEP_ALL_COMPLETE_INIT, 0, task + i);
 		CHECK_ERR
+
+		if (i) {
+			err = TW_Task_add_dep (task[i], task[i - 1]);
+			CHECK_ERR
+		}
 	}
 
-	for (i = 0; i < NUM_TASKS; i++) {
+	/* Commit in reverse order, don't commit task 0 */
+	for (i = NUM_TASKS - 1; i > 0; i--) {
 		err = TW_Task_commit (task[i], eng);
 		CHECK_ERR
 	}
+
+	/* No task should run */
+	for (i = 1; i < NUM_TASKS; i++) {
+		err = TW_Task_get_status (task[i], &status);
+		CHECK_ERR
+
+		EXP_VAL (status, TW_Task_STAT_WAITING, "%d")
+	}
+
+	/* Now commit the first task */
+	err = TW_Task_commit (task[0], eng);
+	CHECK_ERR
 
 	for (i = 0; i < NUM_TASKS; i++) {
 		err = TW_Task_wait (task[i], TW_TIMEOUT_NEVER);
@@ -57,8 +91,9 @@ int main (int argc, char *argv[]) {
 
 	for (i = 0; i < NUM_TASKS; i++) {
 		err = TW_Task_get_status (task[i], &status);
-
 		CHECK_ERR
+
+		EXP_VAL (status, TW_Task_STAT_COMPLETE, "%d")
 	}
 
 	for (i = 0; i < NUM_TASKS; i++) {
@@ -66,7 +101,7 @@ int main (int argc, char *argv[]) {
 		CHECK_ERR
 	}
 
-	EXP_VAL (ctr, NUM_TASKS, "%d");
+	EXP_VAL (last, NUM_TASKS - 1, "%d");
 
 	err = TW_Engine_free (eng);
 	CHECK_ERR

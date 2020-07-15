@@ -34,7 +34,7 @@ terr_t TWABT_Engine_create (int num_worker, void *dispatcher_obj, TW_Handle_t *e
 
 	// Allocate engine structure
 	ep = (TWABT_Engine_t *)TWI_Malloc (sizeof (TWABT_Engine_t));
-	CHK_PTR (ep)
+	CHECK_PTR (ep)
 	ep->schedulers	   = NULL;
 	ep->ess			   = NULL;
 	ep->ness		   = num_worker;
@@ -58,7 +58,7 @@ terr_t TWABT_Engine_create (int num_worker, void *dispatcher_obj, TW_Handle_t *e
 
 	// Create the scheduler
 	ep->schedulers = (ABT_sched *)TWI_Malloc (sizeof (ABT_sched) * ep->ness_alloc);
-	CHK_PTR (ep->schedulers)
+	CHECK_PTR (ep->schedulers)
 	for (i = 0; i < num_worker; i++) {
 		abterr = ABT_sched_create (&sched_def, 1, &(ep->pool), ABT_SCHED_CONFIG_NULL,
 								   ep->schedulers + i);
@@ -67,7 +67,7 @@ terr_t TWABT_Engine_create (int num_worker, void *dispatcher_obj, TW_Handle_t *e
 
 	// Create and start ESs
 	ep->ess = (ABT_xstream *)TWI_Malloc (sizeof (ABT_xstream) * ep->ness_alloc);
-	CHK_PTR (ep->ess)
+	CHECK_PTR (ep->ess)
 	for (i = 0; i < num_worker; i++) {
 		abterr = ABT_xstream_create (ep->schedulers[i], ep->ess + i);
 		CHECK_ABTERR
@@ -156,9 +156,9 @@ terr_t TWABT_Engine_do_work (TW_Handle_t engine, ttime_t timeout) {
 	stoptime = TWI_Time_now () + timeout;
 	do {
 		err = TWABTI_Sched_run_single (ep->pool, &have_job);
-		CHK_ERR
+		CHECK_ERR
 
-		if (timeout == TW_TIMEOUT_ONCE) break;
+		if (timeout == TW_ONCE) break;
 	} while (TWI_Time_now () < stoptime && have_job);
 
 err_out:;

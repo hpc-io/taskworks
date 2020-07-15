@@ -26,9 +26,14 @@ typedef SRWLOCK TWI_Rwlock_t;
 #else
 typedef pthread_rwlock_t TWI_Rwlock_t;
 #endif
-terr_t TWI_Rwlock_create (TWI_Rwlock_t *m);
-terr_t TWI_Rwlock_free (TWI_Rwlock_t *m);
-terr_t TWI_Rwlock_rlock (TWI_Rwlock_t *m);
-terr_t TWI_Rwlock_wlock (TWI_Rwlock_t *m);
-terr_t TWI_Rwlock_runlock (TWI_Rwlock_t *m);
-terr_t TWI_Rwlock_wunlock (TWI_Rwlock_t *m);
+
+typedef TWI_Rwlock_t *TWI_Rwlock_handle_t;
+
+terr_t TWI_Rwlock_create (TWI_Rwlock_handle_t *l);
+terr_t TWI_Rwlock_free (TWI_Rwlock_handle_t l);
+terr_t TWI_Rwlock_init (TWI_Rwlock_handle_t l);
+terr_t TWI_Rwlock_finalize (TWI_Rwlock_handle_t l);
+terr_t TWI_Rwlock_rlock (TWI_Rwlock_handle_t l);
+terr_t TWI_Rwlock_wlock (TWI_Rwlock_handle_t l);
+terr_t TWI_Rwlock_runlock (TWI_Rwlock_handle_t l);
+terr_t TWI_Rwlock_wunlock (TWI_Rwlock_handle_t l);

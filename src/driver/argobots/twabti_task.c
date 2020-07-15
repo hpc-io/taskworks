@@ -13,34 +13,55 @@
 #include "twabt.h"
 
 void task_cb (void *task) {
+	terr_t err;
 	int ret;
+	int success;
 	TWABT_Task_t *tp = task;
 
-	ret = tp->handler (tp->data);
+	err = TWABTI_Task_update_status (tp, TW_Task_STAT_QUEUEING, TW_Task_STAT_RUNNING, &success);
+	CHECK_ERR
 
-	if (ret == 0) {
-		TWABTI_Task_update_status (tp, TW_Task_STAT_RUNNING, TW_Task_STAT_COMPLETE);
-	} else {
-		TWABTI_Task_update_status (tp, TW_Task_STAT_RUNNING, TW_Task_STAT_FAILED);
+	if (success) {
+		ret = tp->handler (tp->data);
+
+		if (ret == 0) {
+			TWABTI_Task_update_status (tp, TW_Task_STAT_RUNNING, TW_Task_STAT_COMPLETE, NULL);
+		} else {
+			TWABTI_Task_update_status (tp, TW_Task_STAT_RUNNING, TW_Task_STAT_FAILED, NULL);
+		}
 	}
+
+err_out:;
 }
 
-terr_t TWABTI_Task_update_status (TWABT_Task_t *tp, int old_stat, int new_stat) {
+terr_t TWABTI_Task_update_status (TWABT_Task_t *tp, int old_stat, int new_stat, int *success) {
 	terr_t err = TW_SUCCESS;
 	int abterr;
 
+	if (success) *success = 0;
+
 	// Old stat need to be different
-	if (old_stat == new_stat) return TW_SUCCESS;
+	if (old_stat != new_stat) {
+		if (old_stat == OPA_cas_int (&(tp->status), old_stat, new_stat)) {
+			// Notify child tasks
+			err = TWABTI_Task_notify_parent_status (tp, old_stat, new_stat);
+			CHECK_ERR
 
-	if (old_stat == OPA_cas_int (&(tp->status), old_stat, new_stat)) {
-		// Notify child tasks
-		err = TWABTI_Task_notify_parent_status (tp, old_stat, new_stat);
-		CHK_ERR
+			// Take action based on new status
+			switch (new_stat) {
+				case TW_Task_STAT_QUEUEING:
+					err = TWABTI_Task_queue (tp);
+					CHECK_ERR
+					break;
+				case TW_Task_STAT_ABORT:
+				case TW_Task_STAT_FAILED:
+				case TW_Task_STAT_COMPLETE:
+					tp->ep = NULL;
+					tp->dep_stat_cb (tp->dispatcher_obj, 0, &(tp->dep_stat), 0);
+					break;
+			}
 
-		// Time for execution
-		if (new_stat == TW_Task_STAT_QUEUEING) {
-			err = TWABTI_Task_queue (tp);
-			CHK_ERR
+			if (success) *success = 1;
 		}
 	}
 
@@ -52,10 +73,7 @@ terr_t TWABTI_Task_queue (TWABT_Task_t *tp) {
 	terr_t err = TW_SUCCESS;
 	int abterr;
 
-	if (OPA_cas_int (&(tp->status), TW_Task_STAT_WAITING, TW_Task_STAT_RUNNING) !=
-		TW_Task_STAT_WAITING) {
-		RET_ERR (TW_ERR_STATUS)
-	}
+	if (OPA_load_int (&(tp->status)) != TW_Task_STAT_QUEUEING) { RET_ERR (TW_ERR_STATUS) }
 
 	if (tp->abt_task != ABT_TASK_NULL) {
 		abterr = ABT_task_free (&(tp->abt_task));
@@ -76,7 +94,7 @@ terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new
 	TWABT_Task_dep_t *dp;
 
 	// Notify child tasks
-	itr = TWI_List_head (tp->childs);
+	itr = TWI_List_begin (tp->childs);
 	while (itr) {
 		dp			= itr->data;
 		stat_before = OPA_load_int (&(dp->child->status));
@@ -84,8 +102,8 @@ terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new
 			stat_after = dp->child->dep_cb (dp->child->dispatcher_obj, tp->dispatcher_obj, old_stat,
 											new_stat, dp->child->dep_stat);
 			if (stat_before != stat_after) {
-				err = TWABTI_Task_update_status (dp->child, stat_before, stat_after);
-				CHK_ERR
+				err = TWABTI_Task_update_status (dp->child, stat_before, stat_after, NULL);
+				CHECK_ERR
 			}
 		}
 		itr = TWI_List_next (itr);

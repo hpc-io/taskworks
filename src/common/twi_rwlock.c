@@ -22,21 +22,39 @@
 
 #include "taskworks_internal.h"
 
-// TODO: Remove macro, just expose the same name
+terr_t TWI_Rwlock_create (TWI_Rwlock_handle_t *l) {
+	terr_t err = TW_SUCCESS;
+
+	*l = TWI_Malloc (sizeof (TWI_Rwlock_t));
+	CHECK_PTR (*l);
+
+	err = TWI_Rwlock_init (*l);
+
+err_out:;
+	return err;
+}
+
+terr_t TWI_Rwlock_free (TWI_Rwlock_handle_t l) {
+	terr_t err;
+	err = TWI_Rwlock_finalize (l);
+	TWI_Free (l);
+	return err;
+}
+
 #ifdef _WIN32
-terr_t TWI_Rwlock_create (TWI_Rwlock_t *l) {
+terr_t TWI_Rwlock_init (TWI_Rwlock_handle_t l) {
 	InitializeSRWLock (l);
 
 	return TW_SUCCESS;
 }
-terr_t TWI_Rwlock_free (TWI_Rwlock_t *l) { return TW_SUCCESS; }
-terr_t TWI_Rwlock_rlock (TWI_Rwlock_t *l) {
+terr_t TWI_Rwlock_finalize (TWI_Rwlock_handle_t l) { return TW_SUCCESS; }
+terr_t TWI_Rwlock_rlock (TWI_Rwlock_handle_t l) {
 	AcquireSRWLockShared (l);
 
 	return TW_SUCCESS;
 }
 
-terr_t TWI_Rwlock_tryrlock (TWI_Rwlock_t *l, int *success) {
+terr_t TWI_Rwlock_tryrlock (TWI_Rwlock_handle_t l, int *success) {
 	BOOLEAN ret;
 
 	ret = TryAcquireSRWLockShared (l);
@@ -48,12 +66,12 @@ terr_t TWI_Rwlock_tryrlock (TWI_Rwlock_t *l, int *success) {
 
 	return TW_SUCCESS;
 }
-terr_t TWI_Rwlock_wlock (TWI_Rwlock_t *l) {
+terr_t TWI_Rwlock_wlock (TWI_Rwlock_handle_t l) {
 	AcquireSRWLockExclusive (l);
 
 	return TW_SUCCESS;
 }
-terr_t TWI_Rwlock_trywlock (TWI_Rwlock_t *l, int *success) {
+terr_t TWI_Rwlock_trywlock (TWI_Rwlock_handle_t l, int *success) {
 	BOOLEAN ret;
 
 	ret = TryAcquireSRWLockExclusive (l);
@@ -65,18 +83,18 @@ terr_t TWI_Rwlock_trywlock (TWI_Rwlock_t *l, int *success) {
 
 	return TW_SUCCESS;
 }
-terr_t TWI_Rwlock_runlock (TWI_Rwlock_t *l) {
+terr_t TWI_Rwlock_runlock (TWI_Rwlock_handle_t l) {
 	ReleaseSRWLockShared (l);
 
 	return TW_SUCCESS;
 }
-terr_t TWI_Rwlock_wunlock (TWI_Rwlock_t *l) {
+terr_t TWI_Rwlock_wunlock (TWI_Rwlock_handle_t l) {
 	ReleaseSRWLockExclusive (l);
 
 	return TW_SUCCESS;
 }
 #else
-terr_t TWI_Rwlock_create (TWI_Rwlock_t *l) {
+terr_t TWI_Rwlock_init (TWI_Rwlock_handle_t l) {
 	terr_t err = TW_SUCCESS;
 	int perr;
 
@@ -86,7 +104,7 @@ terr_t TWI_Rwlock_create (TWI_Rwlock_t *l) {
 err_out:;
 	return err;
 }
-terr_t TWI_Rwlock_free (TWI_Rwlock_t *l) {
+terr_t TWI_Rwlock_finalize (TWI_Rwlock_handle_t l) {
 	terr_t err = TW_SUCCESS;
 	int perr;
 
@@ -96,7 +114,7 @@ terr_t TWI_Rwlock_free (TWI_Rwlock_t *l) {
 err_out:;
 	return err;
 }
-terr_t TWI_Rwlock_rlock (TWI_Rwlock_t *l) {
+terr_t TWI_Rwlock_rlock (TWI_Rwlock_handle_t l) {
 	terr_t err = TW_SUCCESS;
 	int perr;
 
@@ -106,7 +124,7 @@ terr_t TWI_Rwlock_rlock (TWI_Rwlock_t *l) {
 err_out:;
 	return err;
 }
-terr_t TWI_Rwlock_tryrdlock (TWI_Rwlock_t *l, int *success) {
+terr_t TWI_Rwlock_tryrdlock (TWI_Rwlock_handle_t l, int *success) {
 	terr_t err = TW_SUCCESS;
 	int perr;
 
@@ -122,7 +140,7 @@ terr_t TWI_Rwlock_tryrdlock (TWI_Rwlock_t *l, int *success) {
 err_out:;
 	return err;
 }
-terr_t TWI_Rwlock_wlock (TWI_Rwlock_t *l) {
+terr_t TWI_Rwlock_wlock (TWI_Rwlock_handle_t l) {
 	terr_t err = TW_SUCCESS;
 	int perr;
 
@@ -132,7 +150,7 @@ terr_t TWI_Rwlock_wlock (TWI_Rwlock_t *l) {
 err_out:;
 	return err;
 }
-terr_t TWI_Rwlock_trywrlock (TWI_Rwlock_t *l, int *success) {
+terr_t TWI_Rwlock_trywrlock (TWI_Rwlock_handle_t l, int *success) {
 	terr_t err = TW_SUCCESS;
 	int perr;
 
@@ -148,7 +166,7 @@ terr_t TWI_Rwlock_trywrlock (TWI_Rwlock_t *l, int *success) {
 err_out:;
 	return err;
 }
-terr_t TWI_Rwlock_runlock (TWI_Rwlock_t *l) {
+terr_t TWI_Rwlock_runlock (TWI_Rwlock_handle_t l) {
 	terr_t err = TW_SUCCESS;
 	int perr;
 
@@ -158,7 +176,7 @@ terr_t TWI_Rwlock_runlock (TWI_Rwlock_t *l) {
 err_out:;
 	return err;
 }
-terr_t TWI_Rwlock_wunlock (TWI_Rwlock_t *l) {
+terr_t TWI_Rwlock_wunlock (TWI_Rwlock_handle_t l) {
 	terr_t err = TW_SUCCESS;
 	int perr;
 

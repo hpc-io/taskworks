@@ -118,11 +118,11 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 
 	// Initialize the drivers
 	err = TWI_Active_driver->Init (argc, argv);
-	CHK_ERR
+	CHECK_ERR
 	if (TWI_Active_evt_driver) {
 		// TODO:: Init event driver once it is completed
 		////err = TWI_Active_evt_driver->Init (argc, argv);
-		CHK_ERR
+		CHECK_ERR
 	}
 
 err_out:;
@@ -138,10 +138,10 @@ terr_t TW_Finalize () {
 	terr_t err = TW_SUCCESS;
 
 	err = TWI_Active_driver->Finalize ();
-	CHK_ERR
+	CHECK_ERR
 	// TODO:: Finalize event driver once it is completed
 	// err = TWI_Active_evt_driver->Finalize();
-	// CHK_ERR
+	// CHECK_ERR
 
 err_out:;
 	return err;

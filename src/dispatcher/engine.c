@@ -36,7 +36,7 @@ terr_t TW_Engine_create (int num_worker, TW_Engine_handle_t *engine) {
 	ep->driver	= TWI_Active_driver;
 
 	err = ep->driver->Engine_create (num_worker, ep, &(ep->driver_obj));
-	CHK_ERR
+	CHECK_ERR
 
 	*engine = ep;
 
@@ -57,7 +57,7 @@ terr_t TW_Engine_free (TW_Engine_handle_t engine) {
 	CHK_HANDLE (engine, TW_Obj_type_engine)
 
 	err = engine->driver->Engine_free (engine->driver_obj);
-	CHK_ERR
+	CHECK_ERR
 
 	TWI_Free (engine);
 

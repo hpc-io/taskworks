@@ -43,31 +43,71 @@
 		}                                                                       \
 	}
 
-terr_t TWI_Vector_init (TWI_Vector_t *v) {
+terr_t TWI_Vector_create (TWI_Vector_handle_t *v) {
 	terr_t err = TW_SUCCESS;
+	TWI_Vector_handle_t vp;
 
-	TWI_Rwlock_create (&(v->lock));
-	v->size	  = 0;
-	v->nalloc = TWI_Vector_INIT_SIZE;
-	v->data	  = TWI_Malloc (v->nalloc * sizeof (TW_Handle_t));
-	CHK_PTR (v->data)
+	vp = (TWI_Vector_handle_t)TWI_Malloc (sizeof (TWI_Vector_t));
+	CHECK_PTR (vp)
+
+	err = TWI_Vector_init (vp);
+	CHECK_ERR
+
+	*v = vp;
+
 err_out:;
+	if (err) {
+		if (vp) { TWI_Free (vp); }
+	}
 	return err;
 }
 
-terr_t TWI_Vector_free (TWI_Vector_t *v) {
-	TWI_Rwlock_wlock (&(v->lock));
+terr_t TWI_Vector_free (TWI_Vector_handle_t v) {
+	terr_t err;
+
+	err = TWI_Vector_finalize (v);
+
+	TWI_Free (v);
+
+	return err;
+}
+
+terr_t TWI_Vector_init (TWI_Vector_handle_t v) {
+	terr_t err = TW_SUCCESS;
+
+	err = TWI_Rwlock_init (&(v->lock));
+	CHECK_ERR
+	// OPA_store_int (&(vp->size), 0);
+	v->size	  = 0;
+	v->nalloc = TWI_Vector_INIT_SIZE;
+	v->data	  = TWI_Malloc (v->nalloc * sizeof (TW_Handle_t));
+	CHECK_PTR (v->data)
+
+err_out:;
+	if (err) { TWI_Free (v->data); }
+	err = TWI_Rwlock_finalize (&(v->lock));
+	return err;
+}
+
+terr_t TWI_Vector_finalize (TWI_Vector_handle_t v) {
+	terr_t err;
+
+	err = TWI_Rwlock_wlock (&(v->lock));
+	CHECK_ERR
 
 	TWI_Free (v->data);
 	v->data = NULL;
 
-	TWI_Rwlock_wunlock (&(v->lock));
-	TWI_Rwlock_free (&(v->lock));
+	err = TWI_Rwlock_wunlock (&(v->lock));
+	CHECK_ERR
+	err = TWI_Rwlock_finalize (&(v->lock));
+	CHECK_ERR
 
-	return TW_SUCCESS;
+err_out:;
+	return err;
 }
 
-terr_t TWI_Vector_read (TWI_Vector_t *v, int64_t index, void **data) {
+terr_t TWI_Vector_read (TWI_Vector_handle_t v, int64_t index, void **data) {
 	TWI_Rwlock_rlock (&(v->lock));
 
 	if (index < 0 || index > v->size) { RET_ERR (TW_ERR_INVAL) }
@@ -78,7 +118,7 @@ terr_t TWI_Vector_read (TWI_Vector_t *v, int64_t index, void **data) {
 
 	return TW_SUCCESS;
 }
-terr_t TWI_Vector_write (TWI_Vector_t *v, int64_t index, void *data) {
+terr_t TWI_Vector_write (TWI_Vector_handle_t v, int64_t index, void *data) {
 	TWI_Rwlock_rlock (&(v->lock));
 
 	if (index < 0 || index > v->size) { RET_ERR (TW_ERR_INVAL) }
@@ -90,7 +130,7 @@ terr_t TWI_Vector_write (TWI_Vector_t *v, int64_t index, void *data) {
 	return TW_SUCCESS;
 }
 
-terr_t TWI_Vector_erase_at (TWI_Vector_t *v, int64_t idx) {
+terr_t TWI_Vector_erase_at (TWI_Vector_handle_t v, int64_t idx) {
 	terr_t err = TW_SUCCESS;
 	int i;
 
@@ -110,7 +150,7 @@ err_out:;
 	return err;
 }
 
-terr_t TWI_Vector_erase (TWI_Vector_t *v, void *data) {
+terr_t TWI_Vector_erase (TWI_Vector_handle_t v, void *data) {
 	terr_t err = TW_SUCCESS;
 	int i;
 
@@ -133,7 +173,7 @@ err_out:;
 	return err;
 }
 
-int64_t TWI_Vector_find (TWI_Vector_t *v, void *data) {
+int64_t TWI_Vector_find (TWI_Vector_handle_t v, void *data) {
 	int64_t i;
 
 	TWI_Rwlock_rlock (&(v->lock));
@@ -148,7 +188,7 @@ int64_t TWI_Vector_find (TWI_Vector_t *v, void *data) {
 	return -1;
 }
 
-terr_t TWI_Vector_push_back (TWI_Vector_t *v, void *data) {
+terr_t TWI_Vector_push_back (TWI_Vector_handle_t v, void *data) {
 	terr_t err = TW_SUCCESS;
 
 	TWI_Rwlock_wlock (&(v->lock));
@@ -157,7 +197,7 @@ terr_t TWI_Vector_push_back (TWI_Vector_t *v, void *data) {
 	if (v->nalloc == v->size) {
 		v->nalloc *= TWI_Vector_ALLOC_MULTIPLIER;
 		v->data = TWI_Realloc (v->data, v->nalloc * sizeof (void *));
-		CHK_PTR (v->data)
+		CHECK_PTR (v->data)
 	}
 
 	/* Write at back */
@@ -169,9 +209,9 @@ err_out:;
 	return err;
 }
 
-size_t TWI_Vector_size (TWI_Vector_t *v) { return v->size; }
+size_t TWI_Vector_size (TWI_Vector_handle_t v) { return v->size; }
 
-size_t TWI_Vector_resize (TWI_Vector_t *v, size_t size) {
+size_t TWI_Vector_resize (TWI_Vector_handle_t v, size_t size) {
 	terr_t err = TW_SUCCESS;
 
 	TWI_Rwlock_wlock (&(v->lock));
@@ -179,7 +219,7 @@ size_t TWI_Vector_resize (TWI_Vector_t *v, size_t size) {
 	if (v->nalloc == v->size) {
 		v->nalloc *= TWI_Vector_ALLOC_MULTIPLIER;
 		v->data = TWI_Realloc (v->data, v->nalloc * sizeof (void *));
-		CHK_PTR (v->data)
+		CHECK_PTR (v->data)
 	}
 
 	TWI_Rwlock_wunlock (&(v->lock));

@@ -41,5 +41,5 @@ terr_t TWI_List_free (TWI_List_handle_t l);
 terr_t TWI_List_insert (TWI_List_handle_t l, void *data);
 terr_t TWI_List_insert_at (TWI_List_itr_t itr, void *data);
 terr_t TWI_List_erase (TWI_List_handle_t l, void *data);
-TWI_List_itr_t TWI_List_head (TWI_List_handle_t l);
+TWI_List_itr_t TWI_List_begin (TWI_List_handle_t l);
 TWI_List_itr_t TWI_List_next (TWI_List_itr_t itr);

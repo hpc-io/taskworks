@@ -63,6 +63,7 @@ typedef struct TWABT_Engine_t {
 } TWABT_Engine_t;
 
 typedef struct TWABT_Task_t {
+	TWI_Rwlock_t lock;
 	TW_Task_handler_t handler;				 // Task handler
 	void *data;								 // Task handler data
 	TW_Task_dep_handler_t dep_cb;			 // Dependency handler
@@ -75,7 +76,6 @@ typedef struct TWABT_Task_t {
 	TWI_List_handle_t parents;				 // Tasks it depends on
 	TWI_List_handle_t childs;				 // Tasks depend on it
 	TWABT_Engine_t *ep;						 // Engine it is commited to
-	OPA_int_t nparent;						 // Number of task it depends on
 	void *dispatcher_obj;					 // Corresponding structure at dispatcher level
 } TWABT_Task_t;
 
@@ -152,6 +152,6 @@ int TWABTI_Sched_finalize (ABT_sched sched);
 /* Task functions */
 void task_cb (void *task);
 terr_t TWABTI_Sched_run_single (ABT_pool pool, int *success);
-terr_t TWABTI_Task_update_status (TWABT_Task_t *tp, int old_stat, int new_stat);
+terr_t TWABTI_Task_update_status (TWABT_Task_t *tp, int old_stat, int new_stat, int *success);
 terr_t TWABTI_Task_queue (TWABT_Task_t *tp);
 terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new_stat);

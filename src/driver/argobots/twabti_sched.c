@@ -55,7 +55,7 @@ void TWABTI_Sched_run (ABT_sched sched) {
 
 	while (1) {
 		err = TWABTI_Sched_run_single (pool, &havejob);
-		CHK_ERR
+		CHECK_ERR
 
 		abterr = ABT_xstream_check_events (sched);
 		CHECK_ABTERR

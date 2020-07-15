@@ -15,7 +15,7 @@
 #include "taskworks.h"
 
 #define TW_TIMEOUT_NEVER -1LL
-#define TW_TIMEOUT_ONCE	 -2LL
+#define TW_ONCE			 -2LL
 
 #define TW_HANDLE_NULL NULL
 

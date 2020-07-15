@@ -52,21 +52,21 @@
 #endif
 #define PRINT_ERR(E) PRINT_ERR_MSG (E, TW_Get_err_msg (E))
 
-#define CHK_RET(R)             \
+#define CHECK_RET(R)           \
 	{                          \
 		if (R != TW_SUCCESS) { \
 			PRINT_ERR (R)      \
 			goto err_out;      \
 		}                      \
 	}
-#define CHK_RETR(R)            \
+#define CHECK_RETR(R)          \
 	{                          \
 		if (R != TW_SUCCESS) { \
 			PRINT_ERR (R)      \
 			return err_out;    \
 		}                      \
 	}
-#define CHK_ERR CHK_RET (err)
+#define CHECK_ERR CHECK_RET (err)
 
 #define ASSIGN_ERR(R) \
 	{                 \
@@ -80,7 +80,7 @@
 		return R;     \
 	}
 
-#define CHK_PTR(P)            \
+#define CHECK_PTR(P)          \
 	{                         \
 		if (P == NULL) {      \
 			err = TW_ERR_MEM; \
