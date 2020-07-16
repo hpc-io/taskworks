@@ -93,7 +93,7 @@ terr_t TWI_Rwlock_wunlock (TWI_Rwlock_handle_t l) {
 
 	return TW_SUCCESS;
 }
-#else
+#elif defined __USE_UNIX98 || defined __USE_XOPEN2K
 terr_t TWI_Rwlock_init (TWI_Rwlock_handle_t l) {
 	terr_t err = TW_SUCCESS;
 	int perr;

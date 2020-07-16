@@ -105,7 +105,8 @@ extern terr_t TW_Task_create_barrier (TW_Engine_handle_t engine,  // Must have o
 // Controls
 extern terr_t TW_Task_commit (TW_Task_handle_t task,
 							  TW_Engine_handle_t engine);  // Put the task into the dag
-extern terr_t TW_Task_retract (TW_Task_handle_t task);	   // Remove task form the dag
+extern terr_t TW_Task_commit_barrier (TW_Task_handle_t task);
+extern terr_t TW_Task_retract (TW_Task_handle_t task);	// Remove task form the dag
 
 // Wait
 extern terr_t TW_Task_wait (TW_Task_handle_t task,

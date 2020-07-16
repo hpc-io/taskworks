@@ -20,7 +20,6 @@ terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 						  void *dispatcher_obj,
 						  TW_Handle_t *htask) {	 // Create a new task
 	terr_t err = TW_SUCCESS;
-	int abterr;
 	TWABT_Task_t *tp;
 
 	tp = (TWABT_Task_t *)TWI_Malloc (sizeof (TWABT_Task_t));
@@ -61,7 +60,7 @@ err_out:;
 terr_t TWABT_Task_free (TW_Handle_t htask) {  // Free up a task
 	terr_t err = TW_SUCCESS;
 	int abterr;
-	int i, j, s;
+	int is_zero;
 	TWABT_Task_t *tp = (TWABT_Task_t *)htask;
 	TWABT_Task_dep_t *dp;
 	TWI_List_itr_t itr;
@@ -75,8 +74,8 @@ terr_t TWABT_Task_free (TW_Handle_t htask) {  // Free up a task
 		dp = itr->data;
 
 		// Decrease ref count, if we are the last one, free the dep struct
-		j = OPA_decr_and_test_int (&(dp->ref));
-		if (!j) { TWI_Free (dp); }
+		is_zero = OPA_decr_and_test_int (&(dp->ref));
+		if (is_zero) { TWI_Free (dp); }
 
 		itr = TWI_List_next (itr);
 	}
@@ -85,13 +84,16 @@ terr_t TWABT_Task_free (TW_Handle_t htask) {  // Free up a task
 		dp = itr->data;
 
 		// Decrease ref count, if we are the last one, free the dep struct
-		j = OPA_decr_and_test_int (&(dp->ref));
-		if (!j) { TWI_Free (dp); }
+		is_zero = OPA_decr_and_test_int (&(dp->ref));
+		if (is_zero) { TWI_Free (dp); }
 
 		itr = TWI_List_next (itr);
 	}
 
-	if (tp->abt_task != ABT_TASK_NULL) { ABT_task_free (&(tp->abt_task)); }
+	if (tp->abt_task != ABT_TASK_NULL) {
+		abterr = ABT_task_free (&(tp->abt_task));
+		CHECK_ABTERR
+	}
 
 	err = TWI_Rwlock_wunlock (&(tp->lock));
 	CHECK_ERR
@@ -104,10 +106,11 @@ err_out:;
 	return err;
 }
 
-terr_t TWABT_Task_create_barrier (TW_Handle_t engine,  // Must have option of global
-								  int dep_tag,
-								  int tag,
-								  TW_Handle_t *htask) {	 // Create a new barrier task
+terr_t TWABT_Task_create_barrier (TW_Handle_t TWI_UNUSED engine,  // Must have option of global
+								  int TWI_UNUSED dep_tag,
+								  int TWI_UNUSED tag,
+								  TW_Handle_t TWI_UNUSED *htask) {	// Create a new barrier task
+	return TW_ERR_NOT_SUPPORTED;
 }
 
 terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the task into the dag
@@ -179,7 +182,6 @@ terr_t TWABT_Task_retract (TW_Handle_t htask) {
 	terr_t err = TW_SUCCESS;
 	int status, success;
 	TWABT_Task_t *tp = (TWABT_Task_t *)htask;
-	TWABT_Task_t *itr;
 
 	while (1) {
 		status = OPA_load_int (&(tp->status));
@@ -202,11 +204,9 @@ err_out:;
 // job being waited and all its parents.
 terr_t TWABT_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 	terr_t err = TW_SUCCESS;
-	int abterr;
 	int stat;
 	ttime_t stoptime;
 	TWABT_Task_t *tp = (TWABT_Task_t *)htask;
-	TWABT_Task_t *itr;
 
 	if (timeout == TW_TIMEOUT_NEVER) {
 		while (1) {
@@ -223,7 +223,7 @@ terr_t TWABT_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 				stat == TW_Task_STAT_FAILED)
 				break;
 		}
-		if (stat != TW_Task_STAT_COMPLETE) { RET_ERR (TW_ERR_TIMEOUT) }
+		if (stat != TW_Task_STAT_COMPLETE) { ASSIGN_ERR (TW_ERR_TIMEOUT) }
 	}
 err_out:;
 	return err;
@@ -234,7 +234,6 @@ terr_t TWABT_Task_wait (TW_Handle_t *htasks, int num_tasks, ttime_t timeout) {
 	terr_t err = TW_SUCCESS;
 	int i;
 	ttime_t stoptime, now;
-	TWABT_Task_t *tp;
 
 	if (timeout == TW_TIMEOUT_NEVER) {
 		for (i = 0; i < num_tasks; i++) {
@@ -256,12 +255,10 @@ err_out:;
 }
 
 terr_t TWABT_Task_add_dep (TW_Handle_t child, TW_Handle_t parent) {
-	terr_t err = TW_SUCCESS;
-	int i, is_zero;
+	terr_t err		 = TW_SUCCESS;
 	TWABT_Task_t *cp = (TWABT_Task_t *)child;
 	TWABT_Task_t *pp = (TWABT_Task_t *)parent;
 	TWABT_Task_dep_t *dp;
-	TWI_List_itr_t itr;
 
 	err = TWI_Rwlock_rlock (&(cp->lock));
 	CHECK_ERR
@@ -287,7 +284,7 @@ err_out:;
 
 terr_t TWABT_Task_rm_dep (TW_Handle_t child, TW_Handle_t parent) {
 	terr_t err = TW_SUCCESS;
-	int i, is_zero;
+	int is_zero;
 	TWABT_Task_t *cp = (TWABT_Task_t *)child;
 	TWABT_Task_t *pp = (TWABT_Task_t *)parent;
 	TWABT_Task_dep_t *dp;
@@ -334,7 +331,7 @@ terr_t TWABT_Task_inq (TW_Handle_t htask, TW_Task_inq_type_t inqtype, void *ret)
 			*((int *)ret) = tp->tag;
 			break;
 		default:
-			RET_ERR (TW_ERR_INVAL);
+			ASSIGN_ERR (TW_ERR_INVAL);
 			break;
 	}
 

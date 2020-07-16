@@ -12,11 +12,17 @@
 
 #include "twabt.h"
 
-terr_t TWABT_Event_create (TW_Event_handler_t evt_cb,
-						   void *evt_data,
-						   TW_Event_attr_t attr,
-						   void *dispatcher_obj,
-						   TW_Handle_t *hevt) {}  // Create a new event
-terr_t TWABT_Event_free (TW_Handle_t hevt) {}
-terr_t TWABT_Event_commit (TW_Handle_t engine, TW_Handle_t hevt) {}	 // Commit event, start watching
-terr_t TWABT_Event_retract (TW_Handle_t hevt) {}					 // Stop watching
+terr_t TWABT_Event_create (TW_Event_handler_t TWI_UNUSED evt_cb,
+						   void TWI_UNUSED *evt_data,
+						   TW_Event_attr_t TWI_UNUSED attr,
+						   void TWI_UNUSED *dispatcher_obj,
+						   TW_Handle_t TWI_UNUSED *hevt) {
+	return TW_ERR_NOT_SUPPORTED;
+}  // Create a new event
+terr_t TWABT_Event_free (TW_Handle_t TWI_UNUSED hevt) { return TW_ERR_NOT_SUPPORTED; }
+terr_t TWABT_Event_commit (TW_Handle_t TWI_UNUSED engine, TW_Handle_t TWI_UNUSED hevt) {
+	return TW_ERR_NOT_SUPPORTED;
+}  // Commit event, start watching
+terr_t TWABT_Event_retract (TW_Handle_t TWI_UNUSED hevt) {
+	return TW_ERR_NOT_SUPPORTED;
+}  // Stop watching

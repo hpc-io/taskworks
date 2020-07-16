@@ -18,8 +18,6 @@
 #include "dispatcher.h"
 /// \endcond
 
-static char oserr[1024] = "Operating system error:";
-
 /**
  * @brief  Get error message
  * @note The returned char pointer points to a constant string within the library that should not be
@@ -47,7 +45,15 @@ const char *TW_Get_err_msg (terr_t err) {
 		case TW_ERR_INVAL_HANDLE:
 			return "Invalid handle";
 		case TW_ERR_INCOMPATIBLE_OBJECT:
-			return "Objected not compatible with the current backend backend";
+			return "Object not compatible with the current backend ";
+		case TW_ERR_NOT_FOUND:
+			return "Cannot find specified object";
+		case TW_ERR_STATUS:
+			return "Operation cannot be performed while the object is in the current status";
+		case TW_ERR_TIMEOUT:
+			return "Operation timed out";
+		case TW_ERR_DEP_INIT:
+			return "The dependency initialization handler returns non-zero";
 		/* Engine related */
 		case TW_ERR_THREAD_CREATE:
 			return "Cannot create thread";
@@ -55,7 +61,7 @@ const char *TW_Get_err_msg (terr_t err) {
 			return "Cannot send signal to thread";
 		case TW_ERR_NOT_SUPPORTED:
 			return "The backend does not support such function";
+		default:
+			return "Unknown error";
 	}
-
-	return "Unknown error";
 }

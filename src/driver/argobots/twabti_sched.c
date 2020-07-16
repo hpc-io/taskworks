@@ -19,7 +19,9 @@
  * @param  config:
  * @retval
  */
-int TWABTI_Sched_init (ABT_sched sched, ABT_sched_config config) { return ABT_SUCCESS; }
+int TWABTI_Sched_init (ABT_sched TWI_UNUSED sched, ABT_sched_config TWI_UNUSED config) {
+	return ABT_SUCCESS;
+}
 
 terr_t TWABTI_Sched_run_single (ABT_pool pool, int *success) {
 	terr_t err = TW_SUCCESS;
@@ -46,8 +48,6 @@ void TWABTI_Sched_run (ABT_sched sched) {
 	int havejob;
 	// uint32_t work_count = 0;
 	ABT_pool pool;
-
-	int target;
 	ABT_bool stop;
 
 	abterr = ABT_sched_get_pools (sched, 1, 0, &pool);
@@ -79,5 +79,5 @@ err_out:;
  * @note
  * @param  sched: Scheduler to free
  * @retval
- */
-int TWABTI_Sched_finalize (ABT_sched sched) { return ABT_SUCCESS; }
+ * */
+int TWABTI_Sched_finalize (ABT_sched TWI_UNUSED sched) { return ABT_SUCCESS; }

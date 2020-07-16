@@ -25,7 +25,12 @@ typedef HANDLE TWI_Mutex_t;
 #else
 typedef pthread_mutex_t TWI_Mutex_t;
 #endif
-terr_t TWI_Mutex_create (TWI_Mutex_t *m);
-terr_t TWI_Mutex_free (TWI_Mutex_t *m);
-terr_t TWI_Mutex_lock (TWI_Mutex_t *m);
-terr_t TWI_Mutex_unlock (TWI_Mutex_t *m);
+typedef TWI_Mutex_t *TWI_Mutex_handle_t;
+
+terr_t TWI_Mutex_create (TWI_Mutex_handle_t *m);
+terr_t TWI_Mutex_free (TWI_Mutex_handle_t m);
+terr_t TWI_Mutex_init (TWI_Mutex_handle_t m);
+terr_t TWI_Mutex_finalize (TWI_Mutex_handle_t m);
+terr_t TWI_Mutex_lock (TWI_Mutex_handle_t m);
+terr_t TWI_Mutex_trylock (TWI_Mutex_handle_t m, int *success);
+terr_t TWI_Mutex_unlock (TWI_Mutex_handle_t m);

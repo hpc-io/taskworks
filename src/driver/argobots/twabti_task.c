@@ -12,7 +12,7 @@
 
 #include "twabt.h"
 
-void task_cb (void *task) {
+void TWABTI_Task_abttask_cb (void *task) {
 	terr_t err;
 	int ret;
 	int success;
@@ -36,7 +36,6 @@ err_out:;
 
 terr_t TWABTI_Task_update_status (TWABT_Task_t *tp, int old_stat, int new_stat, int *success) {
 	terr_t err = TW_SUCCESS;
-	int abterr;
 
 	if (success) *success = 0;
 
@@ -59,6 +58,8 @@ terr_t TWABTI_Task_update_status (TWABT_Task_t *tp, int old_stat, int new_stat, 
 					tp->ep = NULL;
 					tp->dep_stat_cb (tp->dispatcher_obj, 0, &(tp->dep_stat), 0);
 					break;
+				default:
+					break;
 			}
 
 			if (success) *success = 1;
@@ -80,7 +81,7 @@ terr_t TWABTI_Task_queue (TWABT_Task_t *tp) {
 		CHECK_ABTERR
 	}
 
-	abterr = ABT_task_create (tp->ep->pool, task_cb, tp, &(tp->abt_task));
+	abterr = ABT_task_create (tp->ep->pool, TWABTI_Task_abttask_cb, tp, &(tp->abt_task));
 	CHECK_ABTERR
 
 err_out:;

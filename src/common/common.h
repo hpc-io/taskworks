@@ -12,5 +12,7 @@
 
 #pragma once
 
+#define TWI_UNUSED __attribute__ ((unused))
+
 /* Pointer to all type of internal structures */
 typedef void *TW_Handle_t;

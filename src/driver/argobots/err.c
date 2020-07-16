@@ -12,4 +12,4 @@
 
 #include "twabt.h"
 
-terr_t TWABT_Err_to_tw_err (int abterr) { return -1; }
+terr_t TWABT_Err_to_tw_err (int TWI_UNUSED abterr) { return -1; }

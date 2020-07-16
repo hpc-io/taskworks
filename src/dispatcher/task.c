@@ -38,7 +38,8 @@ terr_t TW_Task_create (TW_Task_handler_t task_cb,
 	terr_t err = TW_SUCCESS;
 	TW_Obj_handle_t tp;
 
-	tp			= (TW_Obj_handle_t)TWI_Malloc (sizeof (TW_Obj_t));
+	tp = (TW_Obj_handle_t)TWI_Malloc (sizeof (TW_Obj_t));
+	CHECK_PTR (tp)
 	tp->objtype = TW_Obj_type_task;
 	tp->driver	= TWI_Active_driver;
 
@@ -57,6 +58,8 @@ terr_t TW_Task_free (TW_Task_handle_t task) {
 	terr_t err		   = TW_SUCCESS;
 	TW_Obj_handle_t tp = (TW_Obj_handle_t)task;
 
+	CHK_HANDLE (task, TW_Obj_type_task)
+
 	err = tp->driver->Task_free (tp->driver_obj);
 	CHECK_ERR
 
@@ -67,13 +70,35 @@ err_out:;
 terr_t TW_Task_create_barrier (TW_Engine_handle_t engine,  // Must have option of global
 							   int dep_tag,
 							   int tag,
-							   TW_Task_handle_t *task) {}
+							   TW_Task_handle_t *task) {
+	terr_t err = TW_SUCCESS;
+	TW_Obj_handle_t tp;
+
+	CHK_HANDLE (engine, TW_Obj_type_engine)
+
+	tp = (TW_Obj_handle_t)TWI_Malloc (sizeof (TW_Obj_t));
+	CHECK_PTR (tp)
+	tp->objtype = TW_Obj_type_task;
+	tp->driver	= TWI_Active_driver;
+
+	err = tp->driver->Task_create_barrier (engine, dep_tag, tag, &(tp->driver_obj));
+	CHECK_ERR
+
+	*task = tp;
+
+err_out:;
+	if (err) { TWI_Free (tp); }
+	return err;
+}
 
 // Controls
 terr_t TW_Task_commit (TW_Task_handle_t task, TW_Engine_handle_t engine) {
 	terr_t err		   = TW_SUCCESS;
 	TW_Obj_handle_t tp = (TW_Obj_handle_t)task;
 	TW_Obj_handle_t ep = (TW_Obj_handle_t)engine;
+
+	CHK_HANDLE (task, TW_Obj_type_task)
+	CHK_HANDLE (engine, TW_Obj_type_engine)
 
 	err = tp->driver->Task_commit (tp->driver_obj, ep->driver_obj);
 	CHECK_ERR
@@ -82,11 +107,26 @@ err_out:;
 	return err;
 }
 
-terr_t TW_Task_commit_barrier (TW_Task_handle_t task);	// Put the task into the dag
+terr_t TW_Task_commit_barrier (TW_Task_handle_t task) {
+	terr_t err		   = TW_SUCCESS;
+	TW_Obj_handle_t tp = (TW_Obj_handle_t)task;
+
+	CHK_HANDLE (task, TW_Obj_type_task)
+
+	err = tp->driver->Task_commit (tp->driver_obj, NULL);
+	CHECK_ERR
+
+err_out:;
+	return err;
+}
+
 terr_t TW_Task_retract (TW_Task_handle_t task) {
 	terr_t err		   = TW_SUCCESS;
 	TW_Obj_handle_t tp = (TW_Obj_handle_t)task;
-	err				   = tp->driver->Task_retract (tp->driver_obj);
+
+	CHK_HANDLE (task, TW_Obj_type_task)
+
+	err = tp->driver->Task_retract (tp->driver_obj);
 	CHECK_ERR
 
 err_out:;
@@ -100,6 +140,8 @@ terr_t TW_Task_wait (TW_Task_handle_t task, int64_t timeout) {
 	terr_t err		   = TW_SUCCESS;
 	TW_Obj_handle_t tp = (TW_Obj_handle_t)task;
 
+	CHK_HANDLE (task, TW_Obj_type_task)
+
 	err = tp->driver->Task_wait_single (tp->driver_obj, timeout);
 	CHECK_ERR
 
@@ -109,15 +151,19 @@ err_out:;
 terr_t TW_Task_wait_multi (TW_Task_handle_t *tasks, int num, int64_t timeout) {
 	terr_t err = TW_SUCCESS;
 	int i;
-	ttime_t tstop, tnow;
-	TW_Obj_handle_t tp;
 	TW_Handle_t *driver_objs = NULL;
 
-	driver_objs = (TW_Handle_t *)TWI_Malloc (sizeof (TW_Handle_t) * num);
-	CHECK_PTR (driver_objs);
+	if (num) {
+		driver_objs = (TW_Handle_t *)TWI_Malloc (sizeof (TW_Handle_t) * (size_t)num);
+		CHECK_PTR (driver_objs);
 
-	err = tp->driver->Task_wait (driver_objs, num, timeout);
-	CHECK_ERR
+		for (i = 0; i < num; i++) {
+			CHK_HANDLE (tasks[i], TW_Obj_type_task)
+			driver_objs[i] = ((TW_Obj_handle_t)tasks[i])->driver_obj;
+		}
+		err = ((TW_Obj_handle_t)tasks[0])->driver->Task_wait (driver_objs, num, timeout);
+		CHECK_ERR
+	}
 
 err_out:;
 	TWI_Free (driver_objs);
@@ -129,6 +175,9 @@ terr_t TW_Task_add_dep (TW_Task_handle_t child, TW_Task_handle_t parent) {
 	terr_t err		   = TW_SUCCESS;
 	TW_Obj_handle_t cp = (TW_Obj_handle_t)child;
 	TW_Obj_handle_t pp = (TW_Obj_handle_t)parent;
+
+	CHK_HANDLE (child, TW_Obj_type_task)
+	CHK_HANDLE (parent, TW_Obj_type_task)
 
 	err = cp->driver->Task_add_dep (cp->driver_obj, pp->driver_obj);
 	CHECK_ERR
@@ -142,6 +191,9 @@ terr_t TW_Task_rm_dep (TW_Task_handle_t child, TW_Task_handle_t parent) {
 	TW_Obj_handle_t cp = (TW_Obj_handle_t)child;
 	TW_Obj_handle_t pp = (TW_Obj_handle_t)parent;
 
+	CHK_HANDLE (child, TW_Obj_type_task)
+	CHK_HANDLE (parent, TW_Obj_type_task)
+
 	err = cp->driver->Task_rm_dep (cp->driver_obj, pp->driver_obj);
 	CHECK_ERR
 
@@ -154,6 +206,8 @@ terr_t TW_Task_get_status (TW_Task_handle_t task, int *statusp) {
 	terr_t err		   = TW_SUCCESS;
 	TW_Obj_handle_t tp = (TW_Obj_handle_t)task;
 
+	CHK_HANDLE (task, TW_Obj_type_task)
+
 	err = tp->driver->Task_inq (tp->driver_obj, TW_Task_inq_type_status, statusp);
 	CHECK_ERR
 
@@ -164,6 +218,8 @@ terr_t TW_Task_get_data (TW_Task_handle_t task, void **datap) {
 	terr_t err		   = TW_SUCCESS;
 	TW_Obj_handle_t tp = (TW_Obj_handle_t)task;
 
+	CHK_HANDLE (task, TW_Obj_type_task)
+
 	err = tp->driver->Task_inq (tp->driver_obj, TW_Task_inq_type_data, datap);
 	CHECK_ERR
 
@@ -173,6 +229,8 @@ err_out:;
 terr_t TW_Task_get_tag (TW_Task_handle_t task, int *tagp) {
 	terr_t err		   = TW_SUCCESS;
 	TW_Obj_handle_t tp = (TW_Obj_handle_t)task;
+
+	CHK_HANDLE (task, TW_Obj_type_task)
 
 	err = tp->driver->Task_inq (tp->driver_obj, TW_Task_inq_type_tag, tagp);
 	CHECK_ERR

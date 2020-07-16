@@ -88,7 +88,7 @@ typedef struct TWABT_Task_dep_t {
 
 /* Init callbacks */
 terr_t TWABT_Init (int *argc, char ***argv);
-terr_t TWABT_Finalize ();
+terr_t TWABT_Finalize (void);
 
 /* Engine callbacks */
 terr_t TWABT_Engine_create (int num_worker,
@@ -150,7 +150,7 @@ void TWABTI_Sched_run (ABT_sched sched);
 int TWABTI_Sched_finalize (ABT_sched sched);
 
 /* Task functions */
-void task_cb (void *task);
+void TWABTI_Task_abttask_cb (void *task);
 terr_t TWABTI_Sched_run_single (ABT_pool pool, int *success);
 terr_t TWABTI_Task_update_status (TWABT_Task_t *tp, int old_stat, int new_stat, int *success);
 terr_t TWABTI_Task_queue (TWABT_Task_t *tp);

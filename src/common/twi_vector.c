@@ -27,6 +27,7 @@
 #define TWI_Vector_INIT_SIZE		32
 #define TWI_Vector_ALLOC_MULTIPLIER 20
 
+/*
 #define TWI_Vector_STAT_INVAL 0x1  // Not initialized
 #define TWI_Vector_STAT_RDY	  0x2  // No one using
 #define TWI_Vector_STAT_ACC	  0x4  // Accessing, no modify
@@ -42,6 +43,7 @@
 			}                                                                   \
 		}                                                                       \
 	}
+*/
 
 terr_t TWI_Vector_create (TWI_Vector_handle_t *v) {
 	terr_t err = TW_SUCCESS;
@@ -107,7 +109,7 @@ err_out:;
 	return err;
 }
 
-terr_t TWI_Vector_read (TWI_Vector_handle_t v, int64_t index, void **data) {
+terr_t TWI_Vector_read (TWI_Vector_handle_t v, int index, void **data) {
 	TWI_Rwlock_rlock (&(v->lock));
 
 	if (index < 0 || index > v->size) { RET_ERR (TW_ERR_INVAL) }
@@ -118,7 +120,7 @@ terr_t TWI_Vector_read (TWI_Vector_handle_t v, int64_t index, void **data) {
 
 	return TW_SUCCESS;
 }
-terr_t TWI_Vector_write (TWI_Vector_handle_t v, int64_t index, void *data) {
+terr_t TWI_Vector_write (TWI_Vector_handle_t v, int index, void *data) {
 	TWI_Rwlock_rlock (&(v->lock));
 
 	if (index < 0 || index > v->size) { RET_ERR (TW_ERR_INVAL) }
@@ -130,11 +132,12 @@ terr_t TWI_Vector_write (TWI_Vector_handle_t v, int64_t index, void *data) {
 	return TW_SUCCESS;
 }
 
-terr_t TWI_Vector_erase_at (TWI_Vector_handle_t v, int64_t idx) {
+terr_t TWI_Vector_erase_at (TWI_Vector_handle_t v, int idx) {
 	terr_t err = TW_SUCCESS;
 	int i;
 
-	TWI_Rwlock_wlock (&(v->lock));
+	err = TWI_Rwlock_wlock (&(v->lock));
+	CHECK_ERR
 
 	if (idx < 0 || idx > v->size) { RET_ERR (TW_ERR_INVAL) }
 
@@ -144,7 +147,8 @@ terr_t TWI_Vector_erase_at (TWI_Vector_handle_t v, int64_t idx) {
 	/* Reduce size */
 	v->size--;
 
-	TWI_Rwlock_wunlock (&(v->lock));
+	err = TWI_Rwlock_wunlock (&(v->lock));
+	CHECK_ERR
 
 err_out:;
 	return err;
@@ -154,7 +158,8 @@ terr_t TWI_Vector_erase (TWI_Vector_handle_t v, void *data) {
 	terr_t err = TW_SUCCESS;
 	int i;
 
-	TWI_Rwlock_wlock (&(v->lock));
+	err = TWI_Rwlock_wlock (&(v->lock));
+	CHECK_ERR
 
 	/* Pull in the next one */
 	for (i = 0; i < v->size; i++) {
@@ -167,14 +172,15 @@ terr_t TWI_Vector_erase (TWI_Vector_handle_t v, void *data) {
 	/* Reduce size */
 	v->size--;
 
-	TWI_Rwlock_wunlock (&(v->lock));
+	err = TWI_Rwlock_wunlock (&(v->lock));
+	CHECK_ERR
 
 err_out:;
 	return err;
 }
 
-int64_t TWI_Vector_find (TWI_Vector_handle_t v, void *data) {
-	int64_t i;
+int TWI_Vector_find (TWI_Vector_handle_t v, void *data) {
+	int i;
 
 	TWI_Rwlock_rlock (&(v->lock));
 
@@ -191,10 +197,11 @@ int64_t TWI_Vector_find (TWI_Vector_handle_t v, void *data) {
 terr_t TWI_Vector_push_back (TWI_Vector_handle_t v, void *data) {
 	terr_t err = TW_SUCCESS;
 
-	TWI_Rwlock_wlock (&(v->lock));
+	err = TWI_Rwlock_wlock (&(v->lock));
+	CHECK_ERR
 
 	/* Increase size if needed */
-	if (v->nalloc == v->size) {
+	if (v->nalloc == (size_t) (v->size)) {
 		v->nalloc *= TWI_Vector_ALLOC_MULTIPLIER;
 		v->data = TWI_Realloc (v->data, v->nalloc * sizeof (void *));
 		CHECK_PTR (v->data)
@@ -203,26 +210,31 @@ terr_t TWI_Vector_push_back (TWI_Vector_handle_t v, void *data) {
 	/* Write at back */
 	v->data[v->size++] = data;
 
-	TWI_Rwlock_wunlock (&(v->lock));
+	err = TWI_Rwlock_wunlock (&(v->lock));
+	CHECK_ERR
 
 err_out:;
 	return err;
 }
 
-size_t TWI_Vector_size (TWI_Vector_handle_t v) { return v->size; }
+size_t TWI_Vector_size (TWI_Vector_handle_t v) { return (size_t) (v->size); }
 
-size_t TWI_Vector_resize (TWI_Vector_handle_t v, size_t size) {
+terr_t TWI_Vector_resize (TWI_Vector_handle_t v, size_t size) {
 	terr_t err = TW_SUCCESS;
 
-	TWI_Rwlock_wlock (&(v->lock));
+	err = TWI_Rwlock_wlock (&(v->lock));
+	CHECK_ERR
 
-	if (v->nalloc == v->size) {
-		v->nalloc *= TWI_Vector_ALLOC_MULTIPLIER;
+	if (v->nalloc < (size_t)size) {
+		while (v->nalloc < (size_t)size) { v->nalloc *= TWI_Vector_ALLOC_MULTIPLIER; }
+
 		v->data = TWI_Realloc (v->data, v->nalloc * sizeof (void *));
 		CHECK_PTR (v->data)
 	}
+	v->size = (int)size;
 
-	TWI_Rwlock_wunlock (&(v->lock));
+	err = TWI_Rwlock_wunlock (&(v->lock));
+	CHECK_ERR
 
 err_out:;
 	return err;

@@ -24,18 +24,18 @@
 
 // TODO: Remove macro, just expose the same name
 #ifdef _WIN32
-terr_t TWI_Mutex_create (TWI_Mutex_t *m) {
+terr_t TWI_Mutex_create (TWI_Mutex_handle_t m) {
 	terr_t err = TW_SUCCESS;
 	*m		   = CreateMutex (NULL, FALSE, NULL);
 	if (*m == NULL) RET_OS_ERR (GetLastError ())
 err_out:;
 	return err;
 }
-terr_t TWI_Mutex_free (TWI_Mutex_t *m) {
+terr_t TWI_Mutex_free (TWI_Mutex_handle_t m) {
 	CloseHandle (*m);
 	return TW_SUCCESS;
 }
-terr_t TWI_Mutex_lock (TWI_Mutex_t *m) {
+terr_t TWI_Mutex_lock (TWI_Mutex_handle_t m) {
 	terr_t err = TW_SUCCESS;
 	DWORD ret;
 
@@ -44,7 +44,7 @@ terr_t TWI_Mutex_lock (TWI_Mutex_t *m) {
 err_out:;
 	return err;
 }
-terr_t TWI_Mutex_trylock (TWI_Mutex_t *m, int *success) {
+terr_t TWI_Mutex_trylock (TWI_Mutex_handle_t m, int *success) {
 	terr_t err = TW_SUCCESS;
 	DWORD ret;
 
@@ -59,7 +59,7 @@ terr_t TWI_Mutex_trylock (TWI_Mutex_t *m, int *success) {
 err_out:;
 	return err;
 }
-terr_t TWI_Mutex_unlock (TWI_Mutex_t *m) {
+terr_t TWI_Mutex_unlock (TWI_Mutex_handle_t m) {
 	terr_t err = TW_SUCCESS;
 	BOOL ret;
 
@@ -70,7 +70,31 @@ err_out:;
 	return err;
 }
 #else
-terr_t TWI_Mutex_create (TWI_Mutex_t *m) {
+terr_t TWI_Mutex_create (TWI_Mutex_handle_t *m) {
+	terr_t err = TW_SUCCESS;
+	TWI_Mutex_handle_t mp;
+
+	mp = (TWI_Mutex_handle_t)TWI_Malloc (sizeof (TWI_Mutex_t));
+	CHECK_PTR (mp);
+
+	err = TWI_Mutex_init (mp);
+	CHECK_ERR
+
+	*m = mp;
+
+err_out:;
+	if (err) { TWI_Free (mp); }
+	return err;
+}
+terr_t TWI_Mutex_free (TWI_Mutex_handle_t m) {
+	terr_t err;
+
+	err = TWI_Mutex_finalize (m);
+	TWI_Free (m);
+
+	return err;
+}
+terr_t TWI_Mutex_init (TWI_Mutex_handle_t m) {
 	terr_t err = TW_SUCCESS;
 	int perr;
 
@@ -80,7 +104,7 @@ terr_t TWI_Mutex_create (TWI_Mutex_t *m) {
 err_out:;
 	return err;
 }
-terr_t TWI_Mutex_free (TWI_Mutex_t *m) {
+terr_t TWI_Mutex_finalize (TWI_Mutex_handle_t m) {
 	terr_t err = TW_SUCCESS;
 	int perr;
 
@@ -90,7 +114,7 @@ terr_t TWI_Mutex_free (TWI_Mutex_t *m) {
 err_out:;
 	return err;
 }
-terr_t TWI_Mutex_lock (TWI_Mutex_t *m) {
+terr_t TWI_Mutex_lock (TWI_Mutex_handle_t m) {
 	terr_t err = TW_SUCCESS;
 	int perr;
 
@@ -100,7 +124,7 @@ terr_t TWI_Mutex_lock (TWI_Mutex_t *m) {
 err_out:;
 	return err;
 }
-terr_t TWI_Mutex_trylock (TWI_Mutex_t *m, int *success) {
+terr_t TWI_Mutex_trylock (TWI_Mutex_handle_t m, int *success) {
 	terr_t err = TW_SUCCESS;
 	int perr;
 
@@ -116,7 +140,7 @@ terr_t TWI_Mutex_trylock (TWI_Mutex_t *m, int *success) {
 err_out:;
 	return err;
 }
-terr_t TWI_Mutex_unlock (TWI_Mutex_t *m) {
+terr_t TWI_Mutex_unlock (TWI_Mutex_handle_t m) {
 	terr_t err = TW_SUCCESS;
 	int perr;
 

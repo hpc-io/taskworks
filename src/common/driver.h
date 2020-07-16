@@ -31,7 +31,7 @@ typedef struct TW_Driver_t {
 	/* Init */
 	terr_t (*Init) (int *argc,
 					char ***argv);	// Iinitialize the driver
-	terr_t (*Finalize) ();			// Finalize the driver
+	terr_t (*Finalize) (void);		// Finalize the driver
 
 	/* Engine callbacks */
 	terr_t (*Engine_create) (int num_worker,

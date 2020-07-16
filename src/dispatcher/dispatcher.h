@@ -27,11 +27,9 @@ typedef enum TW_Obj_type {
 
 typedef struct TW_Obj_t {
 	TW_Obj_type objtype;
-	union {
-		TW_Driver_handle_t driver;			  // Driver associated with the object
-		TW_Event_driver_handle_t evt_driver;  // Driver associated with the object
-	};
-	TW_Handle_t driver_obj;	 // Driver specific object
+	TW_Driver_handle_t driver;			  // Driver associated with the object
+	TW_Event_driver_handle_t evt_driver;  // Driver associated with the object
+	TW_Handle_t driver_obj;				  // Driver specific object
 } TW_Obj_t;
 
 typedef TW_Obj_t *TW_Obj_handle_t;

@@ -15,15 +15,15 @@
 
 /// \cond
 // Prevent doxygen from leaking our internal headers
-#include "taskworks_internal.h"
+#include "dispatcher.h"
 /// \endcond
 
 TW_Task_dep_handler_t TW_Task_dep_all_complete_handler_fn;
 TW_Task_dep_stat_handler_t TW_Task_dep_all_complete_init_fn;
 
-int TW_Task_dep_all_complete_handler (TW_Task_handle_t task,
-									  TW_Task_handle_t parent,
-									  int old_status,
+int TW_Task_dep_all_complete_handler (TW_Task_handle_t TWI_UNUSED task,
+									  TW_Task_handle_t TWI_UNUSED parent,
+									  int TWI_UNUSED old_status,
 									  int new_status,
 									  void *dep_stat) {
 	int is_zero;
@@ -39,7 +39,10 @@ int TW_Task_dep_all_complete_handler (TW_Task_handle_t task,
 	return TW_Task_STAT_WAITING;
 }
 
-int TW_Task_dep_all_complete_init (TW_Task_handle_t task, int num_deps, void **dep_stat, int init) {
+int TW_Task_dep_all_complete_init (TW_Task_handle_t TWI_UNUSED task,
+								   int num_deps,
+								   void **dep_stat,
+								   int init) {
 	OPA_int_t *cp;
 	if (init) {
 		cp = (OPA_int_t *)TWI_Malloc (sizeof (OPA_int_t));

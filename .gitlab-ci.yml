@@ -41,7 +41,7 @@ build:
     - pushd argobots && ./autogen.sh && ./configure --prefix=${PWD}/../tw_deps && make -j 64 && make -j 64  install && popd
   script:
     - autoreconf -i
-    - ./configure --with-opa=${PWD}/tw_deps --enable-parallel --with-argobots=${PWD}/tw_deps
+    - CC=cc ./configure --with-opa=${PWD}/tw_deps --enable-parallel --with-argobots=${PWD}/tw_deps
     - make -j 64 
   tags:
     - cori

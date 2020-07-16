@@ -25,7 +25,7 @@
 #include "taskworks_internal.h"
 
 #ifdef _WIN32
-ttime_t TWI_Time_now () {
+ttime_t TWI_Time_now (void) {
 	FILETIME ftnow;
 	ttime_t tnow;
 
@@ -36,7 +36,7 @@ ttime_t TWI_Time_now () {
 	return tnow / 10 - _W32_FT_OFFSET;
 }
 #else
-ttime_t TWI_Time_now () {
+ttime_t TWI_Time_now (void) {
 	int ret;
 	struct timeval tnow;
 

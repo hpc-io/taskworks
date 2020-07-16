@@ -34,6 +34,83 @@ AH_TEMPLATE([ENABLE_ABT], [Enable Argobots integration.])
 # Make tests
 AM_EXTRA_RECURSIVE_TARGETS([tests])
 
+## ----------------------------------------------------------------------
+## Source any special files that we need.  These files normally aren't
+## present but can be used by the maintainers to fine tune things like
+## turning on debug or profiling flags for the compiler.  The search order
+## is:
+##
+##    CPU-VENDOR-OS
+##    VENDOR-OS
+##    CPU-OS
+##    CPU-VENDOR
+##    OS
+##    VENDOR
+##    CPU
+##
+## If the `OS' ends with a version number then remove it. For instance,
+## `freebsd3.1' would become `freebsd'
+AC_CANONICAL_HOST
+
+case $host_os in
+  aix*)
+    host_os_novers=aix
+    ;;
+  freebsd*)
+    host_os_novers=freebsd
+    ;;
+  netbsd*)
+    host_os_novers=netbsd
+    ;;
+  solaris*)
+    host_os_novers=solaris
+    ;;
+  *)
+    host_os_novers=$host_os
+    ;;
+esac
+
+host_config="none"
+for f in $host_cpu-$host_vendor-$host_os \
+         $host_cpu-$host_vendor-$host_os_novers \
+         $host_vendor-$host_os \
+         $host_vendor-$host_os_novers \
+         $host_cpu-$host_os \
+         $host_cpu-$host_os_novers \
+         $host_cpu-$host_vendor \
+         $host_os \
+         $host_os_novers \
+         $host_vendor \
+         $host_cpu ; do
+  AC_MSG_CHECKING([for config $f])
+  if test -f "$srcdir/hdf5_config_scripts/$f"; then
+    host_config=$srcdir/hdf5_config_scripts/$f
+    AC_MSG_RESULT([found])
+    break
+  fi
+  AC_MSG_RESULT([no])
+done
+if test "X$host_config" != "Xnone"; then
+  CC_BASENAME="`echo $CC | cut -f1 -d' ' | xargs basename 2>/dev/null`"
+  . $host_config
+fi
+
+## Source any special site-specific file
+hname="`hostname`"
+while test -n "$hname"; do
+  file=$srcdir/hdf5_config_scripts/site-specific/host-$hname
+  AC_MSG_CHECKING([for config $file])
+  if test -f "$file"; then
+    . $file
+    AC_MSG_RESULT([found])
+    break
+  fi
+  AC_MSG_RESULT([no])
+  hname_tmp=$hname
+  hname="`echo $hname | cut -d. -f2-99`"
+  test "$hname_tmp" = "$hname" && break
+done
+
 # Whether to enable parallel build with mpi
 AC_ARG_ENABLE([parallel], [AS_HELP_STRING([--enable-parallel], [Search for MPI-IO and MPI support files])],[enable_parallel=${enableval}], [enable_parallel=no])
 
@@ -315,6 +392,12 @@ if test "x$enable_abt" = "xyes"; then
 	AC_DEFINE(ENABLE_ABT, 1)
 fi
 AM_CONDITIONAL(ENABLE_ABT, [test x$enable_abt = xyes])
+
+echo "TW_CFLAGS=$TW_CFLAGS"
+
+CFLAGS="$CFLAGS $TW_CFLAGS"
+CXXFLAGS="$CXXFLAGS $TW_CXXFLAGS"
+CPPFLAGS="$CPPFLAGS $TW_CPPFLAGS"
 
 AC_SUBST([prefix])
 

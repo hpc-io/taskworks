@@ -29,7 +29,7 @@ terr_t TWABT_Engine_create (int num_worker, void *dispatcher_obj, TW_Handle_t *e
 	// ABT_pool_config pool_config;
 	// ABT_sched_config_var sched_cfg_var;
 	ABT_sched_def sched_def;
-	ABT_sched_config sched_cfg;
+	// ABT_sched_config sched_cfg;
 	TWABT_Engine_t *ep = NULL;
 
 	// Allocate engine structure
@@ -57,7 +57,7 @@ terr_t TWABT_Engine_create (int num_worker, void *dispatcher_obj, TW_Handle_t *e
 	//// abterr=ABT_sched_config_create (&sched_cfg, ABT_sched_config_var_end);
 
 	// Create the scheduler
-	ep->schedulers = (ABT_sched *)TWI_Malloc (sizeof (ABT_sched) * ep->ness_alloc);
+	ep->schedulers = (ABT_sched *)TWI_Malloc (sizeof (ABT_sched) * (size_t) (ep->ness_alloc));
 	CHECK_PTR (ep->schedulers)
 	for (i = 0; i < num_worker; i++) {
 		abterr = ABT_sched_create (&sched_def, 1, &(ep->pool), ABT_SCHED_CONFIG_NULL,
@@ -66,7 +66,7 @@ terr_t TWABT_Engine_create (int num_worker, void *dispatcher_obj, TW_Handle_t *e
 	}
 
 	// Create and start ESs
-	ep->ess = (ABT_xstream *)TWI_Malloc (sizeof (ABT_xstream) * ep->ness_alloc);
+	ep->ess = (ABT_xstream *)TWI_Malloc (sizeof (ABT_xstream) * (size_t) (ep->ness_alloc));
 	CHECK_PTR (ep->ess)
 	for (i = 0; i < num_worker; i++) {
 		abterr = ABT_xstream_create (ep->schedulers[i], ep->ess + i);
@@ -172,19 +172,19 @@ err_out:;
  * @param  num_worker: Number of workers
  * @retval
  */
-terr_t TWABT_Engine_set_num_workers (TW_Handle_t engine, int num_worker) {
+terr_t TWABT_Engine_set_num_workers (TW_Handle_t TWI_UNUSED engine, int TWI_UNUSED num_worker) {
 	terr_t err = TW_SUCCESS;
-	int abterr;
-	int i;
+	// int abterr;
+	// int i;
 	// ABT_pool_def pool_def;
 	// ABT_pool_config pool_config;
 	// ABT_sched_config_var sched_cfg_var;
-	ABT_sched_def sched_def;
-	ABT_sched_config sched_cfg;
-	TWABT_Engine_t *ep = (TWABT_Engine_t *)engine;
+	// ABT_sched_def sched_def;
+	// ABT_sched_config sched_cfg;
+	// TWABT_Engine_t *ep = (TWABT_Engine_t *)engine;
 
 	ASSIGN_ERR (TW_ERR_NOT_SUPPORTED)
-
+	/*
 	if (num_worker < ep->ness) {
 		for (i = 0; i < num_worker; i++) {
 			abterr = ABT_xstream_cancel (ep->ess[i]);
@@ -197,7 +197,7 @@ terr_t TWABT_Engine_set_num_workers (TW_Handle_t engine, int num_worker) {
 	} else if (num_worker > ep->ness) {
 		if (num_worker > ep->ness_alloc) {}
 	}
-
+*/
 err_out:;
 	return err;
 }

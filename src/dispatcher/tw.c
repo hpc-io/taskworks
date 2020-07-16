@@ -38,7 +38,6 @@ TW_Driver_handle_t driver;
  */
 terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *argc, char ***argv) {
 	terr_t err = TW_SUCCESS;
-	size_t envsize;
 	char *env_val;
 
 	// Overwrite backend option if environment variable is set
@@ -103,6 +102,7 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 		case TW_Event_backend_none:
 			TWI_Active_evt_driver = NULL;
 			break;
+		case TW_Event_backend_libevent:
 		default:
 			ASSIGN_ERR (TW_ERR_INVAL_EVT_BACKEND)
 			break;
@@ -134,7 +134,7 @@ err_out:;
  * @note   All resource will be freed. All TaskWorks objects will be closed.
  * @retval TW_SUCCESS on success or error code on failure
  */
-terr_t TW_Finalize () {
+terr_t TW_Finalize (void) {
 	terr_t err = TW_SUCCESS;
 
 	err = TWI_Active_driver->Finalize ();

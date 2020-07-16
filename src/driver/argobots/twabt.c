@@ -52,7 +52,7 @@ static int TWABT_Abt_need_finalize = 0;
  * @param  ***argv:
  * @retval
  */
-terr_t TWABT_Init (int *argc, char ***argv) {
+terr_t TWABT_Init (int TWI_UNUSED *argc, char TWI_UNUSED ***argv) {
 	terr_t err = TW_SUCCESS;
 	int abterr;
 
@@ -72,7 +72,7 @@ err_out:;
  * @note
  * @retval
  */
-terr_t TWABT_Finalize () {
+terr_t TWABT_Finalize (void) {
 	terr_t err = TW_SUCCESS;
 	int abterr;
 
@@ -83,4 +83,4 @@ terr_t TWABT_Finalize () {
 
 err_out:;
 	return err;
-};
+}

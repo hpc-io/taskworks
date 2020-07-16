@@ -64,12 +64,12 @@ err_out:;
 	return err;
 }
 
-terr_t TWI_List_insert_at (TWI_List_itr_t itr, void *data) { return TW_ERR_NOT_SUPPORTED; }
+// terr_t TWI_List_insert_at (TWI_List_itr_t itr, void *data) { return TW_ERR_NOT_SUPPORTED; }
 
 terr_t TWI_List_erase (TWI_List_handle_t l, void *data) {
 	terr_t err = TW_SUCCESS;
-	TWI_List_itr_t i, nxt, old_next;
-	OPA_ptr_t *prep, *new_prep;
+	TWI_List_itr_t i, nxt;
+	OPA_ptr_t *prep;
 
 	prep = &(l->head);
 	i	 = OPA_load_ptr (prep);
