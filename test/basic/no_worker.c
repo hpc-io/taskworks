@@ -13,7 +13,7 @@
 #include <stdatomic.h>
 #include <twtest.h>
 
-#define NUM_WORKERS 4
+#define NUM_WORKERS 0
 #define NUM_TASKS	10
 
 int task_fn (void *data) {
@@ -35,7 +35,7 @@ int main (int argc, char *argv[]) {
 	err = TW_Init (TW_Backend_argobots, TW_Event_backend_none, &argc, &argv);
 	CHECK_ERR
 
-	err = TW_Engine_create (NUM_WORKERS, &eng);
+	err = TW_Engine_create (0, &eng);
 	CHECK_ERR
 
 	ctr = 0;
@@ -43,12 +43,32 @@ int main (int argc, char *argv[]) {
 		err = TW_Task_create (task_fn, &ctr, TW_TASK_DEP_ALL_COMPLETE,
 							  TW_TASK_DEP_ALL_COMPLETE_INIT, 0, task + i);
 		CHECK_ERR
+
+		if (i) {
+			err = TW_Task_add_dep (task[i], task[i - 1]);
+			CHECK_ERR
+		}
 	}
 
 	for (i = 0; i < NUM_TASKS; i++) {
 		err = TW_Task_commit (task[i], eng);
 		CHECK_ERR
 	}
+
+	// Should run 0 ~ NUM_TASKS/2
+	err = TW_Task_wait (task[NUM_TASKS / 2], TW_TIMEOUT_NEVER);
+	CHECK_ERR
+	for (i = 0; i <= NUM_TASKS / 2; i++) {
+		err = TW_Task_get_status (task[i], &status);
+		CHECK_ERR
+		EXP_VAL (status, TW_Task_STAT_COMPLETE, "%d")
+	}
+	EXP_VAL (ctr, (NUM_TASKS / 2 + 1), "%d");
+
+	// Run 1 additional task
+	err = TW_Engine_progress (eng);
+	CHECK_ERR
+	EXP_VAL (ctr, (NUM_TASKS / 2 + 2), "%d");
 
 	for (i = 0; i < NUM_TASKS; i++) {
 		err = TW_Task_wait (task[i], TW_TIMEOUT_NEVER);
@@ -57,8 +77,8 @@ int main (int argc, char *argv[]) {
 
 	for (i = 0; i < NUM_TASKS; i++) {
 		err = TW_Task_get_status (task[i], &status);
-
 		CHECK_ERR
+		EXP_VAL (status, TW_Task_STAT_COMPLETE, "%d")
 	}
 
 	for (i = 0; i < NUM_TASKS; i++) {

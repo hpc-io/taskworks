@@ -12,17 +12,23 @@
 
 #include "twabt.h"
 
-void TWABTI_Task_abttask_cb (void *task) {
-	terr_t err;
+void TWABTI_Task_abttask_cb (void *task) { TWABTI_Task_run ((TWABT_Task_t *)task, NULL); }
+
+terr_t TWABTI_Task_run (TWABT_Task_t *tp, TWI_Bool_t *successp) {
+	terr_t err = TW_SUCCESS;
 	int ret;
 	int success;
-	TWABT_Task_t *tp = task;
 
+	// The task can already be done by the main thread or other ES from queue of other priority
 	err = TWABTI_Task_update_status (tp, TW_Task_STAT_QUEUEING, TW_Task_STAT_RUNNING, &success);
 	CHECK_ERR
 
 	if (success) {
-		ret = tp->handler (tp->data);
+		// Only run if there is callback function
+		if (tp->handler) {
+			ret = tp->handler (tp->data);
+		} else
+			ret = 0;
 
 		if (ret == 0) {
 			TWABTI_Task_update_status (tp, TW_Task_STAT_RUNNING, TW_Task_STAT_COMPLETE, NULL);
@@ -31,7 +37,45 @@ void TWABTI_Task_abttask_cb (void *task) {
 		}
 	}
 
+	if (successp) { *successp = success; }
+
 err_out:;
+	return err;
+}
+
+terr_t TWABTI_Task_run_dep (TWABT_Task_t *tp, TWI_Bool_t *successp) {
+	terr_t err		   = TW_SUCCESS;
+	TWI_Bool_t success = TWI_FALSE;
+	TWABT_Task_dep_t *dp;
+	TWI_List_itr_t i;
+
+	while (!success) {
+		if (OPA_load_int (&(tp->status)) == TW_Task_STAT_QUEUEING) {
+			err = TWABTI_Task_run (tp, &success);
+			CHECK_ERR
+		} else if (OPA_load_int (&(tp->status)) == TW_Task_STAT_WAITING) {
+			i = TWI_List_begin (tp->parents);
+			while (i) {
+				dp = (TWABT_Task_dep_t *)i->data;
+
+				if (OPA_load_int (&(dp->ref)) == 2) {
+					err = TWABTI_Task_run_dep (dp->parent, &success);
+					CHECK_ERR
+					if (success) break;
+				}
+
+				i = TWI_List_next (i);
+			}
+		} else {
+			ASSIGN_ERR (TW_ERR_STATUS)
+			break;
+		}
+	}
+
+	if (successp) { *successp = success; }
+
+err_out:;
+	return err;
 }
 
 terr_t TWABTI_Task_update_status (TWABT_Task_t *tp, int old_stat, int new_stat, int *success) {
@@ -55,7 +99,11 @@ terr_t TWABTI_Task_update_status (TWABT_Task_t *tp, int old_stat, int new_stat, 
 				case TW_Task_STAT_ABORT:
 				case TW_Task_STAT_FAILED:
 				case TW_Task_STAT_COMPLETE:
-					tp->ep = NULL;
+					if (tp->ep) {
+						err = TWI_List_erase (tp->ep->tasks, tp);
+						CHECK_ERR
+						tp->ep = NULL;
+					}
 					tp->dep_stat_cb (tp->dispatcher_obj, 0, &(tp->dep_stat), 0);
 					break;
 				default:
@@ -81,8 +129,14 @@ terr_t TWABTI_Task_queue (TWABT_Task_t *tp) {
 		CHECK_ABTERR
 	}
 
-	abterr = ABT_task_create (tp->ep->pool, TWABTI_Task_abttask_cb, tp, &(tp->abt_task));
-	CHECK_ABTERR
+	err = TWI_List_insert_front (tp->ep->tasks, tp);
+	CHECK_ERR
+
+	/* Argobot tasks can't be force removed, create them only when there are workers */
+	if (tp->ep->ness > 0) {
+		abterr = ABT_task_create (tp->ep->pool, TWABTI_Task_abttask_cb, tp, &(tp->abt_task));
+		CHECK_ABTERR
+	}
 
 err_out:;
 	return err;

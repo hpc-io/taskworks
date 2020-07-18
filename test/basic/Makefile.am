@@ -17,8 +17,9 @@ LDADD  = $(top_builddir)/src/libtw.la
 
 TESTPROGRAMS =  init \
                 engine \
+                no_worker \
                 task \
-                task_dep 
+                task_dep \
                 #task_custom_dep
 # mutual_dep
 

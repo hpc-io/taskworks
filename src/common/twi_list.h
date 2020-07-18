@@ -19,12 +19,14 @@
 typedef struct TWI_List_node_t {
 	void *data;
 	OPA_ptr_t next;
+	OPA_ptr_t pre;
 } TWI_List_node_t;
 typedef TWI_List_node_t *TWI_List_itr_t;
 
 typedef struct TWI_List_t {
 	TWI_Rwlock_t lock;
 	OPA_ptr_t head;
+	OPA_ptr_t tail;
 } TWI_List_t;
 typedef TWI_List_t *TWI_List_handle_t;
 
@@ -38,8 +40,9 @@ typedef TWI_List_t *TWI_List_handle_t;
 
 terr_t TWI_List_create (TWI_List_handle_t *l);
 terr_t TWI_List_free (TWI_List_handle_t l);
-terr_t TWI_List_insert (TWI_List_handle_t l, void *data);
-// terr_t TWI_List_insert_at (TWI_List_itr_t itr, void *data);
+terr_t TWI_List_insert_front (TWI_List_handle_t l, void *data);
+// terr_t TWI_List_insert_front_at (TWI_List_itr_t itr, void *data);
 terr_t TWI_List_erase (TWI_List_handle_t l, void *data);
 TWI_List_itr_t TWI_List_begin (TWI_List_handle_t l);
 TWI_List_itr_t TWI_List_next (TWI_List_itr_t itr);
+TWI_List_itr_t TWI_List_pre (TWI_List_itr_t itr);

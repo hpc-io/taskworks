@@ -76,6 +76,8 @@ terr_t TWABT_Engine_create (int num_worker, void *dispatcher_obj, TW_Handle_t *e
 		// CHECK_ABTERR
 	}
 
+	TWI_List_create (&(ep->tasks));
+
 	*engine = ep;
 
 err_out:;
@@ -127,6 +129,8 @@ terr_t TWABT_Engine_free (TW_Handle_t engine) {
 	}
 	TWI_Free (ep->schedulers);
 
+	TWI_List_free (ep->tasks);
+
 	// Pool freed automatically when all schedulers get freed
 	////abterr = ABT_pool_free (&(ep->pool));
 
@@ -144,21 +148,25 @@ err_out:;
  */
 terr_t TWABT_Engine_do_work (TW_Handle_t engine, ttime_t timeout) {
 	terr_t err = TW_SUCCESS;
-	int abterr;
-	int have_job;
+	TWI_Bool_t have_job;
 	ttime_t stoptime;
-	ABT_xstream self_es;
+	TWI_List_itr_t i;
+	TWABT_Task_t *tp;
 	TWABT_Engine_t *ep = (TWABT_Engine_t *)engine;
 
-	abterr = ABT_xstream_self (&self_es);
-	CHECK_ABTERR
-
+	i		 = TWI_List_begin (ep->tasks);
 	stoptime = TWI_Time_now () + timeout;
 	do {
-		err = TWABTI_Sched_run_single (ep->pool, &have_job);
-		CHECK_ERR
+		tp = (TWABT_Task_t *)i->data;
 
-		if (timeout == TW_ONCE) break;
+		if (OPA_load_int (&(tp->status)) == TW_Task_STAT_QUEUEING) {
+			err = TWABTI_Task_run (tp, &have_job);
+			CHECK_ERR
+		}
+
+		if (timeout == TW_ONCE || (!have_job)) break;
+
+		i = TWI_List_next (i);
 	} while (TWI_Time_now () < stoptime && have_job);
 
 err_out:;

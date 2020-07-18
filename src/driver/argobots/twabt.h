@@ -12,6 +12,9 @@
 
 #pragma once
 
+#include <time.h>
+// Time.h must go first to eliminate abt.h warning
+
 #include <abt.h>
 
 #include "taskworks_internal.h"
@@ -60,6 +63,7 @@ typedef struct TWABT_Engine_t {
 	ABT_sched *schedulers;	// Task scheduler
 	ABT_xstream *ess;		// Threads (ES)
 	void *dispatcher_obj;	// Corresponding structure at dispatcher level
+	TWI_List_handle_t tasks;
 } TWABT_Engine_t;
 
 typedef struct TWABT_Task_t {
@@ -151,7 +155,9 @@ int TWABTI_Sched_finalize (ABT_sched sched);
 
 /* Task functions */
 void TWABTI_Task_abttask_cb (void *task);
+terr_t TWABTI_Task_run (TWABT_Task_t *tp, TWI_Bool_t *success);
 terr_t TWABTI_Sched_run_single (ABT_pool pool, int *success);
+terr_t TWABTI_Task_run_dep (TWABT_Task_t *tp, TWI_Bool_t *successp);
 terr_t TWABTI_Task_update_status (TWABT_Task_t *tp, int old_stat, int new_stat, int *success);
 terr_t TWABTI_Task_queue (TWABT_Task_t *tp);
 terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new_stat);

@@ -14,5 +14,9 @@
 
 #define TWI_UNUSED __attribute__ ((unused))
 
+#define TWI_TRUE  1
+#define TWI_FALSE 0
+
 /* Pointer to all type of internal structures */
 typedef void *TW_Handle_t;
+typedef int TWI_Bool_t;

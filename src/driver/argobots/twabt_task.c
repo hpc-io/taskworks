@@ -91,6 +91,8 @@ terr_t TWABT_Task_free (TW_Handle_t htask) {  // Free up a task
 	}
 
 	if (tp->abt_task != ABT_TASK_NULL) {
+		abterr = ABT_task_cancel (tp->abt_task);
+		CHECK_ABTERR
 		abterr = ABT_task_free (&(tp->abt_task));
 		CHECK_ABTERR
 	}
@@ -144,7 +146,7 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 		dp = i->data;
 
 		// Add to parent dep list
-		TWI_List_insert (dp->parent->childs, dp);
+		TWI_List_insert_front (dp->parent->childs, dp);
 	}
 
 	// Check if we need to notify dependency change
@@ -214,6 +216,11 @@ terr_t TWABT_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 			if (stat == TW_Task_STAT_COMPLETE || stat == TW_Task_STAT_ABORT ||
 				stat == TW_Task_STAT_FAILED)
 				break;
+
+			if (tp->ep) {
+				err = TWABTI_Task_run_dep (tp, NULL);
+				CHECK_ERR
+			}
 		}
 	} else {
 		stoptime = TWI_Time_now () + timeout;
@@ -222,6 +229,11 @@ terr_t TWABT_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 			if (stat == TW_Task_STAT_COMPLETE || stat == TW_Task_STAT_ABORT ||
 				stat == TW_Task_STAT_FAILED)
 				break;
+			if (tp->ep && tp->ep->ness == 0) {
+				err = TWABTI_Task_run_dep (tp, NULL);
+				CHECK_ERR
+			} else {
+			}
 		}
 		if (stat != TW_Task_STAT_COMPLETE) { ASSIGN_ERR (TW_ERR_TIMEOUT) }
 	}
@@ -272,7 +284,7 @@ terr_t TWABT_Task_add_dep (TW_Handle_t child, TW_Handle_t parent) {
 	OPA_store_int (&(dp->status), TW_Task_STAT_PENDING);
 
 	// Insert to dep list
-	err = TWI_List_insert (cp->parents, dp);
+	err = TWI_List_insert_front (cp->parents, dp);
 	CHECK_ERR
 
 err_out:;
