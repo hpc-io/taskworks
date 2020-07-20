@@ -12,10 +12,6 @@ variables:
 stages:
   - build
   - test
-
-cache:
-  paths:
-    - "./*"
     
 build:
   stage: build
@@ -47,8 +43,7 @@ build:
     - cori
   artifacts:
     paths:
-      # Autotool metadata will be corrupted by stage init, save the entire repo as artifact
-      # - "./"
+      - config.log
 
 # run tests using the binary built before
 test:
@@ -60,3 +55,9 @@ test:
     - make check
   tags:
     - cori
+  cache:
+    paths:
+      - "./*"
+  artifacts:
+    paths:
+      - test/basic/test-suite.log
