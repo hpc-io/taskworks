@@ -14,8 +14,7 @@
 
 terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 						  void *task_data,
-						  TW_Task_dep_handler_t dep_cb,
-						  TW_Task_dep_stat_handler_t dep_stat_cb,
+						  TW_Task_dep_handler_t dep_handler,
 						  int tag,
 						  void *dispatcher_obj,
 						  TW_Handle_t *htask) {	 // Create a new task
@@ -34,10 +33,8 @@ terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 	CHECK_ERR
 	tp->handler		   = task_cb;
 	tp->data		   = task_data;
-	tp->dep_cb		   = dep_cb;
-	tp->dep_stat_cb	   = dep_stat_cb;
+	tp->dep_handler	   = dep_handler;
 	tp->tag			   = tag;
-	tp->dep_stat	   = NULL;
 	tp->priority	   = 0;
 	tp->ep			   = NULL;
 	tp->abt_task	   = ABT_TASK_NULL;
@@ -138,8 +135,10 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 		;
 
 	// Call dependency init
-	abterr = tp->dep_stat_cb (tp->dispatcher_obj, ndep, &(tp->dep_stat), 1);
-	if (abterr != 0) { RET_ERR (TW_ERR_DEP_INIT) }
+	if (tp->dep_handler.Init) {
+		abterr = tp->dep_handler.Init (tp->dispatcher_obj, ndep, &(tp->dep_handler.Data));
+		if (abterr != 0) { RET_ERR (TW_ERR_DEP_INIT) }
+	}
 
 	// Wire up dep list on parents
 	for (i = TWI_List_begin (tp->parents); i != NULL; i = TWI_List_next (i)) {
@@ -158,9 +157,12 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 			pstatus = OPA_load_int (&(dp->parent->status));
 			dstatus = OPA_load_int (&(dp->status));
 			if (OPA_cas_int (&(dp->status), dstatus, pstatus) == dstatus) {
-				tstatus = tp->dep_cb (tp->dispatcher_obj, dp->parent->dispatcher_obj, dstatus,
-									  pstatus, tp->dep_stat);
-				if (tstatus != TW_Task_STAT_WAITING) break;
+				if (tp->dep_handler.Mask & pstatus) {
+					tstatus = tp->dep_handler.Status_change (tp->dispatcher_obj,
+															 dp->parent->dispatcher_obj, dstatus,
+															 pstatus, tp->dep_handler.Data);
+					if (tstatus != TW_Task_STAT_WAITING) break;
+				}
 			}
 		}
 	} else {
@@ -217,7 +219,7 @@ terr_t TWABT_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 				stat == TW_Task_STAT_FAILED)
 				break;
 
-			if (tp->ep) {
+			if (tp->ep && tp->ep->ness == 0) {
 				err = TWABTI_Task_run_dep (tp, NULL);
 				CHECK_ERR
 			}
@@ -281,7 +283,7 @@ terr_t TWABT_Task_add_dep (TW_Handle_t child, TW_Handle_t parent) {
 	dp->parent = pp;
 	dp->child  = cp;
 	OPA_store_int (&(dp->ref), 2);
-	OPA_store_int (&(dp->status), TW_Task_STAT_PENDING);
+	OPA_store_int (&(dp->status), 0);
 
 	// Insert to dep list
 	err = TWI_List_insert_front (cp->parents, dp);

@@ -68,19 +68,17 @@ typedef struct TWABT_Engine_t {
 
 typedef struct TWABT_Task_t {
 	TWI_Rwlock_t lock;
-	TW_Task_handler_t handler;				 // Task handler
-	void *data;								 // Task handler data
-	TW_Task_dep_handler_t dep_cb;			 // Dependency handler
-	TW_Task_dep_stat_handler_t dep_stat_cb;	 // Dependency state handler
-	int tag;								 // Tag for the user
-	void *dep_stat;							 // Dependency handler stat
-	ABT_task abt_task;						 // Argobot task handle
-	OPA_int_t status;						 // Status of the task
-	int priority;							 // Priority, currently not used
-	TWI_List_handle_t parents;				 // Tasks it depends on
-	TWI_List_handle_t childs;				 // Tasks depend on it
-	TWABT_Engine_t *ep;						 // Engine it is commited to
-	void *dispatcher_obj;					 // Corresponding structure at dispatcher level
+	TW_Task_handler_t handler;			// Task handler
+	void *data;							// Task handler data
+	TW_Task_dep_handler_t dep_handler;	// Dependency handler
+	int tag;							// Tag for the user
+	ABT_task abt_task;					// Argobot task handle
+	OPA_int_t status;					// Status of the task
+	int priority;						// Priority, currently not used
+	TWI_List_handle_t parents;			// Tasks it depends on
+	TWI_List_handle_t childs;			// Tasks depend on it
+	TWABT_Engine_t *ep;					// Engine it is commited to
+	void *dispatcher_obj;				// Corresponding structure at dispatcher level
 } TWABT_Task_t;
 
 typedef struct TWABT_Task_dep_t {
@@ -109,8 +107,7 @@ terr_t TWABT_Engine_set_num_workers (
 /* Task callbacks */
 terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 						  void *task_data,
-						  TW_Task_dep_handler_t dep_cb,
-						  TW_Task_dep_stat_handler_t dep_stat_cb,
+						  TW_Task_dep_handler_t dep_handler,
 						  int tag,
 						  void *dispatcher_obj,
 						  TW_Handle_t *task);		   // Create a new task

@@ -104,7 +104,9 @@ terr_t TWABTI_Task_update_status (TWABT_Task_t *tp, int old_stat, int new_stat, 
 						CHECK_ERR
 						tp->ep = NULL;
 					}
-					tp->dep_stat_cb (tp->dispatcher_obj, 0, &(tp->dep_stat), 0);
+					if (tp->dep_handler.Finalize) {
+						tp->dep_handler.Finalize (tp->dispatcher_obj, tp->dep_handler.Data);
+					}
 					break;
 				default:
 					break;
@@ -154,8 +156,9 @@ terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new
 		dp			= itr->data;
 		stat_before = OPA_load_int (&(dp->child->status));
 		if (stat_before == TW_Task_STAT_WAITING) {
-			stat_after = dp->child->dep_cb (dp->child->dispatcher_obj, tp->dispatcher_obj, old_stat,
-											new_stat, dp->child->dep_stat);
+			stat_after = dp->child->dep_handler.Status_change (
+				dp->child->dispatcher_obj, tp->dispatcher_obj, old_stat, new_stat,
+				dp->child->dep_handler.Data);
 			if (stat_before != stat_after) {
 				err = TWABTI_Task_update_status (dp->child, stat_before, stat_after, NULL);
 				CHECK_ERR

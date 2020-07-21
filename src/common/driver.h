@@ -48,8 +48,7 @@ typedef struct TW_Driver_t {
 	/* Task callbacks */
 	terr_t (*Task_create) (TW_Task_handler_t task_cb,
 						   void *task_data,
-						   TW_Task_dep_handler_t dep_cb,
-						   TW_Task_dep_stat_handler_t dep_stat_cb,
+						   TW_Task_dep_handler_t dep_handler,
 						   int tag,
 						   void *dispatcher_obj,
 						   TW_Handle_t *htask);	 // Create a new task

@@ -13,9 +13,9 @@
 #include <stdatomic.h>
 #include <twtest.h>
 
-#define NUM_WORKERS 0
-#define NUM_TASKS	10
+#define NUM_TASKS 10
 
+int task_fn (void *data);
 int task_fn (void *data) {
 	++(*((atomic_int *)data));
 	return 0;
@@ -26,11 +26,11 @@ int main (int argc, char *argv[]) {
 	int nerr   = 0;
 	int i;
 	int status;
-	atomic_int ctr;
+	volatile atomic_int ctr;
 	TW_Engine_handle_t eng;
 	TW_Task_handle_t task[NUM_TASKS];
 
-	PRINT_TEST_MSG ("Check if TaskWork can create and free engines");
+	PRINT_TEST_MSG ("Check if the engine can run tasks with the main thread when needed");
 
 	err = TW_Init (TW_Backend_argobots, TW_Event_backend_none, &argc, &argv);
 	CHECK_ERR
@@ -40,8 +40,7 @@ int main (int argc, char *argv[]) {
 
 	ctr = 0;
 	for (i = 0; i < NUM_TASKS; i++) {
-		err = TW_Task_create (task_fn, &ctr, TW_TASK_DEP_ALL_COMPLETE,
-							  TW_TASK_DEP_ALL_COMPLETE_INIT, 0, task + i);
+		err = TW_Task_create (task_fn, &ctr, TW_TASK_DEP_ALL_COMPLETE, 0, task + i);
 		CHECK_ERR
 
 		if (i) {

@@ -31,8 +31,7 @@
  */
 terr_t TW_Task_create (TW_Task_handler_t task_cb,
 					   void *task_data,
-					   TW_Task_dep_handler_t dep_cb,
-					   TW_Task_dep_stat_handler_t dep_stat_cb,
+					   TW_Task_dep_handler_t dep_handler,
 					   int tag,
 					   TW_Task_handle_t *task) {
 	terr_t err = TW_SUCCESS;
@@ -43,8 +42,7 @@ terr_t TW_Task_create (TW_Task_handler_t task_cb,
 	tp->objtype = TW_Obj_type_task;
 	tp->driver	= TWI_Active_driver;
 
-	err = tp->driver->Task_create (task_cb, task_data, dep_cb, dep_stat_cb, tag, tp,
-								   &(tp->driver_obj));
+	err = tp->driver->Task_create (task_cb, task_data, dep_handler, tag, tp, &(tp->driver_obj));
 	CHECK_ERR
 
 	*task = tp;

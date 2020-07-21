@@ -17,35 +17,60 @@
 #define NUM_TASKS	10
 
 typedef struct task_data {
-	int tid;
 	int nerr;
-	int *pre;
+	volatile atomic_int *tasks_running;	 // Number of threads in task_fn
+	volatile atomic_int *tasks_ran;		 // Number of threads in task_fn
 } task_data;
 
-int task_fn (void *data);
 int task_fn (void *data) {
 	int nerr	  = 0;
 	task_data *dp = (task_data *)data;
 
-	if (dp->tid) { EXP_VAL (*(dp->pre), dp->tid - 1, "%d") }
+	++(*(dp->tasks_running));
+	++(*(dp->tasks_ran));
 
-	*(dp->pre) = dp->tid;
-	dp->nerr   = nerr;
+	// One at a time
+	EXP_VAL (*(dp->tasks_running), 1, "%d")
+
+	--(*(dp->tasks_running));
+
+	dp->nerr = nerr;
 
 	return 0;
+}
+
+int Custom_dep_status_change (TW_Task_handle_t task,
+							  TW_Task_handle_t parent,
+							  int old_status,
+							  int new_status,
+							  void *dep_data) {
+	TW_Task_handle_t h;
+	TW_Task_handle_t *hp = (TW_Task_handle_t *)dep_data;
+
+	h = *hp;
+
+	// Try CAS in my own handle if available
+	if (h == TW_HANDLE_NULL || (parent == h && new_status == TW_Task_STAT_COMPLETE)) {
+		if (atomic_compare_exchange_strong (hp, &h, task)) { return TW_Task_STAT_QUEUEING; }
+	}
+
+	return TW_Task_STAT_WAITING;
 }
 
 int main (int argc, char *argv[]) {
 	terr_t err = TW_SUCCESS;
 	int nerr   = 0;
-	int i;
+	int i, j;
 	int status;
 	task_data datas[NUM_TASKS];
-	int last = NUM_TASKS;
+	volatile ran = 0, running = 0;
+	volatile TW_Task_handle_t handle = TW_HANDLE_NULL;
+	int last						 = NUM_TASKS;
 	TW_Engine_handle_t eng;
+	TW_Task_dep_handler_t dep;
 	TW_Task_handle_t task[NUM_TASKS];
 
-	PRINT_TEST_MSG ("Check if TaskWork follows task dependency");
+	PRINT_TEST_MSG ("Check if Taskworks follows customized dependency");
 
 	err = TW_Init (TW_Backend_argobots, TW_Event_backend_none, &argc, &argv);
 	CHECK_ERR
@@ -53,35 +78,31 @@ int main (int argc, char *argv[]) {
 	err = TW_Engine_create (NUM_WORKERS, &eng);
 	CHECK_ERR
 
-	for (i = 0; i < NUM_TASKS; i++) {
-		datas[i].tid = i;
-		datas[i].pre = &last;
-		err			 = TW_Task_create (task_fn, datas + i, TW_TASK_DEP_ALL_COMPLETE, 0, task + i);
-		CHECK_ERR
+	dep.Status_change = Custom_dep_status_change;
+	dep.Data		  = &handle;
+	dep.Mask		  = TW_Task_STAT_COMPLETE | TW_Task_STAT_PENDING;
 
-		if (i) {
-			err = TW_Task_add_dep (task[i], task[i - 1]);
-			CHECK_ERR
+	for (i = 0; i < NUM_TASKS; i++) {
+		datas[i].tasks_running = &running;
+		datas[i].tasks_ran	   = &ran;
+		err					   = TW_Task_create (task_fn, datas + i, dep, 0, task + i);
+		CHECK_ERR
+	}
+	// All to all dep
+	for (i = 0; i < NUM_TASKS; i++) {
+		for (j = 0; j < NUM_TASKS; j++) {
+			if (i != j) {
+				err = TW_Task_add_dep (task[i], task[j]);
+				CHECK_ERR
+			}
 		}
 	}
 
-	/* Commit in reverse order, don't commit task 0 */
-	for (i = NUM_TASKS - 1; i > 0; i--) {
+	/* Commit all tasks */
+	for (i = 0; i < NUM_TASKS; i++) {
 		err = TW_Task_commit (task[i], eng);
 		CHECK_ERR
 	}
-
-	/* No task should run */
-	for (i = 1; i < NUM_TASKS; i++) {
-		err = TW_Task_get_status (task[i], &status);
-		CHECK_ERR
-
-		EXP_VAL (status, TW_Task_STAT_WAITING, "%d")
-	}
-
-	/* Now commit the first task */
-	err = TW_Task_commit (task[0], eng);
-	CHECK_ERR
 
 	for (i = 0; i < NUM_TASKS; i++) {
 		err = TW_Task_wait (task[i], TW_TIMEOUT_NEVER);
@@ -100,9 +121,7 @@ int main (int argc, char *argv[]) {
 		CHECK_ERR
 	}
 
-	for (i = 0; i < NUM_TASKS; i++) { nerr += datas[i].nerr; }
-
-	EXP_VAL (last, NUM_TASKS - 1, "%d");
+	EXP_VAL (ran, NUM_TASKS, "%d");
 
 	err = TW_Engine_free (eng);
 	CHECK_ERR

@@ -24,15 +24,15 @@ typedef struct TW_Obj_t *TW_Task_handle_t;
  */
 // The task hasn't been commited, user can modify the task
 #define TW_Task_STAT_PENDING 1
-#define TW_Task_STAT_WAITING 2	// Commited in the flow graph, waiting on job dependency
+#define TW_Task_STAT_WAITING 0x2  // Commited in the flow graph, waiting on job dependency
 // Ready for processing. Waiting in the job queue for available worker
-#define TW_Task_STAT_QUEUEING 3
-#define TW_Task_STAT_RUNNING  4	 // A worker is handling the job
-#define TW_Task_STAT_COMPLETE 5	 // The job is completed
+#define TW_Task_STAT_QUEUEING 0x4
+#define TW_Task_STAT_RUNNING  0x8	// A worker is handling the job
+#define TW_Task_STAT_COMPLETE 0x10	// The job is completed
 // The dependency can never be satisfied (eg. parent job failed). The job is removed from the flow
 // graph
-#define TW_Task_STAT_ABORT	6
-#define TW_Task_STAT_FAILED 7
+#define TW_Task_STAT_ABORT	0x20
+#define TW_Task_STAT_FAILED 0x40
 
 /* Task priority
  * We do not use enum because it is not supported by openpa
@@ -46,8 +46,8 @@ typedef struct TW_Obj_t *TW_Task_handle_t;
 /* Predefined dependency handler
  * We do not use enum because it is not supported by openpa
  */
-#define TW_TASK_DEP_ALL_COMPLETE	  TW_Task_dep_all_complete_handler_fn
-#define TW_TASK_DEP_ALL_COMPLETE_INIT TW_Task_dep_all_complete_init_fn
+#define TW_TASK_DEP_NULL		 TW_Task_dep_null
+#define TW_TASK_DEP_ALL_COMPLETE TW_Task_dep_all_complete
 
 /* Callback functions */
 
@@ -59,39 +59,50 @@ typedef struct TW_Obj_t *TW_Task_handle_t;
  */
 typedef int (*TW_Task_handler_t) (void *data);
 
-/**
- * @brief Callback function to handle dependency
- * @note The function will be called exactly once when the status of a paraent changes
- * @task The task in question
- * @parent The parent task whose status changed
- * @new_status The status of the parent
- * @dep_stat Internal status of the dependency handler
- * @retval The status of the task
- */
-typedef int (*TW_Task_dep_handler_t) (
-	TW_Task_handle_t task, TW_Task_handle_t parent, int old_status, int new_status, void *dep_stat);
-
-/**
- * @brief  Callback function to initialize or finalize the dependency state for the dependency
- * callback function
- * @note Initialize will be called when the task is commited to the engine. Finalize will be called
- * when the task is removed from the engine.
- * @task The task in question
- * @num_deps Number of dependencies
- * @dep_stat Internal status of the dependency handler
- * @init 1 for initialize, 0 for finalize
- * @retval 0 for success, error code otherwise
- */
-typedef int (*TW_Task_dep_stat_handler_t) (TW_Task_handle_t task,
-										   int num_deps,
-										   void **dep_stat,
-										   int init);
+typedef struct TW_Task_dep_handler_t {
+	int Mask;
+	void *Data;
+	/**
+	 * @brief  Callback function to initialize or finalize the dependency state for the dependency
+	 * callback function
+	 * @note Initialize will be called when the task is commited to the engine. Finalize will be
+	 * called when the task is removed from the engine.
+	 * @task The task in question
+	 * @num_deps Number of dependencies
+	 * @data Internal status of the dependency handler
+	 * @init 1 for initialize, 0 for finalize
+	 * @retval 0 for success, error code otherwise
+	 */
+	int (*Init) (TW_Task_handle_t task, int num_deps, void **data);
+	/**
+	 * @brief  Callback function to initialize or finalize the dependency state for the dependency
+	 * callback function
+	 * @note Initialize will be called when the task is commited to the engine. Finalize will be
+	 * called when the task is removed from the engine.
+	 * @task The task in question
+	 * @num_deps Number of dependencies
+	 * @data Internal status of the dependency handler
+	 * @init 1 for initialize, 0 for finalize
+	 * @retval 0 for success, error code otherwise
+	 */
+	int (*Finalize) (TW_Task_handle_t task, void *data);
+	/**
+	 * @brief Callback function when the status of parent tasks changes
+	 * @note The function will be called exactly once when the status of a paraent changes
+	 * @task The task in question
+	 * @parent The parent task whose status changed
+	 * @new_status The status of the parent
+	 * @data Internal status of the dependency handler
+	 * @retval The status of the task
+	 */
+	int (*Status_change) (
+		TW_Task_handle_t task, TW_Task_handle_t parent, int old_status, int new_status, void *data);
+} TW_Task_dep_handler_t;
 
 // Create, free
 extern terr_t TW_Task_create (TW_Task_handler_t task_cb,
 							  void *task_data,
-							  TW_Task_dep_handler_t dep_cb,
-							  TW_Task_dep_stat_handler_t dep_stat_cb,
+							  TW_Task_dep_handler_t dep_handler,
 							  int tag,
 							  TW_Task_handle_t *task);	// Create a new task
 
@@ -126,5 +137,5 @@ extern terr_t TW_Task_get_status (TW_Task_handle_t task, int *statusp);
 extern terr_t TW_Task_get_data (TW_Task_handle_t task, void **datap);
 extern terr_t TW_Task_get_tag (TW_Task_handle_t task, int *tagp);
 
-extern TW_Task_dep_handler_t TW_Task_dep_all_complete_handler_fn;
-extern TW_Task_dep_stat_handler_t TW_Task_dep_all_complete_init_fn;
+extern TW_Task_dep_handler_t TW_Task_dep_null;
+extern TW_Task_dep_handler_t TW_Task_dep_all_complete;

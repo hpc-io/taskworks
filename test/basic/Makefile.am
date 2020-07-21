@@ -20,7 +20,7 @@ TESTPROGRAMS =  init \
                 no_worker \
                 task \
                 task_dep \
-                #task_custom_dep
+                custom_dep
 # mutual_dep
 
 # When we need m4
