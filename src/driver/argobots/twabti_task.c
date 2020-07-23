@@ -43,31 +43,36 @@ err_out:;
 	return err;
 }
 
-terr_t TWABTI_Task_run_dep (TWABT_Task_t *tp, TWI_Bool_t *successp) {
+static terr_t TWABTI_Task_run_dep_core (TWABT_Task_t *tp,
+										TWI_Hash_handle_t h,
+										TWI_Bool_t *successp) {
 	terr_t err		   = TW_SUCCESS;
 	TWI_Bool_t success = TWI_FALSE;
+	int status;
 	TWABT_Task_dep_t *dp;
-	TWI_List_itr_t i;
+	TWI_Nb_list_itr_t i;
 
 	while (!success) {
-		if (OPA_load_int (&(tp->status)) == TW_Task_STAT_QUEUEING) {
+		status = OPA_load_int (&(tp->status));
+		if (status == TW_Task_STAT_QUEUEING) {
 			err = TWABTI_Task_run (tp, &success);
 			CHECK_ERR
-		} else if (OPA_load_int (&(tp->status)) == TW_Task_STAT_WAITING) {
-			i = TWI_List_begin (tp->parents);
-			while (i) {
+		} else if (status == TW_Task_STAT_WAITING) {
+			i = TWI_Nb_list_begin (tp->parents);
+			while (i != TWI_Nb_list_end (tp->parents)) {
 				dp = (TWABT_Task_dep_t *)i->data;
 
 				if (OPA_load_int (&(dp->ref)) == 2) {
-					err = TWABTI_Task_run_dep (dp->parent, &success);
-					CHECK_ERR
+					if (TWI_Hash_insert (h, dp->parent) == TW_SUCCESS) {
+						err = TWABTI_Task_run_dep_core (dp->parent, h, &success);
+						CHECK_ERR
+					}
 					if (success) break;
 				}
 
-				i = TWI_List_next (i);
+				i = TWI_Nb_list_next (i);
 			}
 		} else {
-			ASSIGN_ERR (TW_ERR_STATUS)
 			break;
 		}
 	}
@@ -75,6 +80,24 @@ terr_t TWABTI_Task_run_dep (TWABT_Task_t *tp, TWI_Bool_t *successp) {
 	if (successp) { *successp = success; }
 
 err_out:;
+	return err;
+}
+
+terr_t TWABTI_Task_run_dep (TWABT_Task_t *tp, TWI_Bool_t *successp) {
+	terr_t err			= TW_SUCCESS;
+	TWI_Hash_handle_t h = NULL;
+
+	err = TWI_Hash_create (10, &h);
+	CHECK_ERR
+
+	err = TWI_Hash_insert (h, tp);
+	CHECK_ERR
+
+	err = TWABTI_Task_run_dep_core (tp, h, successp);
+	CHECK_ERR
+
+err_out:;
+	if (h) TWI_Hash_free (h);
 	return err;
 }
 
@@ -100,7 +123,7 @@ terr_t TWABTI_Task_update_status (TWABT_Task_t *tp, int old_stat, int new_stat, 
 				case TW_Task_STAT_FAILED:
 				case TW_Task_STAT_COMPLETE:
 					if (tp->ep) {
-						err = TWI_List_erase (tp->ep->tasks, tp);
+						err = TWI_Nb_list_del (tp->ep->tasks, tp);
 						CHECK_ERR
 						tp->ep = NULL;
 					}
@@ -131,7 +154,7 @@ terr_t TWABTI_Task_queue (TWABT_Task_t *tp) {
 		CHECK_ABTERR
 	}
 
-	err = TWI_List_insert_front (tp->ep->tasks, tp);
+	err = TWI_Nb_list_insert_front (tp->ep->tasks, tp);
 	CHECK_ERR
 
 	/* Argobot tasks can't be force removed, create them only when there are workers */
@@ -147,12 +170,12 @@ err_out:;
 terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new_stat) {
 	terr_t err = TW_SUCCESS;
 	int stat_before, stat_after;
-	TWI_List_itr_t itr;
+	TWI_Nb_list_itr_t itr;
 	TWABT_Task_dep_t *dp;
 
 	// Notify child tasks
-	itr = TWI_List_begin (tp->childs);
-	while (itr) {
+	itr = TWI_Nb_list_begin (tp->childs);
+	while (itr != TWI_Nb_list_end (tp->childs)) {
 		dp			= itr->data;
 		stat_before = OPA_load_int (&(dp->child->status));
 		if (stat_before == TW_Task_STAT_WAITING) {
@@ -164,7 +187,7 @@ terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new
 				CHECK_ERR
 			}
 		}
-		itr = TWI_List_next (itr);
+		itr = TWI_Nb_list_next (itr);
 	}
 
 err_out:;

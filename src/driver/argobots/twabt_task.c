@@ -27,9 +27,9 @@ terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 	CHECK_ERR
 	tp->parents = NULL;
 	tp->childs	= NULL;
-	err			= TWI_List_create (&(tp->parents));
+	err			= TWI_Nb_list_create (&(tp->parents));
 	CHECK_ERR
-	err = TWI_List_create (&(tp->childs));
+	err = TWI_Nb_list_create (&(tp->childs));
 	CHECK_ERR
 	tp->handler		   = task_cb;
 	tp->data		   = task_data;
@@ -46,8 +46,8 @@ terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 err_out:;
 	if (err) {
 		if (tp) {
-			TWI_List_free (tp->parents);
-			TWI_List_free (tp->childs);
+			TWI_Nb_list_free (tp->parents);
+			TWI_Nb_list_free (tp->childs);
 			TWI_Free (tp);
 		}
 	}
@@ -60,31 +60,31 @@ terr_t TWABT_Task_free (TW_Handle_t htask) {  // Free up a task
 	int is_zero;
 	TWABT_Task_t *tp = (TWABT_Task_t *)htask;
 	TWABT_Task_dep_t *dp;
-	TWI_List_itr_t itr;
+	TWI_Nb_list_itr_t itr;
 
 	err = TWI_Rwlock_wlock (&(tp->lock));
 	CHECK_ERR
 
 	// Remove all dependencies
-	itr = TWI_List_begin (tp->childs);	// Childs
-	while (itr) {
+	itr = TWI_Nb_list_begin (tp->childs);  // Childs
+	while (itr != TWI_Nb_list_end (tp->childs)) {
 		dp = itr->data;
 
 		// Decrease ref count, if we are the last one, free the dep struct
 		is_zero = OPA_decr_and_test_int (&(dp->ref));
 		if (is_zero) { TWI_Free (dp); }
 
-		itr = TWI_List_next (itr);
+		itr = TWI_Nb_list_next (itr);
 	}
-	itr = TWI_List_begin (tp->parents);	 // Parents
-	while (itr) {
+	itr = TWI_Nb_list_begin (tp->parents);	// Parents
+	while (itr != TWI_Nb_list_end (tp->parents)) {
 		dp = itr->data;
 
 		// Decrease ref count, if we are the last one, free the dep struct
 		is_zero = OPA_decr_and_test_int (&(dp->ref));
 		if (is_zero) { TWI_Free (dp); }
 
-		itr = TWI_List_next (itr);
+		itr = TWI_Nb_list_next (itr);
 	}
 
 	if (tp->abt_task != ABT_TASK_NULL) {
@@ -98,8 +98,8 @@ terr_t TWABT_Task_free (TW_Handle_t htask) {  // Free up a task
 	CHECK_ERR
 
 err_out:;
-	TWI_List_free (tp->parents);
-	TWI_List_free (tp->childs);
+	TWI_Nb_list_free (tp->parents);
+	TWI_Nb_list_free (tp->childs);
 	TWI_Rwlock_finalize (&(tp->lock));
 	TWI_Free (tp);
 	return err;
@@ -120,7 +120,7 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 	TWABT_Engine_t *ep = (TWABT_Engine_t *)engine;
 	TWABT_Task_t *tp   = (TWABT_Task_t *)htask;
 	TWABT_Task_dep_t *dp;
-	TWI_List_itr_t i;
+	TWI_Nb_list_itr_t i;
 
 	err = TWABTI_Task_update_status (tp, TW_Task_STAT_PENDING, TW_Task_STAT_WAITING, &success);
 	CHECK_ERR
@@ -131,7 +131,8 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 	CHECK_ERR
 
 	// Count number of deps
-	for (i = TWI_List_begin (tp->parents), ndep = 0; i != NULL; i = TWI_List_next (i), ndep++)
+	for (i = TWI_Nb_list_begin (tp->parents), ndep = 0; i != TWI_Nb_list_end (tp->parents);
+		 i = TWI_Nb_list_next (i), ndep++)
 		;
 
 	// Call dependency init
@@ -141,17 +142,19 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 	}
 
 	// Wire up dep list on parents
-	for (i = TWI_List_begin (tp->parents); i != NULL; i = TWI_List_next (i)) {
+	for (i = TWI_Nb_list_begin (tp->parents); i != TWI_Nb_list_end (tp->parents);
+		 i = TWI_Nb_list_next (i)) {
 		dp = i->data;
 
 		// Add to parent dep list
-		TWI_List_insert_front (dp->parent->childs, dp);
+		TWI_Nb_list_insert_front (dp->parent->childs, dp);
 	}
 
 	// Check if we need to notify dependency change
-	i = TWI_List_begin (tp->parents);
-	if (i != NULL) {
-		for (; i != NULL; i = TWI_List_next (i)) {
+	i = TWI_Nb_list_begin (tp->parents);
+	if (i != TWI_Nb_list_end (tp->parents)) {
+		tstatus = TW_Task_STAT_WAITING;
+		for (; i != TWI_Nb_list_end (tp->parents); i = TWI_Nb_list_next (i)) {
 			dp = i->data;
 
 			pstatus = OPA_load_int (&(dp->parent->status));
@@ -219,10 +222,8 @@ terr_t TWABT_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 				stat == TW_Task_STAT_FAILED)
 				break;
 
-			if (tp->ep && tp->ep->ness == 0) {
-				err = TWABTI_Task_run_dep (tp, NULL);
-				CHECK_ERR
-			}
+			err = TWABTI_Task_run_dep (tp, NULL);
+			CHECK_ERR
 		}
 	} else {
 		stoptime = TWI_Time_now () + timeout;
@@ -286,7 +287,7 @@ terr_t TWABT_Task_add_dep (TW_Handle_t child, TW_Handle_t parent) {
 	OPA_store_int (&(dp->status), 0);
 
 	// Insert to dep list
-	err = TWI_List_insert_front (cp->parents, dp);
+	err = TWI_Nb_list_insert_front (cp->parents, dp);
 	CHECK_ERR
 
 err_out:;
@@ -302,13 +303,13 @@ terr_t TWABT_Task_rm_dep (TW_Handle_t child, TW_Handle_t parent) {
 	TWABT_Task_t *cp = (TWABT_Task_t *)child;
 	TWABT_Task_t *pp = (TWABT_Task_t *)parent;
 	TWABT_Task_dep_t *dp;
-	TWI_List_itr_t itr;
+	TWI_Nb_list_itr_t itr;
 
 	err = TWI_Rwlock_rlock (&(cp->lock));
 	CHECK_ERR
 
 	// Remove all dependencies
-	itr = TWI_List_begin (cp->parents);	 // Parents
+	itr = TWI_Nb_list_begin (cp->parents);	// Parents
 	while (itr) {
 		dp = itr->data;
 
@@ -319,7 +320,7 @@ terr_t TWABT_Task_rm_dep (TW_Handle_t child, TW_Handle_t parent) {
 			break;
 		}
 
-		itr = TWI_List_next (itr);
+		itr = TWI_Nb_list_next (itr);
 	}
 	if (!itr) { RET_ERR (TW_ERR_NOT_FOUND) }
 

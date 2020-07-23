@@ -63,7 +63,7 @@ typedef struct TWABT_Engine_t {
 	ABT_sched *schedulers;	// Task scheduler
 	ABT_xstream *ess;		// Threads (ES)
 	void *dispatcher_obj;	// Corresponding structure at dispatcher level
-	TWI_List_handle_t tasks;
+	TWI_Nb_list_handle_t tasks;
 } TWABT_Engine_t;
 
 typedef struct TWABT_Task_t {
@@ -75,8 +75,8 @@ typedef struct TWABT_Task_t {
 	ABT_task abt_task;					// Argobot task handle
 	OPA_int_t status;					// Status of the task
 	int priority;						// Priority, currently not used
-	TWI_List_handle_t parents;			// Tasks it depends on
-	TWI_List_handle_t childs;			// Tasks depend on it
+	TWI_Nb_list_handle_t parents;		// Tasks it depends on
+	TWI_Nb_list_handle_t childs;		// Tasks depend on it
 	TWABT_Engine_t *ep;					// Engine it is commited to
 	void *dispatcher_obj;				// Corresponding structure at dispatcher level
 } TWABT_Task_t;

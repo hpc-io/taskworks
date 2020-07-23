@@ -4984,7 +4984,7 @@ m4_if([$1], [CXX], [
   _LT_TAGVAR(module_expsym_cmds, $1)=
   _LT_TAGVAR(old_archive_from_new_cmds, $1)=
   _LT_TAGVAR(old_archive_from_expsyms_cmds, $1)=
-  _LT_TAGVAR(thread_safe_flag_spec, $1)=
+  _LT_TAGVAR(thread_ts_flag_spec, $1)=
   _LT_TAGVAR(whole_archive_flag_spec, $1)=
   # include_expsyms should be a list of space-separated symbols to be *always*
   # included in the symbol list
@@ -6209,7 +6209,7 @@ _LT_TAGDECL([], [postlink_cmds], [2],
 _LT_TAGDECL([], [file_list_spec], [1],
     [Specify filename containing input files])
 dnl FIXME: Not yet implemented
-dnl _LT_TAGDECL([], [thread_safe_flag_spec], [1],
+dnl _LT_TAGDECL([], [thread_ts_flag_spec], [1],
 dnl    [Compiler flag to generate thread safe objects])
 ])# _LT_LINKER_SHLIBS
 

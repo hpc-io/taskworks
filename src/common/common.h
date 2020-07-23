@@ -12,7 +12,8 @@
 
 #pragma once
 
-#define TWI_UNUSED __attribute__ ((unused))
+#define TWI_UNUSED		 __attribute__ ((unused))
+#define TWI_FALL_THROUGH __attribute__ ((fallthrough));
 
 #define TWI_TRUE  1
 #define TWI_FALSE 0
