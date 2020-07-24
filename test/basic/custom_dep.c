@@ -22,6 +22,7 @@ typedef struct task_data {
 	volatile atomic_int *tasks_ran;		 // Number of threads in task_fn
 } task_data;
 
+int task_fn (void *data);
 int task_fn (void *data) {
 	int nerr	  = 0;
 	task_data *dp = (task_data *)data;
@@ -41,7 +42,12 @@ int task_fn (void *data) {
 
 int Custom_dep_status_change (TW_Task_handle_t task,
 							  TW_Task_handle_t parent,
-							  int old_status,
+							  int __attribute__ ((unused)) old_status,
+							  int new_status,
+							  void *dep_data);
+int Custom_dep_status_change (TW_Task_handle_t task,
+							  TW_Task_handle_t parent,
+							  int __attribute__ ((unused)) old_status,
 							  int new_status,
 							  void *dep_data) {
 	TW_Task_handle_t h;
@@ -63,9 +69,8 @@ int main (int argc, char *argv[]) {
 	int i, j;
 	int status;
 	task_data datas[NUM_TASKS];
-	volatile ran = 0, running = 0;
-	volatile TW_Task_handle_t handle = TW_HANDLE_NULL;
-	int last						 = NUM_TASKS;
+	atomic_int ran = 0, running = 0;
+	TW_Task_handle_t handle = TW_HANDLE_NULL;
 	TW_Engine_handle_t eng;
 	TW_Task_dep_handler_t dep;
 	TW_Task_handle_t task[NUM_TASKS];
@@ -79,6 +84,8 @@ int main (int argc, char *argv[]) {
 	CHECK_ERR
 
 	dep.Status_change = Custom_dep_status_change;
+	dep.Init		  = NULL;
+	dep.Finalize	  = NULL;
 	dep.Data		  = &handle;
 	dep.Mask		  = TW_Task_STAT_COMPLETE | TW_Task_STAT_PENDING;
 

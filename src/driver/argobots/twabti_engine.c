@@ -8,29 +8,38 @@
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Cross-platform read write lock wrapper */
+/* Argobot driver engine implementation */
 
-#pragma once
+#include "twabt.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <pthread.h>
-#endif
+terr_t TWABTI_Engine_free (TWABT_Engine_t *ep) {
+	terr_t err = TW_SUCCESS;
+	int abterr;
+	int i;
 
-#include "taskworks_internal.h"
+	// Stop and free the ESs
+	for (i = 0; i < ep->ness; i++) {
+		abterr = ABT_xstream_join (ep->ess[i]);
+		CHECK_ABTERR
+		abterr = ABT_xstream_free (ep->ess + i);
+		CHECK_ABTERR
+	}
+	TWI_Free (ep->ess);
 
-#ifdef _WIN32
-typedef HANDLE TWI_Mutex_t;
-#else
-typedef pthread_mutex_t TWI_Mutex_t;
-#endif
-typedef TWI_Mutex_t *TWI_Mutex_handle_t;
+	// Free the schedulars
+	for (i = 0; i < ep->ness; i++) {
+		abterr = ABT_sched_free (ep->schedulers + i);
+		CHECK_ABTERR
+	}
+	TWI_Free (ep->schedulers);
 
-TWI_Mutex_handle_t TWI_Mutex_create (void);
-terr_t TWI_Mutex_init (TWI_Mutex_handle_t m);
-void TWI_Mutex_finalize (TWI_Mutex_handle_t m);
-void TWI_Mutex_free (TWI_Mutex_handle_t m);
-void TWI_Mutex_lock (TWI_Mutex_handle_t m);
-void TWI_Mutex_trylock (TWI_Mutex_handle_t m, int *success);
-void TWI_Mutex_unlock (TWI_Mutex_handle_t m);
+	TWI_Nb_list_free (ep->tasks);
+
+	// Pool freed automatically when all schedulers get freed
+	////abterr = ABT_pool_free (&(ep->pool));
+
+	TWI_Free (ep);
+
+err_out:;
+	return err;
+}

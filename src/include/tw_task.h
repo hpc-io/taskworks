@@ -49,6 +49,9 @@ typedef struct TW_Obj_t *TW_Task_handle_t;
 #define TW_TASK_DEP_NULL		 TW_Task_dep_null
 #define TW_TASK_DEP_ALL_COMPLETE TW_Task_dep_all_complete
 
+/* Task tag */
+#define TW_TASK_TAG_ANY -1
+
 /* Callback functions */
 
 /**

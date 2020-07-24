@@ -33,18 +33,17 @@ typedef pthread_mutex_t TWI_Rwlock_t;
 
 typedef TWI_Rwlock_t *TWI_Rwlock_handle_t;
 
+TWI_Rwlock_handle_t TWI_Rwlock_create (void);
+void TWI_Rwlock_free (TWI_Rwlock_handle_t l);
+
 #if defined __USE_UNIX98 || defined __USE_XOPEN2K || defined _WIN32
-terr_t TWI_Rwlock_create (TWI_Rwlock_handle_t *l);
-terr_t TWI_Rwlock_free (TWI_Rwlock_handle_t l);
 terr_t TWI_Rwlock_init (TWI_Rwlock_handle_t l);
-terr_t TWI_Rwlock_finalize (TWI_Rwlock_handle_t l);
-terr_t TWI_Rwlock_rlock (TWI_Rwlock_handle_t l);
-terr_t TWI_Rwlock_wlock (TWI_Rwlock_handle_t l);
-terr_t TWI_Rwlock_runlock (TWI_Rwlock_handle_t l);
-terr_t TWI_Rwlock_wunlock (TWI_Rwlock_handle_t l);
+void TWI_Rwlock_finalize (TWI_Rwlock_handle_t l);
+void TWI_Rwlock_rlock (TWI_Rwlock_handle_t l);
+void TWI_Rwlock_wlock (TWI_Rwlock_handle_t l);
+void TWI_Rwlock_runlock (TWI_Rwlock_handle_t l);
+void TWI_Rwlock_wunlock (TWI_Rwlock_handle_t l);
 #else
-#define TWI_Rwlock_create	TWI_Mutex_create
-#define TWI_Rwlock_free		TWI_Mutex_free
 #define TWI_Rwlock_init		TWI_Mutex_init
 #define TWI_Rwlock_finalize TWI_Mutex_finalize
 #define TWI_Rwlock_rlock	TWI_Mutex_lock

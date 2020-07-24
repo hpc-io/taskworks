@@ -78,6 +78,9 @@ terr_t TWABT_Engine_create (int num_worker, void *dispatcher_obj, TW_Handle_t *e
 
 	TWI_Nb_list_create (&(ep->tasks));
 
+	// Add to opened engine list
+	TWI_Ts_vector_push_back (TWABTI_Engines, ep);
+
 	*engine = ep;
 
 err_out:;
@@ -108,31 +111,13 @@ err_out:;
  * @retval TW_SUCCESS on success or translated error code on failure
  */
 terr_t TWABT_Engine_free (TW_Handle_t engine) {
-	terr_t err = TW_SUCCESS;
-	int abterr;
-	int i;
+	terr_t err		   = TW_SUCCESS;
 	TWABT_Engine_t *ep = (TWABT_Engine_t *)engine;
 
-	// Stop and free the ESs
-	for (i = 0; i < ep->ness; i++) {
-		abterr = ABT_xstream_join (ep->ess[i]);
-		CHECK_ABTERR
-		abterr = ABT_xstream_free (ep->ess + i);
-		CHECK_ABTERR
-	}
-	TWI_Free (ep->ess);
+	err = TWABTI_Engine_free (ep);
+	CHECK_ERR
 
-	// Free the schedulars
-	for (i = 0; i < ep->ness; i++) {
-		abterr = ABT_sched_free (ep->schedulers + i);
-		CHECK_ABTERR
-	}
-	TWI_Free (ep->schedulers);
-
-	TWI_Nb_list_free (ep->tasks);
-
-	// Pool freed automatically when all schedulers get freed
-	////abterr = ABT_pool_free (&(ep->pool));
+	TWI_Ts_vector_swap_erase (TWABTI_Engines, ep);
 
 err_out:;
 	return err;

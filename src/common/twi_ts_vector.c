@@ -24,52 +24,56 @@
 
 #include "twi_ts_vector.h"
 
+#ifdef ENABLE_DEBUG
+#define CHECK_IDX                                                         \
+	{                                                                     \
+		if (index < 0 || index >= (int)TWI_Ts_vectori_get_size (v)) {     \
+			printf ("Vector index out of bound: size = %d, index = %d\n", \
+					(int)TWI_Ts_vectori_get_size (v), index);             \
+			abort ();                                                     \
+		}                                                                 \
+	}
+#else
+#define CHECK_IDX \
+	{}
+#endif
+
 #define TWI_VECTOR_INIT_SIZE		32
 #define TWI_VECTOR_ALLOC_MULTIPLIER 20
 
-#define RLOCK                                \
-	{                                        \
-		err = TWI_Rwlock_rlock (&(v->lock)); \
-		CHECK_ERR                            \
-		locked = 1;                          \
+#define RLOCK                          \
+	{                                  \
+		TWI_Rwlock_rlock (&(v->lock)); \
+		locked = 1;                    \
 	}
 
-#define WLOCK                                \
-	{                                        \
-		err = TWI_Rwlock_rlock (&(v->lock)); \
-		CHECK_ERR                            \
-		locked = 2;                          \
+#define WLOCK                          \
+	{                                  \
+		TWI_Rwlock_rlock (&(v->lock)); \
+		locked = 2;                    \
 	}
 
-#define RUNLOCK                                    \
-	{                                              \
-		if (locked == 1) {                         \
-			err = TWI_Rwlock_runlock (&(v->lock)); \
-			if (err == TW_SUCCESS) locked = 0;     \
-		}                                          \
+#define RUNLOCK                                               \
+	{                                                         \
+		if (locked == 1) { TWI_Rwlock_runlock (&(v->lock)); } \
 	}
 
-#define WUNLOCK                                    \
-	{                                              \
-		if (locked == 2) {                         \
-			err = TWI_Rwlock_wunlock (&(v->lock)); \
-			if (err == TW_SUCCESS) locked = 0;     \
-		}                                          \
+#define WUNLOCK                                               \
+	{                                                         \
+		if (locked == 2) { TWI_Rwlock_wunlock (&(v->lock)); } \
 	}
 
-#define UNLOCK                                         \
-	{                                                  \
-		switch (locked) {                              \
-			case 1:                                    \
-				err = TWI_Rwlock_runlock (&(v->lock)); \
-				if (err == TW_SUCCESS) locked = 0;     \
-				break;                                 \
-			case 2:                                    \
-				err = TWI_Rwlock_wunlock (&(v->lock)); \
-				if (err == TW_SUCCESS) locked = 0;     \
-				break;                                 \
-			default:;                                  \
-		}                                              \
+#define UNLOCK                                   \
+	{                                            \
+		switch (locked) {                        \
+			case 1:                              \
+				TWI_Rwlock_runlock (&(v->lock)); \
+				break;                           \
+			case 2:                              \
+				TWI_Rwlock_wunlock (&(v->lock)); \
+				break;                           \
+			default:;                            \
+		}                                        \
 	}
 
 /*
@@ -120,9 +124,9 @@ inline static size_t TWI_Ts_vectori_get_size (TWI_Ts_vector_handle_t v) {
 	return size;
 }
 
-terr_t TWI_Ts_vector_create (TWI_Ts_vector_handle_t *v) {
-	terr_t err = TW_SUCCESS;
-	TWI_Ts_vector_handle_t vp;
+TWI_Ts_vector_handle_t TWI_Ts_vector_create (void) {
+	terr_t err				  = TW_SUCCESS;
+	TWI_Ts_vector_handle_t vp = NULL;
 
 	vp = (TWI_Ts_vector_handle_t)TWI_Malloc (sizeof (TWI_Ts_vector_t));
 	CHECK_PTR (vp)
@@ -130,23 +134,19 @@ terr_t TWI_Ts_vector_create (TWI_Ts_vector_handle_t *v) {
 	err = TWI_Ts_vector_init (vp);
 	CHECK_ERR
 
-	*v = vp;
-
 err_out:;
 	if (err) {
-		if (vp) { TWI_Free (vp); }
+		if (vp) {
+			TWI_Free (vp);
+			vp = NULL;
+		}
 	}
-	return err;
+	return vp;
 }
 
-terr_t TWI_Ts_vector_free (TWI_Ts_vector_handle_t v) {
-	terr_t err;
-
-	err = TWI_Ts_vector_finalize (v);
-
+void TWI_Ts_vector_free (TWI_Ts_vector_handle_t v) {
+	TWI_Ts_vector_finalize (v);
 	TWI_Free (v);
-
-	return err;
 }
 
 terr_t TWI_Ts_vector_init (TWI_Ts_vector_handle_t v) {
@@ -160,58 +160,66 @@ terr_t TWI_Ts_vector_init (TWI_Ts_vector_handle_t v) {
 	CHECK_PTR (v->data)
 
 err_out:;
-	if (err) { TWI_Free (v->data); }
-	err = TWI_Rwlock_finalize (&(v->lock));
+	if (err) {
+		TWI_Free (v->data);
+		TWI_Rwlock_finalize (&(v->lock));
+	}
 	return err;
 }
 
-terr_t TWI_Ts_vector_finalize (TWI_Ts_vector_handle_t v) {
-	terr_t err;
-
+void TWI_Ts_vector_finalize (TWI_Ts_vector_handle_t v) {
 	TWI_Free (v->data);
 	v->data = NULL;
-
-	err = TWI_Rwlock_finalize (&(v->lock));
-	CHECK_ERR
-
-err_out:;
-	return err;
+	TWI_Rwlock_finalize (&(v->lock));
 }
 
-terr_t TWI_Ts_vector_read (TWI_Ts_vector_handle_t v, int index, void **data) {
-	terr_t err;
+void *TWI_Ts_vector_read (TWI_Ts_vector_handle_t v, int index) {
+	void *data;
 	int locked = 0;
 
+	CHECK_IDX
 	RLOCK;
 
-	if (index < 0 || index >= (int)TWI_Ts_vectori_get_size (v)) { ASSIGN_ERR (TW_ERR_INVAL) }
+	data = v->data[index];
 
-	*data = v->data[index];
-
-err_out:
 	RUNLOCK;
 
-	return err;
+	return data;
 }
-terr_t TWI_Ts_vector_write (TWI_Ts_vector_handle_t v, int index, void *data) {
-	terr_t err;
+void TWI_Ts_vector_write (TWI_Ts_vector_handle_t v, int index, void *data) {
 	int locked = 0;
 
-	RLOCK;
+	CHECK_IDX
 
-	if (index < 0 || (size_t)index >= TWI_Ts_vectori_get_size (v)) { ASSIGN_ERR (TW_ERR_INVAL) }
+	RLOCK;
 
 	v->data[index] = data;
 
-err_out:
 	RUNLOCK;
-
-	return err;
 }
 
-terr_t TWI_Ts_vector_erase_at (TWI_Ts_vector_handle_t v, int idx) {
-	terr_t err = TW_SUCCESS;
+void TWI_Ts_vector_erase_at (TWI_Ts_vector_handle_t v, int index) {
 	int i;
+	int size;
+	int locked = 0;
+
+	CHECK_IDX
+
+	WLOCK;
+
+	size = (int)TWI_Ts_vectori_get_size (v);
+
+	/* Pull in the next one */
+	for (i = index; i < size - 1; i++) { v->data[i] = v->data[i + 1]; }
+
+	/* Reduce size */
+	OPA_decr_int (&(v->size));
+
+	WUNLOCK;
+}
+
+int TWI_Ts_vector_erase (TWI_Ts_vector_handle_t v, void *data) {
+	int i, j;
 	int size;
 	int locked = 0;
 
@@ -219,22 +227,23 @@ terr_t TWI_Ts_vector_erase_at (TWI_Ts_vector_handle_t v, int idx) {
 
 	size = (int)TWI_Ts_vectori_get_size (v);
 
-	if (idx < 0 || idx >= size) { ASSIGN_ERR (TW_ERR_INVAL) }
+	/* Search for item */
+	for (i = size - 1; i >= 0; i--) {
+		if (v->data[i] == data) {
+			/* Move items after */
+			for (j = i; j < size - 1; j++) { v->data[j] = v->data[j + 1]; }
+			/* Reduce size */
+			OPA_decr_int (&(v->size));
+			break;
+		}
+	}
 
-	/* Pull in the next one */
-	for (i = idx; i < size - 1; i++) { v->data[i] = v->data[i + 1]; }
-
-	/* Reduce size */
-	OPA_decr_int (&(v->size));
-
-err_out:;
 	WUNLOCK;
 
-	return err;
+	return i;
 }
 
-terr_t TWI_Ts_vector_erase (TWI_Ts_vector_handle_t v, void *data) {
-	terr_t err = TW_SUCCESS;
+int TWI_Ts_vector_swap_erase (TWI_Ts_vector_handle_t v, void *data) {
 	int i;
 	int size;
 	int locked = 0;
@@ -244,24 +253,24 @@ terr_t TWI_Ts_vector_erase (TWI_Ts_vector_handle_t v, void *data) {
 	size = (int)TWI_Ts_vectori_get_size (v);
 
 	/* Search for item */
-	for (i = 0; i < size; i++) {
+	for (i = size - 1; i >= 0; i--) {
 		if (v->data[i] == data) {
-			for (; i < size - 1; i++) { v->data[i] = v->data[i + 1]; }
+			/* Swap with last */
+			v->data[i] = v->data[size - 1];
+
+			/* Reduce size */
+			OPA_decr_int (&(v->size));
+
 			break;
 		}
 	}
 
-	/* Reduce size */
-	OPA_decr_int (&(v->size));
-
-err_out:;
 	WUNLOCK;
 
-	return err;
+	return i;
 }
 
 int TWI_Ts_vector_find (TWI_Ts_vector_handle_t v, void *data) {
-	terr_t err = TW_SUCCESS;
 	int i;
 	int size;
 	int locked = 0;
@@ -277,7 +286,6 @@ int TWI_Ts_vector_find (TWI_Ts_vector_handle_t v, void *data) {
 
 	if (i > size) i = -1;
 
-err_out:
 	RUNLOCK;
 
 	return -1;
@@ -328,3 +336,7 @@ terr_t TWI_Ts_vector_resize (TWI_Ts_vector_handle_t v, size_t size) {
 err_out:;
 	return err;
 }
+
+void TWI_Ts_vector_lock (TWI_Ts_vector_handle_t v) { TWI_Rwlock_rlock (&(v->lock)); }
+
+void TWI_Ts_vector_unlock (TWI_Ts_vector_handle_t v) { TWI_Rwlock_runlock (&(v->lock)); }

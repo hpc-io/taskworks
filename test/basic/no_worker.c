@@ -26,7 +26,7 @@ int main (int argc, char *argv[]) {
 	int nerr   = 0;
 	int i;
 	int status;
-	volatile atomic_int ctr;
+	atomic_int ctr;
 	TW_Engine_handle_t eng;
 	TW_Task_handle_t task[NUM_TASKS];
 

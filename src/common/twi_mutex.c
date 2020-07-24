@@ -22,57 +22,31 @@
 
 #include "taskworks_internal.h"
 
-// TODO: Remove macro, just expose the same name
+#ifdef ENABLE_DEBUG
 #ifdef _WIN32
-terr_t TWI_Mutex_create (TWI_Mutex_handle_t m) {
-	terr_t err = TW_SUCCESS;
-	*m		   = CreateMutex (NULL, FALSE, NULL);
-	if (*m == NULL) RET_OS_ERR (GetLastError ())
-err_out:;
-	return err;
-}
-terr_t TWI_Mutex_free (TWI_Mutex_handle_t m) {
-	CloseHandle (*m);
-	return TW_SUCCESS;
-}
-terr_t TWI_Mutex_lock (TWI_Mutex_handle_t m) {
-	terr_t err = TW_SUCCESS;
-	DWORD ret;
-
-	ret = WaitForSingleObject (*m, INFINITE);
-	if (ret == WAIT_FAILED) RET_OS_ERR (GetLastError ())
-err_out:;
-	return err;
-}
-terr_t TWI_Mutex_trylock (TWI_Mutex_handle_t m, int *success) {
-	terr_t err = TW_SUCCESS;
-	DWORD ret;
-
-	ret = WaitForSingleObject (*m, INFINITE);
-	if (ret == WAIT_FAILED) RET_OS_ERR (GetLastError ())
-
-	if (ret == WAIT_TIMEOUT)
-		*success = 0;
-	else
-		*success = 1;
-
-err_out:;
-	return err;
-}
-terr_t TWI_Mutex_unlock (TWI_Mutex_handle_t m) {
-	terr_t err = TW_SUCCESS;
-	BOOL ret;
-
-	ret = ReleaseMutex (*m);
-	if (ret == 0) RET_OS_ERR (GetLastError ())
-
-err_out:;
-	return err;
-}
+#define CHECK_MERR                                                          \
+	{                                                                       \
+		if (ret == WAIT_FAILED || ret == 0) PRINT_OS_ERR (GetLastError ()); \
+		abort ();                                                           \
+	}
 #else
-terr_t TWI_Mutex_create (TWI_Mutex_handle_t *m) {
-	terr_t err = TW_SUCCESS;
-	TWI_Mutex_handle_t mp;
+
+#define CHECK_MERR               \
+	{                            \
+		if (perr) {              \
+			PRINT_OS_ERR (perr); \
+			abort ();            \
+		}                        \
+	}
+#endif
+#else
+#define CHECK_MERR \
+	{}
+#endif
+
+TWI_Mutex_handle_t TWI_Mutex_create (void) {
+	terr_t err			  = TW_SUCCESS;
+	TWI_Mutex_handle_t mp = NULL;
 
 	mp = (TWI_Mutex_handle_t)TWI_Malloc (sizeof (TWI_Mutex_t));
 	CHECK_PTR (mp);
@@ -80,20 +54,55 @@ terr_t TWI_Mutex_create (TWI_Mutex_handle_t *m) {
 	err = TWI_Mutex_init (mp);
 	CHECK_ERR
 
-	*m = mp;
-
 err_out:;
-	if (err) { TWI_Free (mp); }
-	return err;
+	if (err) {
+		TWI_Free (mp);
+		mp = NULL;
+	}
+	return mp;
 }
-terr_t TWI_Mutex_free (TWI_Mutex_handle_t m) {
-	terr_t err;
 
-	err = TWI_Mutex_finalize (m);
+void TWI_Mutex_free (TWI_Mutex_handle_t m) {
+	TWI_Mutex_finalize (m);
 	TWI_Free (m);
+}
 
+#ifdef _WIN32
+terr_t TWI_Mutex_init (TWI_Mutex_handle_t m) {
+	terr_t err = TW_SUCCESS;
+	*m		   = CreateMutex (NULL, FALSE, NULL);
+	if (*m == NULL) RET_OS_ERR (GetLastError ())
+err_out:;
 	return err;
 }
+void TWI_Mutex_finalize (TWI_Mutex_handle_t m) { CloseHandle (*m); }
+void TWI_Mutex_lock (TWI_Mutex_handle_t m) {
+	terr_t err = TW_SUCCESS;
+	DWORD ret;
+
+	ret = WaitForSingleObject (*m, INFINITE);
+	CHECK_MERR
+}
+void TWI_Mutex_trylock (TWI_Mutex_handle_t m, int *success) {
+	terr_t err = TW_SUCCESS;
+	DWORD ret;
+
+	ret = WaitForSingleObject (*m, INFINITE);
+	if (ret == WAIT_TIMEOUT)
+		*success = 0;
+	else {
+		CHECK_MERR
+		*success = 1;
+	}
+}
+void TWI_Mutex_unlock (TWI_Mutex_handle_t m) {
+	terr_t err = TW_SUCCESS;
+	BOOL ret;
+
+	ret = ReleaseMutex (*m);
+	CHECK_MERR
+}
+#else
 terr_t TWI_Mutex_init (TWI_Mutex_handle_t m) {
 	terr_t err = TW_SUCCESS;
 	int perr;
@@ -104,50 +113,33 @@ terr_t TWI_Mutex_init (TWI_Mutex_handle_t m) {
 err_out:;
 	return err;
 }
-terr_t TWI_Mutex_finalize (TWI_Mutex_handle_t m) {
-	terr_t err = TW_SUCCESS;
+void TWI_Mutex_finalize (TWI_Mutex_handle_t m) {
 	int perr;
 
 	perr = pthread_mutex_destroy (m);
-	if (perr) { RET_OS_ERR (perr) }
-
-err_out:;
-	return err;
+	CHECK_MERR
 }
-terr_t TWI_Mutex_lock (TWI_Mutex_handle_t m) {
-	terr_t err = TW_SUCCESS;
+void TWI_Mutex_lock (TWI_Mutex_handle_t m) {
 	int perr;
 
 	perr = pthread_mutex_lock (m);
-	if (perr) { RET_OS_ERR (perr) }
-
-err_out:;
-	return err;
+	CHECK_MERR
 }
-terr_t TWI_Mutex_trylock (TWI_Mutex_handle_t m, int *success) {
-	terr_t err = TW_SUCCESS;
+void TWI_Mutex_trylock (TWI_Mutex_handle_t m, int *success) {
 	int perr;
 
 	perr = pthread_mutex_trylock (m);
-	if (perr) {
-		if (perr == EBUSY)
-			*success = 0;
-		else
-			RET_OS_ERR (perr)
-	} else
+	if (perr == EBUSY)
+		*success = 0;
+	else {
+		CHECK_MERR
 		*success = 1;
-
-err_out:;
-	return err;
+	}
 }
-terr_t TWI_Mutex_unlock (TWI_Mutex_handle_t m) {
-	terr_t err = TW_SUCCESS;
+void TWI_Mutex_unlock (TWI_Mutex_handle_t m) {
 	int perr;
 
 	perr = pthread_mutex_unlock (m);
-	if (perr) { RET_OS_ERR (perr) }
-
-err_out:;
-	return err;
+	CHECK_MERR
 }
 #endif

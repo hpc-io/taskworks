@@ -57,6 +57,7 @@ typedef struct TW_Driver_t {
 	terr_t (*Task_create_barrier) (TW_Handle_t engine,	// Must have option of global
 								   int dep_tag,
 								   int tag,
+								   void *dispatcher_obj,
 								   TW_Handle_t *htask);	 // Create a new barrier task
 	terr_t (*Task_commit) (TW_Handle_t htask,
 						   TW_Handle_t engine);	 // Put the task into the dag

@@ -12,18 +12,66 @@
 
 #include "twabt.h"
 
+terr_t TWABTI_Task_free (TWABT_Task_t *tp) {  // Free up a task
+	terr_t err = TW_SUCCESS;
+	int abterr;
+	int is_zero;
+	TWABT_Task_dep_t *dp;
+	TWI_Nb_list_itr_t itr;
+
+	TWI_Rwlock_wlock (&(tp->lock));
+
+	// Remove all dependencies
+	itr = TWI_Nb_list_begin (tp->childs);  // Childs
+	while (itr != TWI_Nb_list_end (tp->childs)) {
+		dp = itr->data;
+
+		// Decrease ref count, if we are the last one, free the dep struct
+		is_zero = OPA_decr_and_test_int (&(dp->ref));
+		if (is_zero) { TWI_Free (dp); }
+
+		itr = TWI_Nb_list_next (itr);
+	}
+	itr = TWI_Nb_list_begin (tp->parents);	// Parents
+	while (itr != TWI_Nb_list_end (tp->parents)) {
+		dp = itr->data;
+
+		// Decrease ref count, if we are the last one, free the dep struct
+		is_zero = OPA_decr_and_test_int (&(dp->ref));
+		if (is_zero) { TWI_Free (dp); }
+
+		itr = TWI_Nb_list_next (itr);
+	}
+
+	if (tp->abt_task != ABT_TASK_NULL) {
+		// Canceling cause seg fault in argobots
+		// abterr = ABT_task_cancel (tp->abt_task);
+		// CHECK_ABTERR
+		abterr = ABT_task_free (&(tp->abt_task));
+		CHECK_ABTERR
+	}
+	TWI_Rwlock_wunlock (&(tp->lock));
+
+err_out:;
+	TWI_Nb_list_free (tp->parents);
+	TWI_Nb_list_free (tp->childs);
+	TWI_Rwlock_finalize (&(tp->lock));
+	TWI_Free (tp);
+	return err;
+}
+
 void TWABTI_Task_abttask_cb (void *task) { TWABTI_Task_run ((TWABT_Task_t *)task, NULL); }
 
 terr_t TWABTI_Task_run (TWABT_Task_t *tp, TWI_Bool_t *successp) {
 	terr_t err = TW_SUCCESS;
 	int ret;
-	int success;
+	TWI_Bool_t success;
 
 	// The task can already be done by the main thread or other ES from queue of other priority
 	err = TWABTI_Task_update_status (tp, TW_Task_STAT_QUEUEING, TW_Task_STAT_RUNNING, &success);
 	CHECK_ERR
 
-	if (success) {
+	if (success == TWI_TRUE) {
 		// Only run if there is callback function
 		if (tp->handler) {
 			ret = tp->handler (tp->data);
@@ -52,7 +100,7 @@ static terr_t TWABTI_Task_run_dep_core (TWABT_Task_t *tp,
 	TWABT_Task_dep_t *dp;
 	TWI_Nb_list_itr_t i;
 
-	while (!success) {
+	while (success != TWI_TRUE) {
 		status = OPA_load_int (&(tp->status));
 		if (status == TW_Task_STAT_QUEUEING) {
 			err = TWABTI_Task_run (tp, &success);
@@ -67,7 +115,7 @@ static terr_t TWABTI_Task_run_dep_core (TWABT_Task_t *tp,
 						err = TWABTI_Task_run_dep_core (dp->parent, h, &success);
 						CHECK_ERR
 					}
-					if (success) break;
+					if (success == TWI_TRUE) break;
 				}
 
 				i = TWI_Nb_list_next (i);
@@ -101,10 +149,13 @@ err_out:;
 	return err;
 }
 
-terr_t TWABTI_Task_update_status (TWABT_Task_t *tp, int old_stat, int new_stat, int *success) {
+terr_t TWABTI_Task_update_status (TWABT_Task_t *tp,
+								  int old_stat,
+								  int new_stat,
+								  TWI_Bool_t *success) {
 	terr_t err = TW_SUCCESS;
 
-	if (success) *success = 0;
+	if (success) *success = TWI_FALSE;
 
 	// Old stat need to be different
 	if (old_stat != new_stat) {
@@ -135,7 +186,7 @@ terr_t TWABTI_Task_update_status (TWABT_Task_t *tp, int old_stat, int new_stat, 
 					break;
 			}
 
-			if (success) *success = 1;
+			if (success) *success = TWI_TRUE;
 		}
 	}
 
@@ -149,18 +200,21 @@ terr_t TWABTI_Task_queue (TWABT_Task_t *tp) {
 
 	if (OPA_load_int (&(tp->status)) != TW_Task_STAT_QUEUEING) { RET_ERR (TW_ERR_STATUS) }
 
-	if (tp->abt_task != ABT_TASK_NULL) {
-		abterr = ABT_task_free (&(tp->abt_task));
-		CHECK_ABTERR
-	}
-
-	err = TWI_Nb_list_insert_front (tp->ep->tasks, tp);
-	CHECK_ERR
-
-	/* Argobot tasks can't be force removed, create them only when there are workers */
-	if (tp->ep->ness > 0) {
-		abterr = ABT_task_create (tp->ep->pool, TWABTI_Task_abttask_cb, tp, &(tp->abt_task));
-		CHECK_ABTERR
+	if (tp->handler) {
+		if (tp->abt_task != ABT_TASK_NULL) {
+			abterr = ABT_task_free (&(tp->abt_task));
+			CHECK_ABTERR
+		}
+		err = TWI_Nb_list_insert_front (tp->ep->tasks, tp);
+		CHECK_ERR
+		/* Argobot tasks can't be force removed, create them only when there are workers */
+		if (tp->ep->ness > 0) {
+			abterr = ABT_task_create (tp->ep->pool, TWABTI_Task_abttask_cb, tp, &(tp->abt_task));
+			CHECK_ABTERR
+		}
+	} else {
+		err = TWABTI_Task_update_status (tp, TW_Task_STAT_QUEUEING, TW_Task_STAT_COMPLETE, NULL);
+		CHECK_ERR
 	}
 
 err_out:;

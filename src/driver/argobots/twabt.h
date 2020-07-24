@@ -88,6 +88,10 @@ typedef struct TWABT_Task_dep_t {
 	OPA_int_t ref;		   // Reference count
 } TWABT_Task_dep_t;
 
+extern TWI_Ts_vector_handle_t TWABTI_Tasks;
+extern TWI_Ts_vector_handle_t TWABTI_Engines;
+extern TWI_Ts_vector_handle_t TWABTI_Events;
+
 /* Init callbacks */
 terr_t TWABT_Init (int *argc, char ***argv);
 terr_t TWABT_Finalize (void);
@@ -115,6 +119,7 @@ terr_t TWABT_Task_free (TW_Handle_t task);			   // Free up a task
 terr_t TWABT_Task_create_barrier (TW_Handle_t engine,  // Must have option of global
 								  int dep_tag,
 								  int tag,
+								  void *dispatcher_obj,
 								  TW_Handle_t *task);  // Create a new barrier task
 terr_t TWABT_Task_commit (TW_Handle_t task,
 						  TW_Handle_t engine);	// Put the task into the dag
@@ -142,6 +147,9 @@ terr_t TWABT_Event_commit (TW_Handle_t engine,
 terr_t TWABT_Event_retract (TW_Handle_t hevt);	// Stop watching
 
 /* Internal functions */
+terr_t TWABTI_Engine_free (TWABT_Engine_t *engine);
+terr_t TWABTI_Task_free (TWABT_Task_t *task);
+// terr_t TWABTI_Event_free (TWABT_Event_t *hevt);
 
 /* Error handling */
 terr_t TWABT_Err_to_tw_err (int abterr);

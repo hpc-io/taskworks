@@ -57,6 +57,8 @@ terr_t TWI_Nb_list_init (TWI_Nb_list_handle_t l) {
 
 	OPA_store_ptr (&(l->head.next), &(l->tail));
 	OPA_store_ptr (&(l->tail.next), NULL);
+	OPA_store_ptr (&(l->head.next_free), NULL);
+	OPA_store_ptr (&(l->tail.next_free), NULL);
 
 	return err;
 }

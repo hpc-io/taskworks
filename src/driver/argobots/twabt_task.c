@@ -18,8 +18,8 @@ terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 						  int tag,
 						  void *dispatcher_obj,
 						  TW_Handle_t *htask) {	 // Create a new task
-	terr_t err = TW_SUCCESS;
-	TWABT_Task_t *tp;
+	terr_t err		 = TW_SUCCESS;
+	TWABT_Task_t *tp = NULL;
 
 	tp = (TWABT_Task_t *)TWI_Malloc (sizeof (TWABT_Task_t));
 	CHECK_PTR (tp)
@@ -41,6 +41,9 @@ terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 	tp->dispatcher_obj = dispatcher_obj;
 	OPA_store_int (&(tp->status), TW_Task_STAT_PENDING);
 
+	// Add to opened task list
+	TWI_Ts_vector_push_back (TWABTI_Tasks, tp);
+
 	*htask = tp;
 
 err_out:;
@@ -55,67 +58,55 @@ err_out:;
 }
 
 terr_t TWABT_Task_free (TW_Handle_t htask) {  // Free up a task
-	terr_t err = TW_SUCCESS;
-	int abterr;
-	int is_zero;
 	TWABT_Task_t *tp = (TWABT_Task_t *)htask;
-	TWABT_Task_dep_t *dp;
-	TWI_Nb_list_itr_t itr;
 
-	err = TWI_Rwlock_wlock (&(tp->lock));
-	CHECK_ERR
+	TWI_Ts_vector_swap_erase (TWABTI_Tasks, tp);
 
-	// Remove all dependencies
-	itr = TWI_Nb_list_begin (tp->childs);  // Childs
-	while (itr != TWI_Nb_list_end (tp->childs)) {
-		dp = itr->data;
-
-		// Decrease ref count, if we are the last one, free the dep struct
-		is_zero = OPA_decr_and_test_int (&(dp->ref));
-		if (is_zero) { TWI_Free (dp); }
-
-		itr = TWI_Nb_list_next (itr);
-	}
-	itr = TWI_Nb_list_begin (tp->parents);	// Parents
-	while (itr != TWI_Nb_list_end (tp->parents)) {
-		dp = itr->data;
-
-		// Decrease ref count, if we are the last one, free the dep struct
-		is_zero = OPA_decr_and_test_int (&(dp->ref));
-		if (is_zero) { TWI_Free (dp); }
-
-		itr = TWI_Nb_list_next (itr);
-	}
-
-	if (tp->abt_task != ABT_TASK_NULL) {
-		abterr = ABT_task_cancel (tp->abt_task);
-		CHECK_ABTERR
-		abterr = ABT_task_free (&(tp->abt_task));
-		CHECK_ABTERR
-	}
-
-	err = TWI_Rwlock_wunlock (&(tp->lock));
-	CHECK_ERR
-
-err_out:;
-	TWI_Nb_list_free (tp->parents);
-	TWI_Nb_list_free (tp->childs);
-	TWI_Rwlock_finalize (&(tp->lock));
-	TWI_Free (tp);
-	return err;
+	return TWABTI_Task_free (tp);
 }
 
-terr_t TWABT_Task_create_barrier (TW_Handle_t TWI_UNUSED engine,  // Must have option of global
-								  int TWI_UNUSED dep_tag,
-								  int TWI_UNUSED tag,
-								  TW_Handle_t TWI_UNUSED *htask) {	// Create a new barrier task
-	return TW_ERR_NOT_SUPPORTED;
+terr_t TWABT_Task_create_barrier (TW_Handle_t engine,  // Must have option of global
+								  int dep_tag,
+								  int tag,
+								  void *dispatcher_obj,
+								  TW_Handle_t *htask) {	 // Create a new barrier task
+	terr_t err = TW_SUCCESS;
+	int i, size;
+	TWABT_Task_t *tp, *pp;
+
+	// Create task
+	err = TWABT_Task_create (NULL, NULL, TW_TASK_DEP_ALL_COMPLETE, tag, dispatcher_obj,
+							 (TW_Handle_t *)(&tp));
+	CHECK_ERR
+
+	// Set up dependency
+	TWI_Ts_vector_lock (TWABTI_Tasks);
+	size = (int)TWI_Ts_vector_size (TWABTI_Tasks);
+	for (i = 0; i < size; i++) {
+		pp = TWABTI_Tasks->data[i];
+		if (pp == tp) continue;
+		if (engine == NULL || engine == pp->ep) {
+			if (dep_tag == TW_TASK_TAG_ANY || dep_tag == pp->tag) {
+				err = TWABT_Task_add_dep (tp, pp);
+				CHECK_ERR
+			}
+		}
+	}
+	TWI_Ts_vector_unlock (TWABTI_Tasks);
+
+	*htask = tp;
+err_out:;
+	if (err) {
+		if (tp) { TWABT_Task_free (tp); }
+	}
+	return err;
 }
 
 terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the task into the dag
 	terr_t err = TW_SUCCESS;
 	int abterr;
-	int success, ndep;
+	int ndep;
+	TWI_Bool_t success;
 	int pstatus, dstatus, tstatus;
 	TWABT_Engine_t *ep = (TWABT_Engine_t *)engine;
 	TWABT_Task_t *tp   = (TWABT_Task_t *)htask;
@@ -124,11 +115,10 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 
 	err = TWABTI_Task_update_status (tp, TW_Task_STAT_PENDING, TW_Task_STAT_WAITING, &success);
 	CHECK_ERR
-	if (!success) { RET_ERR (TW_ERR_STATUS) }
+	if (success != TWI_TRUE) { RET_ERR (TW_ERR_STATUS) }
 
 	// Prevent modification of dependencies
-	err = TWI_Rwlock_wlock (&(tp->lock));
-	CHECK_ERR
+	TWI_Rwlock_wlock (&(tp->lock));
 
 	// Count number of deps
 	for (i = TWI_Nb_list_begin (tp->parents), ndep = 0; i != TWI_Nb_list_end (tp->parents);
@@ -175,19 +165,19 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 	// Set engine
 	tp->ep = ep;
 
-	err = TWABTI_Task_update_status (tp, TW_Task_STAT_WAITING, tstatus, NULL);
+	err = TWABTI_Task_update_status (tp, TW_Task_STAT_WAITING, tstatus, &success);
 	CHECK_ERR
 
 err_out:;
-	err = TWI_Rwlock_wunlock (&(tp->lock));
-	CHECK_ERR
+	TWI_Rwlock_wunlock (&(tp->lock));
 
 	return err;
 }
 
 terr_t TWABT_Task_retract (TW_Handle_t htask) {
 	terr_t err = TW_SUCCESS;
-	int status, success;
+	int status;
+	TWI_Bool_t success;
 	TWABT_Task_t *tp = (TWABT_Task_t *)htask;
 
 	while (1) {
@@ -196,7 +186,7 @@ terr_t TWABT_Task_retract (TW_Handle_t htask) {
 			err = TWABTI_Task_update_status (tp, status, TW_Task_STAT_ABORT, &success);
 			CHECK_ERR
 
-			if (success) break;
+			if (success == TWI_TRUE) break;
 		} else {
 			RET_ERR (TW_ERR_STATUS)
 		}
@@ -275,8 +265,7 @@ terr_t TWABT_Task_add_dep (TW_Handle_t child, TW_Handle_t parent) {
 	TWABT_Task_t *pp = (TWABT_Task_t *)parent;
 	TWABT_Task_dep_t *dp;
 
-	err = TWI_Rwlock_rlock (&(cp->lock));
-	CHECK_ERR
+	TWI_Rwlock_rlock (&(cp->lock));
 
 	dp = (TWABT_Task_dep_t *)TWI_Malloc (sizeof (TWABT_Task_dep_t));
 	CHECK_PTR (dp)
@@ -291,8 +280,7 @@ terr_t TWABT_Task_add_dep (TW_Handle_t child, TW_Handle_t parent) {
 	CHECK_ERR
 
 err_out:;
-	err = TWI_Rwlock_runlock (&(cp->lock));
-	CHECK_ERR
+	TWI_Rwlock_runlock (&(cp->lock));
 
 	return err;
 }
@@ -305,8 +293,7 @@ terr_t TWABT_Task_rm_dep (TW_Handle_t child, TW_Handle_t parent) {
 	TWABT_Task_dep_t *dp;
 	TWI_Nb_list_itr_t itr;
 
-	err = TWI_Rwlock_rlock (&(cp->lock));
-	CHECK_ERR
+	TWI_Rwlock_rlock (&(cp->lock));
 
 	// Remove all dependencies
 	itr = TWI_Nb_list_begin (cp->parents);	// Parents
@@ -322,11 +309,10 @@ terr_t TWABT_Task_rm_dep (TW_Handle_t child, TW_Handle_t parent) {
 
 		itr = TWI_Nb_list_next (itr);
 	}
-	if (!itr) { RET_ERR (TW_ERR_NOT_FOUND) }
+	if (!itr) { ASSIGN_ERR (TW_ERR_NOT_FOUND) }
 
 err_out:;
-	err = TWI_Rwlock_runlock (&(cp->lock));
-	CHECK_ERR
+	TWI_Rwlock_runlock (&(cp->lock));
 
 	return err;
 }

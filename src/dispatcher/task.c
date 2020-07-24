@@ -37,6 +37,8 @@ terr_t TW_Task_create (TW_Task_handler_t task_cb,
 	terr_t err = TW_SUCCESS;
 	TW_Obj_handle_t tp;
 
+	if (tag < 0) ASSIGN_ERR (TW_ERR_INVAL)
+
 	tp = (TW_Obj_handle_t)TWI_Malloc (sizeof (TW_Obj_t));
 	CHECK_PTR (tp)
 	tp->objtype = TW_Obj_type_task;
@@ -72,14 +74,15 @@ terr_t TW_Task_create_barrier (TW_Engine_handle_t engine,  // Must have option o
 	terr_t err = TW_SUCCESS;
 	TW_Obj_handle_t tp;
 
-	CHK_HANDLE (engine, TW_Obj_type_engine)
+	if (engine && engine->objtype != TW_Obj_type_engine) ASSIGN_ERR (TW_ERR_INVAL)
+	if (tag < 0) ASSIGN_ERR (TW_ERR_INVAL)
 
 	tp = (TW_Obj_handle_t)TWI_Malloc (sizeof (TW_Obj_t));
 	CHECK_PTR (tp)
 	tp->objtype = TW_Obj_type_task;
 	tp->driver	= TWI_Active_driver;
 
-	err = tp->driver->Task_create_barrier (engine, dep_tag, tag, &(tp->driver_obj));
+	err = tp->driver->Task_create_barrier (engine, dep_tag, tag, tp, &(tp->driver_obj));
 	CHECK_ERR
 
 	*task = tp;

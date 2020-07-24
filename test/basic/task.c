@@ -27,7 +27,7 @@ int main (int argc, char *argv[]) {
 	int nerr   = 0;
 	int i;
 	int status;
-	volatile atomic_int ctr;
+	atomic_int ctr;
 	TW_Engine_handle_t eng;
 	TW_Task_handle_t task[NUM_TASKS];
 
@@ -57,8 +57,8 @@ int main (int argc, char *argv[]) {
 
 	for (i = 0; i < NUM_TASKS; i++) {
 		err = TW_Task_get_status (task[i], &status);
-
 		CHECK_ERR
+		EXP_VAL (status, TW_Task_STAT_COMPLETE, "%d")
 	}
 
 	for (i = 0; i < NUM_TASKS; i++) {

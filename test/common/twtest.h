@@ -42,3 +42,12 @@
 			nerr++;                                                                              \
 		}                                                                                        \
 	}
+
+#define EXP_COND(C)                                                                              \
+	{                                                                                            \
+		if (!(C)) {                                                                              \
+			printf ("Error at line %d in %s: Expect (" #C ") = true, but got false\n", __LINE__, \
+					__FILE__);                                                                   \
+			nerr++;                                                                              \
+		}                                                                                        \
+	}

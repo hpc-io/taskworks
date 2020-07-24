@@ -43,6 +43,10 @@ TW_Driver_t TWABT_Driver = {
 	TWABT_Event_retract,  // Stop watching
 };
 
+TWI_Ts_vector_handle_t TWABTI_Engines = NULL;
+TWI_Ts_vector_handle_t TWABTI_Tasks	  = NULL;
+TWI_Ts_vector_handle_t TWABTI_Events  = NULL;
+
 static int TWABT_Abt_need_finalize = 0;
 
 /**
@@ -63,6 +67,14 @@ terr_t TWABT_Init (int TWI_UNUSED *argc, char TWI_UNUSED ***argv) {
 		TWABT_Abt_need_finalize = 1;
 	}
 
+	// Initialize object lists
+	TWABTI_Engines = TWI_Ts_vector_create ();
+	CHECK_PTR (TWABTI_Engines)
+	TWABTI_Tasks = TWI_Ts_vector_create ();
+	CHECK_PTR (TWABTI_Tasks)
+	TWABTI_Events = TWI_Ts_vector_create ();
+	CHECK_PTR (TWABTI_Events)
+
 err_out:;
 	return err;
 }
@@ -75,7 +87,41 @@ err_out:;
 terr_t TWABT_Finalize (void) {
 	terr_t err = TW_SUCCESS;
 	int abterr;
+	int i, size;
 
+	// Free unfreed objects
+	/*
+	TWI_Ts_vector_lock (TWABTI_Events);
+	size = (int)TWI_Ts_vector_size (TWABTI_Events);
+	for (i = 0; i < size; i++) {
+		err = TWABTI_Event_free (TWABTI_Events->data[i]);
+		CHECK_ERR
+	}
+	TWI_Ts_vector_unlock (TWABTI_Events);
+	*/
+
+	TWI_Ts_vector_lock (TWABTI_Tasks);
+	size = (int)TWI_Ts_vector_size (TWABTI_Tasks);
+	for (i = 0; i < size; i++) {
+		err = TWABTI_Task_free (TWABTI_Tasks->data[i]);
+		CHECK_ERR
+	}
+	TWI_Ts_vector_unlock (TWABTI_Tasks);
+
+	TWI_Ts_vector_lock (TWABTI_Engines);
+	size = (int)TWI_Ts_vector_size (TWABTI_Engines);
+	for (i = 0; i < size; i++) {
+		err = TWABTI_Engine_free (TWABTI_Engines->data[i]);
+		CHECK_ERR
+	}
+	TWI_Ts_vector_unlock (TWABTI_Engines);
+
+	// Free object list
+	TWI_Ts_vector_free (TWABTI_Events);
+	TWI_Ts_vector_free (TWABTI_Tasks);
+	TWI_Ts_vector_free (TWABTI_Engines);
+
+	// Finalize argobots
 	if (TWABT_Abt_need_finalize) {
 		abterr = ABT_finalize ();
 		CHECK_ABTERR

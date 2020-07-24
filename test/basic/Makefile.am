@@ -20,6 +20,7 @@ TESTPROGRAMS =  init \
                 no_worker \
                 task \
                 task_dep \
+                task_barrier \
                 custom_dep
 # mutual_dep
 
