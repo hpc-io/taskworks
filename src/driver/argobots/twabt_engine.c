@@ -139,6 +139,7 @@ terr_t TWABT_Engine_do_work (TW_Handle_t engine, ttime_t timeout) {
 	TWABT_Task_t *tp;
 	TWABT_Engine_t *ep = (TWABT_Engine_t *)engine;
 
+	TWI_Nb_list_inc_ref (ep->tasks);
 	i		 = TWI_Nb_list_begin (ep->tasks);
 	stoptime = TWI_Time_now () + timeout;
 	do {
@@ -155,6 +156,7 @@ terr_t TWABT_Engine_do_work (TW_Handle_t engine, ttime_t timeout) {
 	} while (TWI_Time_now () < stoptime && have_job);
 
 err_out:;
+	TWI_Nb_list_dec_ref (ep->tasks);
 	return err;
 }
 

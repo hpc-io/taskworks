@@ -35,9 +35,12 @@ build:
     # Install Argobots
     - git clone -b v1.0 https://github.com/pmodels/argobots.git 
     - pushd argobots && ./autogen.sh && ./configure --prefix=${PWD}/../tw_deps && make -j 64 && make -j 64  install && popd
+    # Install libevent
+    - git clone -b release-2.1.12-stable https://github.com/libevent/libevent.git 
+    - pushd libevent && ./autogen.sh && ./configure --prefix=${PWD}/../tw_deps && make -j 64 && make -j 64  install && popd
   script:
     - autoreconf -i
-    - CC=cc ./configure --with-opa=${PWD}/tw_deps --enable-parallel --with-argobots=${PWD}/tw_deps
+    - CC=cc ./configure --with-opa=${PWD}/tw_deps --enable-parallel --with-argobots=${PWD}/tw_deps --with-libevent=${PWD}/tw_deps
     - make -j 64 
   tags:
     - cori

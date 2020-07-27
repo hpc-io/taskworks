@@ -27,6 +27,34 @@
 //#define NEXT(A)		 GET_PTR (OPA_load_ptr (&(A->next)))
 //#define PRE(A)		 GET_PTR (OPA_load_ptr (&(A->pre)))
 
+#define INC_REF TWI_Nb_list_inc_ref (l)
+#define DEC_REF TWI_Nb_list_dec_ref (l)
+
+static inline void TWI_Nb_list_recycle (TWI_Nb_list_handle_t l, TWI_Nb_list_itr_t pos) {
+	TWI_Bool_t done = TWI_FALSE;
+	TWI_Nb_list_itr_t i, j;
+
+	while (done != TWI_TRUE) {
+		done = TWI_TRUE;
+		i	 = &(l->head);
+		while (i && i != pos) {
+			j = i;
+			i = (TWI_Nb_list_itr_t)OPA_load_ptr (&(i->next_free));
+		}
+		if (i) {
+			if (pos == OPA_cas_ptr (&(j->next_free), pos, NULL)) {
+				while (i) {
+					j = i;
+					i = (TWI_Nb_list_itr_t)OPA_load_ptr (&(i->next_free));
+					TWI_Free (j);
+				}
+			} else {
+				done = TWI_FALSE;
+			}
+		}
+	}
+}
+
 terr_t TWI_Nb_list_create (TWI_Nb_list_handle_t *l) {
 	terr_t err = TW_SUCCESS;
 
@@ -59,6 +87,7 @@ terr_t TWI_Nb_list_init (TWI_Nb_list_handle_t l) {
 	OPA_store_ptr (&(l->tail.next), NULL);
 	OPA_store_ptr (&(l->head.next_free), NULL);
 	OPA_store_ptr (&(l->tail.next_free), NULL);
+	OPA_store_int (&(l->ref), 0);
 
 	return err;
 }
@@ -83,43 +112,30 @@ err_out:;
 
 terr_t TWI_Nb_list_insert_front (TWI_Nb_list_handle_t l, void *data) {
 	terr_t err = TW_SUCCESS;
-	// TWI_Nb_list_itr_t new_node;
-	// TWI_Nb_list_itr_t old_head, cur_head;
 
-	if (!l) { ASSIGN_ERR (TW_ERR_INVAL) }
+	INC_REF;
 
 	err = TWI_Nb_list_insert_at (l, &(l->head), data, NULL);
+	CHECK_ERR
+
+	DEC_REF;
 
 err_out:;
 	return err;
-
-	/*
-		// Create new node
-		new_node = (TWI_Nb_list_itr_t)TWI_Malloc (sizeof (TWI_Nb_list_node_t));
-		CHECK_PTR (new_node);
-		new_node->data = data;
-
-		// Try insert until we success
-		cur_head = OPA_load_ptr (&(l->head));
-		do {
-			old_head = cur_head;
-			OPA_store_ptr (&(new_node->next), old_head);
-			cur_head = OPA_cas_ptr (&(l->head), old_head, new_node);
-		} while (cur_head != old_head);
-	*/
 }
 
 terr_t TWI_Nb_list_insert_at (TWI_Nb_list_handle_t l,
 							  TWI_Nb_list_itr_t pos,
 							  void *data,
 							  TWI_Bool_t *successp) {
-	terr_t err = TW_SUCCESS;
-	// OPA_ptr_t *next;
+	terr_t err				   = TW_SUCCESS;
 	TWI_Bool_t success		   = TWI_TRUE;
 	TWI_Nb_list_itr_t new_node = NULL;
 	TWI_Nb_list_itr_t old_next, cur_next;
 
-	if (pos == &(l->tail)) ASSIGN_ERR (TW_ERR_INVAL)
+	INC_REF;
+
+	// if (pos == &(l->tail)) ASSIGN_ERR (TW_ERR_INVAL)
 
 	new_node = (TWI_Nb_list_itr_t)TWI_Malloc (sizeof (TWI_Nb_list_node_t));
 	CHECK_PTR (new_node);
@@ -164,6 +180,9 @@ terr_t TWI_Nb_list_insert_at (TWI_Nb_list_handle_t l,
 
 err_out:;
 	if (err || (!success)) { TWI_Free (new_node); }
+
+	DEC_REF;
+
 	return err;
 }
 
@@ -173,7 +192,9 @@ terr_t TWI_Nb_list_del_at (TWI_Nb_list_handle_t l, TWI_Nb_list_itr_t pos, int *s
 	int step		   = 0;
 	TWI_Nb_list_itr_t pre, next, new_next, pre_next;
 
-	if (pos == &(l->head) || pos == &(l->tail)) ASSIGN_ERR (TW_ERR_INVAL)
+	INC_REF;
+
+	// if (pos == &(l->head) || pos == &(l->tail)) ASSIGN_ERR (TW_ERR_INVAL)
 
 	// Mark the next pointer for deletion
 	while (step < 2) {
@@ -212,17 +233,21 @@ terr_t TWI_Nb_list_del_at (TWI_Nb_list_handle_t l, TWI_Nb_list_itr_t pos, int *s
 
 	if (successp) *successp = success;
 
-err_out:;
+	// err_out:;
+	DEC_REF;
 	return err;
 }
 
 TWI_Nb_list_itr_t TWI_Nb_list_find (TWI_Nb_list_handle_t l, void *data) {
 	TWI_Nb_list_itr_t i;
 
+	INC_REF;
+
 	for (i = TWI_Nb_list_begin (l); i != TWI_Nb_list_end (l); i = TWI_Nb_list_next (i)) {
 		if (i->data == data) { break; }
 	}
 
+	INC_REF;
 	return i;
 }
 
@@ -230,6 +255,8 @@ terr_t TWI_Nb_list_del (TWI_Nb_list_handle_t l, void *data) {
 	terr_t err		   = TW_SUCCESS;
 	TWI_Bool_t success = TWI_FALSE;
 	TWI_Nb_list_itr_t i;
+
+	INC_REF;
 
 	do {
 		i = TWI_Nb_list_find (l, data);
@@ -257,8 +284,8 @@ terr_t TWI_Nb_list_del (TWI_Nb_list_handle_t l, void *data) {
 			}
 		}
 	*/
-
 err_out:;
+	DEC_REF;
 	return err;
 }
 
@@ -317,3 +344,13 @@ TWI_Nb_list_itr_t TWI_Nb_list_pre (TWI_Nb_list_handle_t l, TWI_Nb_list_itr_t itr
 
 	return pre;
 }
+
+void TWI_Nb_list_inc_ref (TWI_Nb_list_handle_t l) {
+	int val;
+	TWI_Nb_list_itr_t pos;
+	pos = OPA_load_ptr (&(l->head.next_free));
+	val = OPA_fetch_and_incr_int (&(l->ref));
+	if (val == 0) { TWI_Nb_list_recycle (l, pos); }
+}
+
+void TWI_Nb_list_dec_ref (TWI_Nb_list_handle_t l) { OPA_decr_int (&(l->ref)); }

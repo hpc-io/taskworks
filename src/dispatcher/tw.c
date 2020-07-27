@@ -96,13 +96,12 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 		case TW_Event_backend_default:	// The first available backend
 #ifdef ENABLE_LIBEVENT
 		case TW_Event_backend_libevent:	 // Argobots
-			TWI_Active_evt_driver = ;
+			TWI_Active_evt_driver = NULL;
 			break;
 #endif
 		case TW_Event_backend_none:
 			TWI_Active_evt_driver = NULL;
 			break;
-		case TW_Event_backend_libevent:
 		default:
 			ASSIGN_ERR (TW_ERR_INVAL_EVT_BACKEND)
 			break;

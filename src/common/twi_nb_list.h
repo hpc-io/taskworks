@@ -28,6 +28,7 @@ typedef struct TWI_Nb_list_t {
 	TWI_Rwlock_t lock;
 	TWI_Nb_list_node_t head;
 	TWI_Nb_list_node_t tail;
+	OPA_int_t ref;
 } TWI_Nb_list_t;
 typedef TWI_Nb_list_t *TWI_Nb_list_handle_t;
 
@@ -83,3 +84,5 @@ TWI_Nb_list_itr_t TWI_Nb_list_begin (TWI_Nb_list_handle_t l);
 TWI_Nb_list_itr_t TWI_Nb_list_end (TWI_Nb_list_handle_t l);
 TWI_Nb_list_itr_t TWI_Nb_list_next (TWI_Nb_list_itr_t itr);
 TWI_Nb_list_itr_t TWI_Nb_list_pre (TWI_Nb_list_handle_t l, TWI_Nb_list_itr_t itr);
+void TWI_Nb_list_inc_ref (TWI_Nb_list_handle_t l);
+void TWI_Nb_list_dec_ref (TWI_Nb_list_handle_t l);

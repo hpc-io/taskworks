@@ -122,6 +122,9 @@ extern terr_t TW_Task_commit (TW_Task_handle_t task,
 extern terr_t TW_Task_commit_barrier (TW_Task_handle_t task);
 extern terr_t TW_Task_retract (TW_Task_handle_t task);	// Remove task form the dag
 
+// Mark complete without running
+// Mark as running
+
 // Wait
 extern terr_t TW_Task_wait (TW_Task_handle_t task,
 							int64_t timeout);  // Wait for a single task to complete. The
@@ -139,6 +142,9 @@ extern terr_t TW_Task_rm_dep (TW_Task_handle_t child, TW_Task_handle_t parent);
 extern terr_t TW_Task_get_status (TW_Task_handle_t task, int *statusp);
 extern terr_t TW_Task_get_data (TW_Task_handle_t task, void **datap);
 extern terr_t TW_Task_get_tag (TW_Task_handle_t task, int *tagp);
+
+// get dep. tasks
+// get task of certain tag
 
 extern TW_Task_dep_handler_t TW_Task_dep_null;
 extern TW_Task_dep_handler_t TW_Task_dep_all_complete;

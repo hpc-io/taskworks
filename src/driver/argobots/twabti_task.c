@@ -22,6 +22,7 @@ terr_t TWABTI_Task_free (TWABT_Task_t *tp) {  // Free up a task
 	TWI_Rwlock_wlock (&(tp->lock));
 
 	// Remove all dependencies
+	TWI_Nb_list_inc_ref (tp->childs);
 	itr = TWI_Nb_list_begin (tp->childs);  // Childs
 	while (itr != TWI_Nb_list_end (tp->childs)) {
 		dp = itr->data;
@@ -32,6 +33,8 @@ terr_t TWABTI_Task_free (TWABT_Task_t *tp) {  // Free up a task
 
 		itr = TWI_Nb_list_next (itr);
 	}
+	TWI_Nb_list_dec_ref (tp->childs);
+	TWI_Nb_list_inc_ref (tp->parents);
 	itr = TWI_Nb_list_begin (tp->parents);	// Parents
 	while (itr != TWI_Nb_list_end (tp->parents)) {
 		dp = itr->data;
@@ -42,6 +45,7 @@ terr_t TWABTI_Task_free (TWABT_Task_t *tp) {  // Free up a task
 
 		itr = TWI_Nb_list_next (itr);
 	}
+	TWI_Nb_list_dec_ref (tp->parents);
 
 	if (tp->abt_task != ABT_TASK_NULL) {
 		// Canceling cause seg fault in argobots
@@ -106,6 +110,7 @@ static terr_t TWABTI_Task_run_dep_core (TWABT_Task_t *tp,
 			err = TWABTI_Task_run (tp, &success);
 			CHECK_ERR
 		} else if (status == TW_Task_STAT_WAITING) {
+			TWI_Nb_list_dec_ref (tp->parents);
 			i = TWI_Nb_list_begin (tp->parents);
 			while (i != TWI_Nb_list_end (tp->parents)) {
 				dp = (TWABT_Task_dep_t *)i->data;
@@ -113,6 +118,7 @@ static terr_t TWABTI_Task_run_dep_core (TWABT_Task_t *tp,
 				if (OPA_load_int (&(dp->ref)) == 2) {
 					if (TWI_Hash_insert (h, dp->parent) == TW_SUCCESS) {
 						err = TWABTI_Task_run_dep_core (dp->parent, h, &success);
+						if (err != TW_SUCCESS) TWI_Nb_list_dec_ref (tp->parents);
 						CHECK_ERR
 					}
 					if (success == TWI_TRUE) break;
@@ -120,6 +126,7 @@ static terr_t TWABTI_Task_run_dep_core (TWABT_Task_t *tp,
 
 				i = TWI_Nb_list_next (i);
 			}
+			TWI_Nb_list_dec_ref (tp->parents);
 		} else {
 			break;
 		}
@@ -228,6 +235,7 @@ terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new
 	TWABT_Task_dep_t *dp;
 
 	// Notify child tasks
+	TWI_Nb_list_inc_ref (tp->childs);
 	itr = TWI_Nb_list_begin (tp->childs);
 	while (itr != TWI_Nb_list_end (tp->childs)) {
 		dp			= itr->data;
@@ -245,5 +253,6 @@ terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new
 	}
 
 err_out:;
+	TWI_Nb_list_dec_ref (tp->childs);
 	return err;
 }

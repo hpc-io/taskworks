@@ -120,6 +120,8 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 	// Prevent modification of dependencies
 	TWI_Rwlock_wlock (&(tp->lock));
 
+	TWI_Nb_list_inc_ref (tp->parents);
+
 	// Count number of deps
 	for (i = TWI_Nb_list_begin (tp->parents), ndep = 0; i != TWI_Nb_list_end (tp->parents);
 		 i = TWI_Nb_list_next (i), ndep++)
@@ -169,6 +171,8 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 	CHECK_ERR
 
 err_out:;
+	TWI_Nb_list_dec_ref (tp->parents);
+
 	TWI_Rwlock_wunlock (&(tp->lock));
 
 	return err;
@@ -295,6 +299,8 @@ terr_t TWABT_Task_rm_dep (TW_Handle_t child, TW_Handle_t parent) {
 
 	TWI_Rwlock_rlock (&(cp->lock));
 
+	TWI_Nb_list_inc_ref (cp->parents);
+
 	// Remove all dependencies
 	itr = TWI_Nb_list_begin (cp->parents);	// Parents
 	while (itr) {
@@ -312,6 +318,7 @@ terr_t TWABT_Task_rm_dep (TW_Handle_t child, TW_Handle_t parent) {
 	if (!itr) { ASSIGN_ERR (TW_ERR_NOT_FOUND) }
 
 err_out:;
+	TWI_Nb_list_dec_ref (cp->parents);
 	TWI_Rwlock_runlock (&(cp->lock));
 
 	return err;

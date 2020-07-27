@@ -30,3 +30,4 @@ Features:
 ---------
                         Parallel: @ENABLE_PARALLEL@
                  Argobot backend: @ENABLE_ABT@
+                Libevent backend: @ENABLE_LIBEVENT@

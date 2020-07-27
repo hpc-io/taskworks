@@ -30,6 +30,7 @@ AC_DEFUN([UD_MSG_DEBUG],
 AH_TEMPLATE([ENABLE_PARALLEL], [Enable MPI support.])
 AH_TEMPLATE([ENABLE_DEBUG], [Debug build.])
 AH_TEMPLATE([ENABLE_ABT], [Enable Argobots integration.])
+AH_TEMPLATE([ENABLE_LIBEVENT], [Enable libevent integration.])
 
 # Make tests
 AM_EXTRA_RECURSIVE_TARGETS([tests])
@@ -323,8 +324,8 @@ if test "x$enable_debug" = "xyes"; then
    CFLAGS+=" -O0 -g"
    AC_DEFINE(ENABLE_DEBUG, 1)
 fi
-
 # ----------------------------------------------------------------------
+
 # Whether to enable argobots
 enable_abt=no
 AC_ARG_WITH([argobots],
@@ -339,6 +340,7 @@ if test "x$enable_abt" = "xyes"; then
 			enable_abt=no
 			;;
 		*)
+			HAVE_ABT="yes"
 			case "$withval" in
 				*,*)
 					abt_inc="`echo $withval | cut -f1 -d,`"
@@ -365,15 +367,15 @@ if test "x$enable_abt" = "xyes"; then
 				CPPFLAGS="$CPPFLAGS -I$abt_inc"
 			fi
 
-			AC_CHECK_HEADERS([opa_primitives.h opa_queue.h],, [unset HAVE_OPA])
+			AC_CHECK_HEADERS([abt.h],, [unset ENABLE_ABT])
 
 			if test -n "$abt_lib"; then
 				LDFLAGS="$LDFLAGS -L$abt_lib"
 			fi
 
-			AC_CHECK_LIB([opa], [OPA_Interprocess_lock_init],, [unset HAVE_OPA])
+			AC_CHECK_LIB([abt], [ABT_init],, [unset ENABLE_ABT])
 
-			if test -z "$HAVE_OPA"; then
+			if test -z "$HAVE_ABT"; then
 				AC_MSG_ERROR([could not find opa library])
 			fi
 			;;
@@ -392,6 +394,76 @@ if test "x$enable_abt" = "xyes"; then
 	AC_DEFINE(ENABLE_ABT, 1)
 fi
 AM_CONDITIONAL(ENABLE_ABT, [test x$enable_abt = xyes])
+
+# Whether to enable argobots
+enable_libevent=no
+AC_ARG_WITH([libevent],
+						[AC_HELP_STRING([--with-libevent=DIR],
+														[Enable libevent event backend [default=yes]])],[enable_libevent=yes],
+						[enable_libevent=no])
+if test "x$enable_libevent" = "xyes"; then
+	case "$withval" in
+		yes)
+			;;
+		no)
+			enable_libevent=no
+			;;
+		*)
+			HAVE_LIBEVENT="yes"
+			case "$withval" in
+				*,*)
+					libevent_inc="`echo $withval | cut -f1 -d,`"
+					libevent_lib="`echo $withval | cut -f2 -d, -s`"
+					;;
+				*)
+					if test -n "$withval"; then
+						libevent_inc="$withval/include"
+						libevent_lib="$withval/lib"
+					fi
+					;;
+			esac
+
+			## Trying to include -I/usr/include and -L/usr/lib is redundant and
+			## can mess some compilers up.
+			if test "X$libevent_inc" = "X/usr/include"; then
+				libevent_inc=""
+			fi
+			if test "X$libevent_lib" = "X/usr/lib"; then
+				libevent_lib=""
+			fi
+
+			if test -n "$libevent_inc"; then
+				CPPFLAGS="$CPPFLAGS -I$libevent_inc"
+			fi
+
+			AC_CHECK_HEADERS([event2/event.h event.h],, [unset HAVE_LIBEVENT])
+
+			if test -n "$libevent_lib"; then
+				LDFLAGS="$LDFLAGS -L$libevent_lib"
+			fi
+
+			AC_CHECK_LIB([event], [event_init],, [unset HAVE_LIBEVENT])
+
+			if test -z "$HAVE_LIBEVENT"; then
+				AC_MSG_ERROR([could not find libevent library])
+			fi
+			;;
+	esac
+fi
+if test "x$enable_libevent" = "xyes"; then
+	ENABLE_LIBEVENT="yes"
+
+	AC_CHECK_HEADERS([event.h],, [unset ENABLE_LIBEVENT])
+	AC_CHECK_LIB([event], [event_init],, [unset ENABLE_LIBEVENT])
+
+	if test -z "$ENABLE_LIBEVENT"; then
+		AC_MSG_ERROR([could not find libevent library])
+	fi
+
+	AC_DEFINE(ENABLE_LIBEVENT, 1)
+fi
+AM_CONDITIONAL(ENABLE_LIBEVENT, [test x$enable_libevent = xyes])
+
 
 echo "TW_CFLAGS=$TW_CFLAGS"
 
@@ -418,6 +490,7 @@ AC_SUBST([enable_static])
 
 AC_SUBST([ENABLE_PARALLEL])
 AC_SUBST([ENABLE_ABT])
+AC_SUBST([ENABLE_LIBEVENT])
 
 AC_CONFIG_FILES([
 		Makefile 
