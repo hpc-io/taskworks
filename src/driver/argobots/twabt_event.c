@@ -14,7 +14,7 @@
 
 terr_t TWABT_Event_create (TW_Event_handler_t TWI_UNUSED evt_cb,
 						   void TWI_UNUSED *evt_data,
-						   TW_Event_attr_t TWI_UNUSED attr,
+						   TW_Event_args_t TWI_UNUSED attr,
 						   void TWI_UNUSED *dispatcher_obj,
 						   TW_Handle_t TWI_UNUSED *hevt) {
 	return TW_ERR_NOT_SUPPORTED;

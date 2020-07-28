@@ -23,7 +23,7 @@ typedef struct TW_Obj_t *TW_Task_handle_t;
  * We do not use enum because it is not supported by openpa
  */
 // The task hasn't been commited, user can modify the task
-#define TW_Task_STAT_PENDING 1
+#define TW_Task_STAT_PENDING 0x1
 #define TW_Task_STAT_WAITING 0x2  // Commited in the flow graph, waiting on job dependency
 // Ready for processing. Waiting in the job queue for available worker
 #define TW_Task_STAT_QUEUEING 0x4

@@ -138,7 +138,7 @@ terr_t TWABT_Task_inq (TW_Handle_t task, TW_Task_inq_type_t inqtype, void *ret);
 /* Event callbacks */
 terr_t TWABT_Event_create (TW_Event_handler_t evt_cb,
 						   void *evt_data,
-						   TW_Event_attr_t attr,
+						   TW_Event_args_t attr,
 						   void *dispatcher_obj,
 						   TW_Handle_t *hevt);	// Create a new event
 terr_t TWABT_Event_free (TW_Handle_t hevt);

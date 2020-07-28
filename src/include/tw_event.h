@@ -22,46 +22,89 @@
 #include "tw_task.h"
 
 #ifdef _WIN32
-#define TW_Event_socket_t HANDLE
+#define TW_Socket_t HANDLE
+#define TW_Fd_t		HANDLE
 #else
-#define TW_Event_socket_t int
+#define TW_Socket_t int
+#define TW_Fd_t		int
 #endif
 
+#define TW_EVENT_FILE_READ	0x1
+#define TW_EVENT_FILE_WRITE 0x2
+#define TW_EVENT_FILE_ALL	0x3
+
+#define TW_EVENT_SOCKET_READ  0x1
+#define TW_EVENT_SOCKET_WRITE 0x2
+#define TW_EVENT_SOCKET_ALL	  0x3
+
+#define TW_INFINITE -1
+
 typedef enum TW_Event_type_t {
-	TW_Event_type_time,	 // The task hasn't been commited, user can modify the
-						 // task
+	TW_Event_type_timer,  // The task hasn't been commited, user can modify the
+						  // task
 	// File related event
 	TW_Event_type_file,
-	TW_Event_type_file_open,
-
 	TW_Event_type_socket,  // Internet socket related events
 	TW_Event_type_task,	   // Task related event
 	TW_Event_type_mpi,	   // MPI related event
 } TW_Event_type_t;
 
-typedef struct TW_Obj_t *TW_Event_handle_t;
-typedef struct TW_Event_attr_t {
-	TW_Event_type_t type;
-	/*
-	union evt_data {
-		int fd;
-		int socket;
-	};
-	*/
-} TW_Event_attr_t;
+typedef struct TW_File_event_args_t {
+	TW_Fd_t fd;
+	int events;
+} TW_File_event_args_t;
+typedef struct TW_Socket_event_args_t {
+	TW_Socket_t socket;
+	int events;
+} TW_Socket_event_args_t;
+// typedef struct TW_MPI_event_args_t {
+//} TW_MPI_event_args_t;
+typedef struct TW_Task_event_args_t {
+	TW_Task_handle_t task;
+	int status;
+} TW_Task_event_args_t;
+typedef struct TW_Timer_event_args_t {
+	int64_t micro_sec;
+	int repeat_count;
+} TW_Timer_event_args_t;
 
-typedef terr_t (*TW_Event_handler_t) (TW_Event_handle_t hevt, void *data);
+typedef struct TW_Event_args_t {
+	TW_Event_type_t type;
+	union args {
+		TW_File_event_args_t file;
+		TW_Socket_event_args_t socket;
+		// TW_MPI_event_args_t socket;
+		TW_Task_event_args_t task;
+		TW_Timer_event_args_t timer;
+	} args;
+} TW_Event_args_t;
+
+typedef TW_Event_args_t *TW_Event_args_handle_t;
+
+typedef struct TW_Obj_t *TW_Event_handle_t;
+
+typedef terr_t (*TW_Event_handler_t) (TW_Event_args_t *arg, void *data);
 
 typedef enum TW_Event_socket_event_type { TW_Event_socket_event_data } TW_Event_socket_event_type;
 
+// Set event arg
+extern terr_t TW_Event_arg_set_file (TW_Event_args_handle_t harg, TW_Fd_t fd, int events);
+extern terr_t TW_Event_arg_set_socket (TW_Event_args_handle_t harg, TW_Socket_t socket, int events);
+extern terr_t TW_Event_arg_set_timer (TW_Event_args_handle_t harg,
+									  int64_t micro_sec,
+									  int repeat_count);
+extern terr_t TW_Event_arg_set_task (TW_Event_args_handle_t harg,
+									 TW_Task_handle_t task,
+									 int status);
+
 // Create, free
-extern terr_t TW_Event_create_task (TW_Event_attr_t attr,
-									TW_Event_handler_t evt_cb,
-									void *evt_data,
-									TW_Event_handle_t *hevt);  // Create a new event
-extern terr_t TW_Event_free (TW_Event_handle_t hevt);
+extern terr_t TW_Event_create (TW_Event_handler_t evt_cb,
+							   void *evt_data,
+							   TW_Event_args_t arg,
+							   TW_Event_handle_t *event);  // Create a new event
+extern terr_t TW_Event_free (TW_Event_handle_t event);
 
 // Control
-extern terr_t TW_Event_commit (TW_Engine_handle_t engine,
-							   TW_Event_handle_t hevt);	  // Commit event, start watching
-extern terr_t TW_Event_retract (TW_Event_handle_t hevt);  // Stop watching
+extern terr_t TW_Event_commit (TW_Event_handle_t event,
+							   TW_Engine_handle_t engine);	// Commit event, start watching
+extern terr_t TW_Event_retract (TW_Event_handle_t event);	// Stop watching

@@ -9,7 +9,8 @@
 SUFFIXES = .o .c .h .m4
 
 AM_CPPFLAGS  =  -I${top_srcdir}/src/include \
-                -I${top_srcdir}/src/common
+                -I${top_srcdir}/src/common \
+                -I${top_srcdir}/src/driver
                 
 # Our main target, the task engine library
 noinst_LTLIBRARIES=libtwdispatcher.la
@@ -19,7 +20,8 @@ libtwdispatcher_la_SOURCES =    tw.c \
                                     engine.c \
                                     task.c \
                                     dep.c \
-                                    err.c
+                                    err.c \
+                                    event.c
 
 # M4 hook
 # M4_SRCS  = 
