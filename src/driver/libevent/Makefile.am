@@ -4,17 +4,19 @@
 # This file is part of Taskworks. The full Taskworks copyright notice,    
 # including terms governing use, modification, and redistribution, is       
 # contained in the file COPYING at the root of the source code distribution 
-# tree.                                                                     
+# tree.       
 
-SUBDIRS = 
-DIST_SUBDIRS = 
+SUFFIXES = .o .c .h .m4
 
-if ENABLE_ABT
-   SUBDIRS += argobots
-   DIST_SUBDIRS += argobots
-endif
+AM_CPPFLAGS  =  -I${top_srcdir}/src/include \
+                -I${top_srcdir}/src/common \
+                -I${top_srcdir}/src/driver
 
-if ENABLE_LIBEVENT
-   SUBDIRS += libevent
-   DIST_SUBDIRS += libevent
-endif
+# Argobots driver
+noinst_LTLIBRARIES=libtwlibevt.la
+libtwlibevt_la_SOURCES =    twlibevt.c \
+                                twlibevt_loop.c \
+                                twlibevt_event.c
+
+# Allow running make tests without make
+tests-local: all

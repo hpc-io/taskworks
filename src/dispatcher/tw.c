@@ -96,7 +96,7 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 		case TW_Event_backend_default:	// The first available backend
 #ifdef ENABLE_LIBEVENT
 		case TW_Event_backend_libevent:	 // Argobots
-			TWI_Active_evt_driver = NULL;
+			TWI_Active_evt_driver = &TWLIBEVT_Driver;
 			break;
 #endif
 		case TW_Event_backend_none:
@@ -119,8 +119,7 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 	err = TWI_Active_driver->Init (argc, argv);
 	CHECK_ERR
 	if (TWI_Active_evt_driver) {
-		// TODO:: Init event driver once it is completed
-		////err = TWI_Active_evt_driver->Init (argc, argv);
+		err = TWI_Active_evt_driver->Init (argc, argv);
 		CHECK_ERR
 	}
 
@@ -138,9 +137,11 @@ terr_t TW_Finalize (void) {
 
 	err = TWI_Active_driver->Finalize ();
 	CHECK_ERR
-	// TODO:: Finalize event driver once it is completed
-	// err = TWI_Active_evt_driver->Finalize();
-	// CHECK_ERR
+
+	if (TWI_Active_evt_driver) {
+		err = TWI_Active_evt_driver->Finalize ();
+		CHECK_ERR
+	}
 
 err_out:;
 	return err;

@@ -6,4 +6,4 @@
 # contained in the file COPYING at the root of the source code distribution 
 # tree.                                                                     
 
-SUBDIRS = basic
+SUBDIRS = basic event

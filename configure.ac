@@ -498,11 +498,13 @@ AC_CONFIG_FILES([
 		src/libtw.settings
 		src/driver/Makefile 
 		src/driver/argobots/Makefile 
+		src/driver/libevent/Makefile 
 		src/common/Makefile 
 		src/dispatcher/Makefile 
 		examples/Makefile
 		test/Makefile
-		test/basic/Makefile])
+		test/basic/Makefile
+		test/event/Makefile])
 
 AC_OUTPUT
 

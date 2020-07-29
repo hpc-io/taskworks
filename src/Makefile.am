@@ -18,6 +18,10 @@ libtw_la_LIBADD  =  dispatcher/libtwdispatcher.la \
 if ENABLE_ABT
    libtw_la_LIBADD += driver/argobots/libtwabt.la
 endif
+if ENABLE_LIBEVENT
+   libtw_la_LIBADD += driver/libevent/libtwlibevt.la
+endif
+
 
 
 include_HEADERS =   include/taskworks.h \
