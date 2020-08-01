@@ -27,16 +27,21 @@ terr_t TWABTI_Engine_free (TWABT_Engine_t *ep) {
 	TWI_Free (ep->ess);
 
 	// Free the schedulars
+	/* Scheduler freed automatically when ES get freed
 	for (i = 0; i < ep->ness; i++) {
-		abterr = ABT_sched_free (ep->schedulers + i);
-		CHECK_ABTERR
+		// abterr = ABT_sched_free (ep->schedulers + i);
+		// CHECK_ABTERR
 	}
+	*/
 	TWI_Free (ep->schedulers);
 
 	TWI_Nb_list_free (ep->tasks);
 
-	// Pool freed automatically when all schedulers get freed
+	// Pools freed automatically when all schedulers get freed
 	////abterr = ABT_pool_free (&(ep->pool));
+
+	if (ep->evt_loop) { ep->evt_driver->Loop_free (ep->evt_loop); }
+	TWI_Mutex_finalize (&(ep->evt_lock));
 
 	TWI_Free (ep);
 

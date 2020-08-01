@@ -16,6 +16,7 @@ terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 						  void *task_data,
 						  TW_Task_dep_handler_t dep_handler,
 						  int tag,
+						  int priority,
 						  void *dispatcher_obj,
 						  TW_Handle_t *htask) {	 // Create a new task
 	terr_t err		 = TW_SUCCESS;
@@ -31,11 +32,13 @@ terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 	CHECK_ERR
 	err = TWI_Nb_list_create (&(tp->childs));
 	CHECK_ERR
+	err = TWI_Nb_list_create (&(tp->events));
+	CHECK_ERR
 	tp->handler		   = task_cb;
 	tp->data		   = task_data;
 	tp->dep_handler	   = dep_handler;
 	tp->tag			   = tag;
-	tp->priority	   = 0;
+	tp->priority	   = priority;
 	tp->ep			   = NULL;
 	tp->abt_task	   = ABT_TASK_NULL;
 	tp->dispatcher_obj = dispatcher_obj;
@@ -75,8 +78,8 @@ terr_t TWABT_Task_create_barrier (TW_Handle_t engine,  // Must have option of gl
 	TWABT_Task_t *tp, *pp;
 
 	// Create task
-	err = TWABT_Task_create (NULL, NULL, TW_TASK_DEP_ALL_COMPLETE, tag, dispatcher_obj,
-							 (TW_Handle_t *)(&tp));
+	err = TWABT_Task_create (NULL, NULL, TW_TASK_DEP_ALL_COMPLETE, tag, TW_TASK_PRIORITY_STANDARD,
+							 dispatcher_obj, (TW_Handle_t *)(&tp));
 	CHECK_ERR
 
 	// Set up dependency

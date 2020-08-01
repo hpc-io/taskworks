@@ -26,6 +26,46 @@
  * @param  dep_cb: The function to decide whether the task is ready to run
  * @param  *dep_data: The data used by dep_cb
  * @param  tag: An integer that can be used by the application for identifiation purpose
+ * @param  priority:
+ * @param  *task: Handle to the task created
+ * @retval
+ */
+terr_t TW_Task_create_ex (TW_Task_handler_t task_cb,
+						  void *task_data,
+						  TW_Task_dep_handler_t dep_handler,
+						  int tag,
+						  int priority,
+						  TW_Task_handle_t *task) {
+	terr_t err = TW_SUCCESS;
+	TW_Obj_handle_t tp;
+
+	if (tag < 0) ASSIGN_ERR (TW_ERR_INVAL)
+	if (priority < 0 || priority > TW_TASK_PRIORITY_STANDARD) ASSIGN_ERR (TW_ERR_INVAL)
+
+	tp = (TW_Obj_handle_t)TWI_Malloc (sizeof (TW_Obj_t));
+	CHECK_PTR (tp)
+	tp->objtype = TW_Obj_type_task;
+	tp->driver	= TWI_Active_driver;
+
+	err = tp->driver->Task_create (task_cb, task_data, dep_handler, tag, priority, tp,
+								   &(tp->driver_obj));
+	CHECK_ERR
+
+	*task = tp;
+
+err_out:;
+	if (err) { TWI_Free (tp); }
+	return err;
+}
+
+/**
+ * @brief  Create a new task
+ * @note
+ * @param  task_cb: The function to perform the task
+ * @param  *task_data: The data used by task_cb
+ * @param  dep_cb: The function to decide whether the task is ready to run
+ * @param  *dep_data: The data used by dep_cb
+ * @param  tag: An integer that can be used by the application for identifiation purpose
  * @param  *task: Handle to the task created
  * @retval
  */
@@ -34,24 +74,8 @@ terr_t TW_Task_create (TW_Task_handler_t task_cb,
 					   TW_Task_dep_handler_t dep_handler,
 					   int tag,
 					   TW_Task_handle_t *task) {
-	terr_t err = TW_SUCCESS;
-	TW_Obj_handle_t tp;
-
-	if (tag < 0) ASSIGN_ERR (TW_ERR_INVAL)
-
-	tp = (TW_Obj_handle_t)TWI_Malloc (sizeof (TW_Obj_t));
-	CHECK_PTR (tp)
-	tp->objtype = TW_Obj_type_task;
-	tp->driver	= TWI_Active_driver;
-
-	err = tp->driver->Task_create (task_cb, task_data, dep_handler, tag, tp, &(tp->driver_obj));
-	CHECK_ERR
-
-	*task = tp;
-
-err_out:;
-	if (err) { TWI_Free (tp); }
-	return err;
+	return TW_Task_create_ex (task_cb, task_data, dep_handler, tag, TW_TASK_PRIORITY_STANDARD,
+							  task);
 }
 
 terr_t TW_Task_free (TW_Task_handle_t task) {
@@ -66,6 +90,7 @@ terr_t TW_Task_free (TW_Task_handle_t task) {
 err_out:;
 	return err;
 }
+
 // Create a new barrier task
 terr_t TW_Task_create_barrier (TW_Engine_handle_t engine,  // Must have option of global
 							   int dep_tag,

@@ -13,13 +13,8 @@ AM_CPPFLAGS  =  -I${top_srcdir}/src/include \
                 -I${top_srcdir}/src/driver
 
 # Argobots driver
-noinst_LTLIBRARIES=libtwlibevt.la
-libtwlibevt_la_SOURCES =    err.c \
-                            twlibevt.c \
-                                twlibevt_loop.c \
-                                twlibevt_event.c \
-                                twlibevti_loop.c \
-                                twlibevti_event.c
+noinst_LTLIBRARIES=libtwtestcommon.la
+libtwtestcommon_la_SOURCES =    semaphore.c 
 
 # Allow running make tests without make
 tests-local: all

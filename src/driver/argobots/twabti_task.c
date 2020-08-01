@@ -47,6 +47,19 @@ terr_t TWABTI_Task_free (TWABT_Task_t *tp) {  // Free up a task
 	}
 	TWI_Nb_list_dec_ref (tp->parents);
 
+	TWI_Nb_list_inc_ref (tp->events);
+	itr = TWI_Nb_list_begin (tp->events);  // Event listeners
+	while (itr != TWI_Nb_list_end (tp->events)) {
+		TWABT_Task_monitor_t *mp = (TWABT_Task_monitor_t *)itr->data;
+
+		// Decrease ref count, if we are the last one, free the dep struct
+		is_zero = OPA_decr_and_test_int (&(mp->ref));
+		if (is_zero) { TWI_Free (mp); }
+
+		itr = TWI_Nb_list_next (itr);
+	}
+	TWI_Nb_list_dec_ref (tp->events);
+
 	if (tp->abt_task != ABT_TASK_NULL) {
 		// Canceling cause seg fault in argobots
 		// abterr = ABT_task_cancel (tp->abt_task);
@@ -59,6 +72,7 @@ terr_t TWABTI_Task_free (TWABT_Task_t *tp) {  // Free up a task
 err_out:;
 	TWI_Nb_list_free (tp->parents);
 	TWI_Nb_list_free (tp->childs);
+	TWI_Nb_list_free (tp->events);
 	TWI_Rwlock_finalize (&(tp->lock));
 	TWI_Free (tp);
 	return err;
@@ -161,6 +175,8 @@ terr_t TWABTI_Task_update_status (TWABT_Task_t *tp,
 								  int new_stat,
 								  TWI_Bool_t *success) {
 	terr_t err = TW_SUCCESS;
+	TWI_Nb_list_itr_t i;
+	TW_Event_args_t arg;
 
 	if (success) *success = TWI_FALSE;
 
@@ -194,6 +210,22 @@ terr_t TWABTI_Task_update_status (TWABT_Task_t *tp,
 			}
 
 			if (success) *success = TWI_TRUE;
+
+			arg.type			 = TW_Event_type_task;
+			arg.args.task.task	 = tp->dispatcher_obj;
+			arg.args.task.status = new_stat;
+			TWI_Nb_list_inc_ref (tp->events);
+			for (i = TWI_Nb_list_begin (tp->events); i != TWI_Nb_list_end (tp->events);
+				 i = TWI_Nb_list_next (i)) {
+				TWABT_Task_monitor_t *mp = (TWABT_Task_monitor_t *)i->data;
+
+				if (OPA_load_int (&(mp->ref)) == 2) {
+					if (mp->evt->status_flag & new_stat) {
+						mp->evt->handler (mp->evt->dispatcher_obj, &arg, mp->evt->data);
+					}
+				}
+			}
+			TWI_Nb_list_dec_ref (tp->events);
 		}
 	}
 
@@ -216,7 +248,8 @@ terr_t TWABTI_Task_queue (TWABT_Task_t *tp) {
 		CHECK_ERR
 		/* Argobot tasks can't be force removed, create them only when there are workers */
 		if (tp->ep->ness > 0) {
-			abterr = ABT_task_create (tp->ep->pool, TWABTI_Task_abttask_cb, tp, &(tp->abt_task));
+			abterr = ABT_task_create (tp->ep->pools[tp->priority], TWABTI_Task_abttask_cb, tp,
+									  &(tp->abt_task));
 			CHECK_ABTERR
 		}
 	} else {
@@ -238,15 +271,17 @@ terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new
 	TWI_Nb_list_inc_ref (tp->childs);
 	itr = TWI_Nb_list_begin (tp->childs);
 	while (itr != TWI_Nb_list_end (tp->childs)) {
-		dp			= itr->data;
-		stat_before = OPA_load_int (&(dp->child->status));
-		if (stat_before == TW_Task_STAT_WAITING) {
-			stat_after = dp->child->dep_handler.Status_change (
-				dp->child->dispatcher_obj, tp->dispatcher_obj, old_stat, new_stat,
-				dp->child->dep_handler.Data);
-			if (stat_before != stat_after) {
-				err = TWABTI_Task_update_status (dp->child, stat_before, stat_after, NULL);
-				CHECK_ERR
+		dp = itr->data;
+		if (OPA_load_int (&(dp->ref)) == 2) {
+			stat_before = OPA_load_int (&(dp->child->status));
+			if (stat_before == TW_Task_STAT_WAITING) {
+				stat_after = dp->child->dep_handler.Status_change (
+					dp->child->dispatcher_obj, tp->dispatcher_obj, old_stat, new_stat,
+					dp->child->dep_handler.Data);
+				if (stat_before != stat_after) {
+					err = TWABTI_Task_update_status (dp->child, stat_before, stat_after, NULL);
+					CHECK_ERR
+				}
 			}
 		}
 		itr = TWI_Nb_list_next (itr);

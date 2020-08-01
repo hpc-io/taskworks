@@ -503,6 +503,7 @@ AC_CONFIG_FILES([
 		src/dispatcher/Makefile 
 		examples/Makefile
 		test/Makefile
+		test/common/Makefile
 		test/basic/Makefile
 		test/event/Makefile])
 

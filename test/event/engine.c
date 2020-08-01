@@ -8,20 +8,30 @@
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* TaskWork root header */
+/* Test engine APIs */
 
-#pragma once
+#include <twtest.h>
 
-#define TW_INFINITE		 -1
-#define TW_TIMEOUT_NEVER -1LL
-#define TW_ONCE			 -2LL
+int main (int argc, char *argv[]) {
+	terr_t err = TW_SUCCESS;
+	TW_Engine_handle_t eng;
+	int nerr = 0;
 
-#define TW_HANDLE_NULL NULL
+	PRINT_TEST_MSG (
+		"Check if TaskWork can create and free engines with event loop integration backend");
 
-typedef int terr_t;
+	err = TW_Init (TW_Backend_argobots, TW_Event_backend_libevent, &argc, &argv);
+	CHECK_ERR
 
-#include "tw_dispatcher.h"
-#include "tw_engine.h"
-#include "tw_err.h"
-#include "tw_event.h"
-#include "tw_task.h"
+	err = TW_Engine_create (4, &eng);
+	CHECK_ERR
+
+	err = TW_Engine_free (eng);
+	CHECK_ERR
+
+	err = TW_Finalize ();
+	CHECK_ERR
+
+	PRINT_TEST_RESULT
+	return nerr;
+}

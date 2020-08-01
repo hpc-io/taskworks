@@ -25,3 +25,6 @@
 #include "twi_rwlock.h"
 #include "twi_time.h"
 #include "twi_ts_vector.h"
+
+#define TWI_TASK_NUM_PRIORITY_LEVEL (TW_TASK_PRIORITY_STANDARD + 1)
+#define TW_TASK_PRIORITY_RESERVED	0

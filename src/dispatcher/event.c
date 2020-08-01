@@ -85,7 +85,7 @@ extern terr_t TW_Event_arg_set_task (TW_Event_args_handle_t harg,
 
 	if ((status | TW_Task_STAT_ALL) != TW_Task_STAT_ALL) ASSIGN_ERR (TW_ERR_INVAL);
 
-	args.task	= task;
+	args.task	= task->driver_obj;
 	args.status = status;
 
 	harg->type		= TW_Event_type_task;
@@ -105,8 +105,8 @@ terr_t TW_Event_create (TW_Event_handler_t evt_cb,
 
 	ep = (TW_Obj_handle_t)TWI_Malloc (sizeof (TW_Obj_t));
 	CHECK_PTR (ep)
-	ep->objtype	   = TW_Obj_type_event;
-	ep->evt_driver = TWI_Active_evt_driver;
+	ep->objtype = TW_Obj_type_event;
+	ep->driver	= TWI_Active_driver;
 
 	err = ep->driver->Event_create (evt_cb, evt_data, arg, ep, &(ep->driver_obj));
 	CHECK_ERR

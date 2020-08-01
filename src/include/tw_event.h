@@ -29,15 +29,17 @@
 #define TW_Fd_t		int
 #endif
 
-#define TW_EVENT_FILE_READ	0x1
-#define TW_EVENT_FILE_WRITE 0x2
-#define TW_EVENT_FILE_ALL	0x3
+#define TW_EVENT_FILE_READ			  0x1
+#define TW_EVENT_FILE_WRITE			  0x2
+#define TW_EVENT_FILE_READY_FOR_READ  0x4
+#define TW_EVENT_FILE_READY_FOR_WRITE 0x8
+#define TW_EVENT_FILE_ALL			  0xF
 
-#define TW_EVENT_SOCKET_READ  0x1
-#define TW_EVENT_SOCKET_WRITE 0x2
-#define TW_EVENT_SOCKET_ALL	  0x3
-
-#define TW_INFINITE -1
+#define TW_EVENT_SOCKET_READ			0x1
+#define TW_EVENT_SOCKET_WRITE			0x2
+#define TW_EVENT_SOCKET_READY_FOR_READ	0x4
+#define TW_EVENT_SOCKET_READY_FOR_WRITE 0x8
+#define TW_EVENT_SOCKET_ALL				0xF
 
 typedef enum TW_Event_type_t {
 	TW_Event_type_timer,  // The task hasn't been commited, user can modify the
@@ -83,7 +85,7 @@ typedef TW_Event_args_t *TW_Event_args_handle_t;
 
 typedef struct TW_Obj_t *TW_Event_handle_t;
 
-typedef terr_t (*TW_Event_handler_t) (TW_Event_args_t *arg, void *data);
+typedef int (*TW_Event_handler_t) (TW_Event_handle_t evt, TW_Event_args_t *arg, void *data);
 
 typedef enum TW_Event_socket_event_type { TW_Event_socket_event_data } TW_Event_socket_event_type;
 

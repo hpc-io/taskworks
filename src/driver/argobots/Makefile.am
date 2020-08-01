@@ -20,6 +20,7 @@ libtwabt_la_SOURCES =   err.c \
                             twabt_task.c \
                             twabt_event.c \
                             twabti_engine.c \
+                            twabti_event.c \
                             twabti_sched.c \
                             twabti_task.c
 

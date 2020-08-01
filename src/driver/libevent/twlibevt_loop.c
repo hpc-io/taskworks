@@ -12,14 +12,70 @@
 
 #include "twlibevt.h"
 
-terr_t TWLIBEVT_Event_create (TW_Event_handler_t TWI_UNUSED evt_cb,
-							  void TWI_UNUSED *evt_data,
-							  TW_Event_args_t TWI_UNUSED arg,
-							  TW_Handle_t TWI_UNUSED *event) {
+terr_t TWLIBEVT_Loop_create (TW_Handle_t *loop) {
+	int err = TW_SUCCESS;
+	TWLIBEVT_Loop_t *lp;
+
+	lp = (TWLIBEVT_Loop_t *)TWI_Malloc (sizeof (TWLIBEVT_Loop_t));
+	CHECK_PTR (lp);
+
+	lp->base = event_base_new ();
+	CHECK_LIBEVTPTR (lp->base);
+
+	// List of commited events no managed by libevent
+	lp->unmanaged_events = TWI_Ts_vector_create ();
+	CHECK_PTR (lp->unmanaged_events);
+
+	*loop = lp;
+
+err_out:;
+	return err;
+}
+terr_t TWLIBEVT_Loop_free (TW_Handle_t loop) {
+	TWLIBEVT_Loop_t *lp = (TWLIBEVT_Loop_t *)loop;
+
+	TWI_Ts_vector_free (lp->unmanaged_events);
+
+	event_base_free (lp->base);
+
+	TWI_Free (lp);
+
 	return TW_SUCCESS;
 }
-terr_t TWLIBEVT_Event_free (TW_Handle_t TWI_UNUSED event) { return TW_SUCCESS; }
-terr_t TWLIBEVT_Event_commit (TW_Handle_t TWI_UNUSED event, TW_Handle_t TWI_UNUSED loop) {
-	return TW_SUCCESS;
+
+terr_t TWLIBEVT_Loop_check_events (TW_Handle_t loop, ttime_t timeout) {
+	terr_t err = TW_SUCCESS;
+	ttime_t tstop;
+	TWI_Bool_t have_evt;
+	TWLIBEVT_Loop_t *lp = (TWLIBEVT_Loop_t *)loop;
+
+	tstop = TWI_Time_now () + timeout;
+	do {
+		err = TWLIBEVTI_Check_for_single_event (lp, &have_evt);
+		CHECK_ERR
+		if (timeout == TW_ONCE) break;
+	} while ((timeout == TW_TIMEOUT_NEVER || TWI_Time_now () < tstop) && have_evt);
+
+err_out:;
+	return err;
 }
-terr_t TWLIBEVT_Event_retract (TW_Handle_t TWI_UNUSED htask) { return TW_SUCCESS; }
+
+terr_t TWLIBEVTI_Check_for_single_event (TW_Handle_t loop, TWI_Bool_t *success) {
+	terr_t err = TW_SUCCESS;
+	int evterr;
+	TWLIBEVT_Loop_t *lp = (TWLIBEVT_Loop_t *)loop;
+
+	// TODO: pull for unmanaged events
+
+	evterr = event_base_loop (lp->base, EVLOOP_ONCE | EVLOOP_NONBLOCK);
+	if (evterr == 0) {
+		*success = TWI_TRUE;
+	} else if (evterr == 1) {
+		*success = TWI_FALSE;
+	} else {
+		CHECK_LIBEVTERR
+	}
+
+err_out:;
+	return err;
+}

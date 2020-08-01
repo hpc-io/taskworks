@@ -34,8 +34,5 @@ typedef struct TW_Obj_t {
 
 typedef TW_Obj_t *TW_Obj_handle_t;
 
-extern TW_Event_driver_handle_t TWI_Active_evt_driver;
-extern TW_Driver_handle_t TWI_Active_driver;
-
 extern TW_Task_dep_handler_t TWI_Task_dep_null;
 extern TW_Task_dep_handler_t TWI_Task_dep_all_complete;

@@ -37,11 +37,8 @@ typedef struct TW_Obj_t *TW_Task_handle_t;
 /* Task priority
  * We do not use enum because it is not supported by openpa
  */
-#define TW_TASK_PRIORITY_IMMEDIATE 0
-#define TW_TASK_PRIORITY_HIGH	   1
-#define TW_TASK_PRIORITY_STANDARD  2
-#define TW_TASK_PRIORITY_LOW	   3
-#define TW_TASK_PRIORITY_LOWEST	   4
+#define TW_TASK_PRIORITY_URGENT	  1
+#define TW_TASK_PRIORITY_STANDARD 2
 
 /* Predefined dependency handler
  * We do not use enum because it is not supported by openpa
@@ -102,12 +99,21 @@ typedef struct TW_Task_dep_handler_t {
 		TW_Task_handle_t task, TW_Task_handle_t parent, int old_status, int new_status, void *data);
 } TW_Task_dep_handler_t;
 
+typedef void (*TW_Task_status_handler_t) (TW_Task_handle_t task, int status);
+
 // Create, free
 extern terr_t TW_Task_create (TW_Task_handler_t task_cb,
 							  void *task_data,
 							  TW_Task_dep_handler_t dep_handler,
 							  int tag,
 							  TW_Task_handle_t *task);	// Create a new task
+
+extern terr_t TW_Task_create_ex (TW_Task_handler_t task_cb,
+								 void *task_data,
+								 TW_Task_dep_handler_t dep_handler,
+								 int tag,
+								 int priority,
+								 TW_Task_handle_t *task);  // Create a new task
 
 extern terr_t TW_Task_free (TW_Task_handle_t task);	 // Free up a task
 

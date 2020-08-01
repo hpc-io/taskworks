@@ -18,9 +18,9 @@ TW_Event_driver_t TWLIBEVT_Driver = {
 	TWLIBEVT_Finalize,	// Finalize the driver and free all resource
 
 	/* Loop callbacks */
-	TWLIBEVT_Loop_create,	// Initialize an event loop
-	TWLIBEVT_Loop_free,		// Finalize the event loop
-	TWLIBEVT_Loop_do_work,	// Check for a single event
+	TWLIBEVT_Loop_create,		 // Initialize an event loop
+	TWLIBEVT_Loop_free,			 // Finalize the event loop
+	TWLIBEVT_Loop_check_events,	 // Check for a single event
 
 	/* Event callbacks */
 	TWLIBEVT_Event_create,	// Create a new event

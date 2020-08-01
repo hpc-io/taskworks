@@ -13,9 +13,14 @@ AM_DEFAULT_SOURCE_EXT = .c
 AM_CPPFLAGS  = -I$(top_srcdir)/src/include
 AM_CPPFLAGS += -I$(top_srcdir)/test/common
 
-LDADD  = $(top_builddir)/src/libtw.la 
+LDADD  =    $(top_builddir)/src/libtw.la \
+            $(top_builddir)/test/common/libtwtestcommon.la
 
-TESTPROGRAMS =  init
+TESTPROGRAMS =  init \
+                engine \
+                file \
+                timer \
+                task
 
 # mutual_dep
 

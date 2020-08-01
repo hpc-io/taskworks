@@ -2,6 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef _WIN32
+#else
+#endif
+#include <semaphore.h>
+typedef sem_t *TWT_Semaphore;
 #include "taskworks.h"
 
 #define CHECK_RET(E)                                                                             \
@@ -51,3 +56,8 @@
 			nerr++;                                                                              \
 		}                                                                                        \
 	}
+
+terr_t TWT_Sem_create (TWT_Semaphore *sem);
+terr_t TWT_Sem_dec (TWT_Semaphore sem);
+terr_t TWT_Sem_inc (TWT_Semaphore sem);
+terr_t TWT_Sem_free (TWT_Semaphore sem);
