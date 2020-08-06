@@ -23,6 +23,14 @@ terr_t TWABTI_Task_free (TWABT_Task_t *tp) {  // Free up a task
 
 	DEBUG_PRINTF (1, "Freeing task %p\n", (void *)tp);
 
+	if (tp->abt_task != ABT_TASK_NULL) {
+		// Canceling cause seg fault in argobots
+		// abterr = ABT_task_cancel (tp->abt_task);
+		// CHECK_ABTERR
+		abterr = ABT_task_free (&(tp->abt_task));
+		CHECK_ABTERR
+	}
+
 	// Remove all dependencies
 	TWI_Nb_list_inc_ref (tp->childs);
 	itr = TWI_Nb_list_begin (tp->childs);  // Childs
@@ -68,13 +76,6 @@ terr_t TWABTI_Task_free (TWABT_Task_t *tp) {  // Free up a task
 	}
 	TWI_Nb_list_dec_ref (tp->events);
 
-	if (tp->abt_task != ABT_TASK_NULL) {
-		// Canceling cause seg fault in argobots
-		// abterr = ABT_task_cancel (tp->abt_task);
-		// CHECK_ABTERR
-		abterr = ABT_task_free (&(tp->abt_task));
-		CHECK_ABTERR
-	}
 	TWI_Rwlock_wunlock (&(tp->lock));
 
 err_out:;
@@ -98,6 +99,12 @@ terr_t TWABTI_Task_run (TWABT_Task_t *tp, TWI_Bool_t *successp) {
 	CHECK_ERR
 
 	if (success == TWI_TRUE) {
+		// Wait until argobot task create
+		if (tp->ep->ness > 0) {
+			while (tp->abt_task == NULL)
+				;
+		}
+
 		// Only run if there is callback function
 		if (tp->handler) {
 			ret = tp->handler (tp->data);

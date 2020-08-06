@@ -252,8 +252,10 @@ terr_t TWABT_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 		while (1) {
 			stat = OPA_load_int (&(tp->status));
 			if (stat == TW_Task_STAT_COMPLETED || stat == TW_Task_STAT_ABORTED ||
-				stat == TW_Task_STAT_FAILED)
+				stat == TW_Task_STAT_FAILED) {
+				if (tp->abt_task) { ABT_task_join (tp->abt_task); }
 				break;
+			}
 
 			err = TWABTI_Task_run_dep (tp, NULL);
 			CHECK_ERR
@@ -263,8 +265,10 @@ terr_t TWABT_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 		while (TWI_Time_now () < stoptime) {
 			stat = OPA_load_int (&(tp->status));
 			if (stat == TW_Task_STAT_COMPLETED || stat == TW_Task_STAT_ABORTED ||
-				stat == TW_Task_STAT_FAILED)
+				stat == TW_Task_STAT_FAILED) {
+				if (tp->abt_task) { ABT_task_join (tp->abt_task); }
 				break;
+			}
 			if (tp->ep && tp->ep->ness == 0) {
 				err = TWABTI_Task_run_dep (tp, NULL);
 				CHECK_ERR

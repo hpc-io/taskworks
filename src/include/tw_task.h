@@ -23,16 +23,18 @@ typedef struct TW_Obj_t *TW_Task_handle_t;
  * We do not use enum because it is not supported by openpa
  */
 // The task hasn't been commited, user can modify the task
-#define TW_Task_STAT_FREE	 0x1
-#define TW_Task_STAT_DEPHOLD 0x2  // Commited in the flow graph, waiting on job dependency
+#define TW_Task_STAT_INVAL	 0x0
+#define TW_Task_STAT_TRANS	 0x1
+#define TW_Task_STAT_FREE	 0x2
+#define TW_Task_STAT_DEPHOLD 0x4  // Commited in the flow graph, waiting on job dependency
 // Ready for processing. Waiting in the job queue for available worker
-#define TW_Task_STAT_READY	   0x4
-#define TW_Task_STAT_RUNNING   0x8	 // A worker is handling the job
-#define TW_Task_STAT_COMPLETED 0x10	 // The job is completed
+#define TW_Task_STAT_READY	   0x8
+#define TW_Task_STAT_RUNNING   0x10	 // A worker is handling the job
+#define TW_Task_STAT_COMPLETED 0x20	 // The job is completed
 // The dependency can never be satisfied (eg. parent job failed). The job is removed from the flow
 // graph
-#define TW_Task_STAT_ABORTED 0x20
-#define TW_Task_STAT_FAILED	 0x40
+#define TW_Task_STAT_ABORTED 0x40
+#define TW_Task_STAT_FAILED	 0x80
 
 /* Task priority
  * We do not use enum because it is not supported by openpa

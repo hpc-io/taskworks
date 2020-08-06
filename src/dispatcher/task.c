@@ -280,6 +280,8 @@ const char *TW_Task_status_str (int status) {
 		return "aborted";
 	} else if (status & TW_Task_STAT_FAILED) {
 		return "failed";
+	} else if (status & TW_Task_STAT_TRANS) {
+		return "transition";
 	}
 
 	return "unknown";
