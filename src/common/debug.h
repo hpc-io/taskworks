@@ -27,8 +27,8 @@
 	{}
 #endif
 
-#define DEBUG_ENTER_FUNC(L) DEBUG_PRINTF (L, "Entering %s", __func__)
-#define DEBUG_EXIT_FUNC(L)	DEBUG_PRINTF (L, "Leaving %s", __func__)
+#define DEBUG_ENTER_FUNC(L) DEBUG_PRINTF (L, "Entering %s\n", __func__)
+#define DEBUG_EXIT_FUNC(L)	DEBUG_PRINTF (L, "Leaving %s\n", __func__)
 
 extern int TWI_Debug_level;
 
