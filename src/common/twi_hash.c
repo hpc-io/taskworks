@@ -100,6 +100,33 @@ err_out:;
 	return err;
 }
 
+terr_t TWI_Hash_try_insert (TWI_Hash_handle_t h, void *data, TWI_Bool_t *success) {
+	terr_t err = TW_SUCCESS;
+	size_t idx;
+	TWI_Hash_node_t *new_node = NULL;
+
+	if (!h) { ASSIGN_ERR (TW_ERR_INVAL) }
+
+	if (TWI_Hash_exists (h, data) == TWI_TRUE) {
+		*success = TWI_FALSE;
+		goto err_out;
+	}
+
+	idx = (size_t)data & h->idx_mask;
+
+	new_node = TWI_Malloc (sizeof (TWI_Hash_node_t));
+	CHECK_PTR (new_node)
+
+	new_node->data	= data;
+	new_node->next	= h->buckets[idx];
+	h->buckets[idx] = new_node;
+
+	*success = TWI_TRUE;
+
+err_out:;
+	return err;
+}
+
 TWI_Bool_t TWI_Hash_exists (TWI_Hash_handle_t h, void *data) {
 	size_t idx;
 	TWI_Hash_node_t *i;

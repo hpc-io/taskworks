@@ -264,3 +264,23 @@ terr_t TW_Task_get_tag (TW_Task_handle_t task, int *tagp) {
 err_out:;
 	return err;
 }
+
+const char *TW_Task_status_str (int status) {
+	if (status & TW_Task_STAT_FREE) {
+		return "free";
+	} else if (status & TW_Task_STAT_DEPHOLD) {
+		return "dep. hold";
+	} else if (status & TW_Task_STAT_READY) {
+		return "ready";
+	} else if (status & TW_Task_STAT_RUNNING) {
+		return "running";
+	} else if (status & TW_Task_STAT_COMPLETED) {
+		return "completed";
+	} else if (status & TW_Task_STAT_ABORTED) {
+		return "aborted";
+	} else if (status & TW_Task_STAT_FAILED) {
+		return "failed";
+	}
+
+	return "unknown";
+}

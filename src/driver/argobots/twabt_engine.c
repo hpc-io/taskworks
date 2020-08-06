@@ -158,7 +158,7 @@ terr_t TWABT_Engine_do_work (TW_Handle_t engine, ttime_t timeout) {
 	do {
 		tp = (TWABT_Task_t *)i->data;
 
-		if (OPA_load_int (&(tp->status)) == TW_Task_STAT_QUEUEING) {
+		if (OPA_load_int (&(tp->status)) == TW_Task_STAT_READY) {
 			err = TWABTI_Task_run (tp, &have_job);
 			CHECK_ERR
 		}

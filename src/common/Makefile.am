@@ -22,7 +22,8 @@ libtwcommon_la_SOURCES =    twi_mem.c \
                             twi_rwlock.c \
                             twi_ts_vector.c \
                             twi_hash.c \
-                            twi_nb_list.c
+                            twi_nb_list.c \
+                            debug.c
 
 
 # Allow running make tests without make

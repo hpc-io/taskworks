@@ -13,8 +13,8 @@
 #include <stdatomic.h>
 #include <twtest.h>
 
-#define NUM_WORKERS 4
-#define NUM_TASKS	10
+#define NUM_WORKERS 2
+#define NUM_TASKS	4
 
 typedef struct task_data {
 	int nerr;
@@ -56,11 +56,11 @@ int Custom_dep_status_change (TW_Task_handle_t task,
 	h = *hp;
 
 	// Try CAS in my own handle if available
-	if (h == TW_HANDLE_NULL || (parent == h && new_status == TW_Task_STAT_COMPLETE)) {
-		if (atomic_compare_exchange_strong (hp, &h, task)) { return TW_Task_STAT_QUEUEING; }
+	if (h == TW_HANDLE_NULL || (parent == h && new_status == TW_Task_STAT_COMPLETED)) {
+		if (atomic_compare_exchange_strong (hp, &h, task)) { return TW_Task_STAT_READY; }
 	}
 
-	return TW_Task_STAT_WAITING;
+	return TW_Task_STAT_DEPHOLD;
 }
 
 int main (int argc, char *argv[]) {
@@ -87,12 +87,12 @@ int main (int argc, char *argv[]) {
 	dep.Init		  = NULL;
 	dep.Finalize	  = NULL;
 	dep.Data		  = &handle;
-	dep.Mask		  = TW_Task_STAT_COMPLETE | TW_Task_STAT_PENDING;
+	dep.Mask		  = TW_Task_STAT_COMPLETED | TW_Task_STAT_FREE;
 
 	for (i = 0; i < NUM_TASKS; i++) {
 		datas[i].tasks_running = &running;
 		datas[i].tasks_ran	   = &ran;
-		err					   = TW_Task_create (task_fn, datas + i, dep, 0, task + i);
+		err					   = TW_Task_create (task_fn, datas + i, dep, i, task + i);
 		CHECK_ERR
 	}
 	// All to all dep
@@ -120,7 +120,7 @@ int main (int argc, char *argv[]) {
 		err = TW_Task_get_status (task[i], &status);
 		CHECK_ERR
 
-		EXP_VAL (status, TW_Task_STAT_COMPLETE, "%d")
+		EXP_VAL (status, TW_Task_STAT_COMPLETED, "%d")
 	}
 
 	for (i = 0; i < NUM_TASKS; i++) {
@@ -129,6 +129,8 @@ int main (int argc, char *argv[]) {
 	}
 
 	EXP_VAL (ran, NUM_TASKS, "%d");
+
+	printf ("main thread engine free\n");
 
 	err = TW_Engine_free (eng);
 	CHECK_ERR

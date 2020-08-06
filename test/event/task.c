@@ -61,7 +61,7 @@ int main (int argc, char *argv[]) {
 	for (i = 0; i < NUM_TASKS; i++) {
 		err = TW_Task_create (task_fn, &ctr, TW_TASK_DEP_NULL, 0, task + i);
 		CHECK_ERR
-		err = TW_Event_arg_set_task (&arg, task[i], TW_Task_STAT_COMPLETE);
+		err = TW_Event_arg_set_task (&arg, task[i], TW_Task_STAT_COMPLETED);
 		CHECK_ERR
 		err = TW_Event_create (event_fn, &ctr2, arg, events + i);
 		CHECK_ERR

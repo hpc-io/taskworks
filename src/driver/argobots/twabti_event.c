@@ -16,6 +16,7 @@ typedef struct TWABTI_Event_task_data_t {
 	TW_Event_args_t *arg;
 } TWABTI_Event_task_data_t;
 
+void TWABTI_Event_task_cb (void *data);
 void TWABTI_Event_task_cb (void *data) {
 	TWABTI_Event_task_data_t *dp = (TWABTI_Event_task_data_t *)data;
 	TWABT_Event_t *ep			 = dp->ep;

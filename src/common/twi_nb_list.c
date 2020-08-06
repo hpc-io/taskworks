@@ -83,18 +83,27 @@ err_out:;
 terr_t TWI_Nb_list_init (TWI_Nb_list_handle_t l) {
 	terr_t err = TW_SUCCESS;
 
+	DEBUG_ENTER_FUNC (3)
+
 	OPA_store_ptr (&(l->head.next), &(l->tail));
 	OPA_store_ptr (&(l->tail.next), NULL);
 	OPA_store_ptr (&(l->head.next_free), NULL);
 	OPA_store_ptr (&(l->tail.next_free), NULL);
 	OPA_store_int (&(l->ref), 0);
 
+	DEBUG_PRINTF (2, "Created non-blocking list %p\n", (void *)l);
+
+	DEBUG_EXIT_FUNC (3)
 	return err;
 }
 
 terr_t TWI_Nb_list_finalize (TWI_Nb_list_handle_t l) {
 	terr_t err = TW_SUCCESS;
 	TWI_Nb_list_itr_t i, j;
+
+	DEBUG_ENTER_FUNC (3)
+
+	DEBUG_PRINTF (2, "Finaling non-blocking list %p\n", (void *)l);
 
 	if (!l) { ASSIGN_ERR (TW_ERR_INVAL) }
 
@@ -107,6 +116,7 @@ terr_t TWI_Nb_list_finalize (TWI_Nb_list_handle_t l) {
 	OPA_store_ptr (&(l->head.next), NULL);
 
 err_out:;
+	DEBUG_EXIT_FUNC (3)
 	return err;
 }
 
@@ -290,7 +300,14 @@ err_out:;
 }
 
 TWI_Nb_list_itr_t TWI_Nb_list_begin (TWI_Nb_list_handle_t l) {
-	return (TWI_Nb_list_itr_t)OPA_load_ptr (&(l->head.next));
+	TWI_Nb_list_itr_t ret;
+
+	DEBUG_ENTER_FUNC (3)
+
+	ret = (TWI_Nb_list_itr_t)OPA_load_ptr (&(l->head.next));
+
+	DEBUG_EXIT_FUNC (3)
+	return ret;
 }
 TWI_Nb_list_itr_t TWI_Nb_list_end (TWI_Nb_list_handle_t l) { return &(l->tail); }
 TWI_Nb_list_itr_t TWI_Nb_list_next (TWI_Nb_list_itr_t itr) {

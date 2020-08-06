@@ -22,6 +22,8 @@ terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 	terr_t err		 = TW_SUCCESS;
 	TWABT_Task_t *tp = NULL;
 
+	DEBUG_ENTER_FUNC (2);
+
 	tp = (TWABT_Task_t *)TWI_Malloc (sizeof (TWABT_Task_t));
 	CHECK_PTR (tp)
 	err = TWI_Rwlock_init (&(tp->lock));
@@ -42,12 +44,15 @@ terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 	tp->ep			   = NULL;
 	tp->abt_task	   = ABT_TASK_NULL;
 	tp->dispatcher_obj = dispatcher_obj;
-	OPA_store_int (&(tp->status), TW_Task_STAT_PENDING);
+	OPA_store_int (&(tp->status), TW_Task_STAT_FREE);
 
 	// Add to opened task list
 	TWI_Ts_vector_push_back (TWABTI_Tasks, tp);
 
 	*htask = tp;
+
+	DEBUG_PRINTF (1, "Created task %p, handler: %p, data: %p, tag: %d, priority: %d\n", (void *)tp,
+				  (void *)(long long)(tp->handler), (void *)(tp->data), tp->tag, tp->priority);
 
 err_out:;
 	if (err) {
@@ -57,15 +62,23 @@ err_out:;
 			TWI_Free (tp);
 		}
 	}
+
+	DEBUG_EXIT_FUNC (2);
 	return err;
 }
 
 terr_t TWABT_Task_free (TW_Handle_t htask) {  // Free up a task
+	int err			 = TW_SUCCESS;
 	TWABT_Task_t *tp = (TWABT_Task_t *)htask;
+
+	DEBUG_ENTER_FUNC (2);
 
 	TWI_Ts_vector_swap_erase (TWABTI_Tasks, tp);
 
-	return TWABTI_Task_free (tp);
+	err = TWABTI_Task_free (tp);
+
+	DEBUG_EXIT_FUNC (2);
+	return err;
 }
 
 terr_t TWABT_Task_create_barrier (TW_Handle_t engine,  // Must have option of global
@@ -76,6 +89,8 @@ terr_t TWABT_Task_create_barrier (TW_Handle_t engine,  // Must have option of gl
 	terr_t err = TW_SUCCESS;
 	int i, size;
 	TWABT_Task_t *tp, *pp;
+
+	DEBUG_ENTER_FUNC (2);
 
 	// Create task
 	err = TWABT_Task_create (NULL, NULL, TW_TASK_DEP_ALL_COMPLETE, tag, TW_TASK_PRIORITY_STANDARD,
@@ -98,10 +113,14 @@ terr_t TWABT_Task_create_barrier (TW_Handle_t engine,  // Must have option of gl
 	TWI_Ts_vector_unlock (TWABTI_Tasks);
 
 	*htask = tp;
+
+	DEBUG_PRINTF (1, "Created barrier task %p\n", (void *)tp);
 err_out:;
 	if (err) {
 		if (tp) { TWABT_Task_free (tp); }
 	}
+
+	DEBUG_EXIT_FUNC (2);
 	return err;
 }
 
@@ -116,7 +135,11 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 	TWABT_Task_dep_t *dp;
 	TWI_Nb_list_itr_t i;
 
-	err = TWABTI_Task_update_status (tp, TW_Task_STAT_PENDING, TW_Task_STAT_WAITING, &success);
+	DEBUG_ENTER_FUNC (2);
+
+	DEBUG_PRINTF (1, "Committing task %p\n", (void *)tp);
+
+	err = TWABTI_Task_update_status (tp, TW_Task_STAT_FREE, TW_Task_STAT_DEPHOLD, &success);
 	CHECK_ERR
 	if (success != TWI_TRUE) { RET_ERR (TW_ERR_STATUS) }
 
@@ -136,6 +159,9 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 		if (abterr != 0) { RET_ERR (TW_ERR_DEP_INIT) }
 	}
 
+	// Set engine, this must be done before exposing the task to threads
+	tp->ep = ep;
+
 	// Wire up dep list on parents
 	for (i = TWI_Nb_list_begin (tp->parents); i != TWI_Nb_list_end (tp->parents);
 		 i = TWI_Nb_list_next (i)) {
@@ -148,7 +174,7 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 	// Check if we need to notify dependency change
 	i = TWI_Nb_list_begin (tp->parents);
 	if (i != TWI_Nb_list_end (tp->parents)) {
-		tstatus = TW_Task_STAT_WAITING;
+		tstatus = TW_Task_STAT_DEPHOLD;
 		for (; i != TWI_Nb_list_end (tp->parents); i = TWI_Nb_list_next (i)) {
 			dp = i->data;
 
@@ -156,21 +182,21 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 			dstatus = OPA_load_int (&(dp->status));
 			if (OPA_cas_int (&(dp->status), dstatus, pstatus) == dstatus) {
 				if (tp->dep_handler.Mask & pstatus) {
+					DEBUG_PRINTF (1, "notify task %p, status of task %p is %s\n",
+								  (void *)(dp->child), (void *)(dp->parent),
+								  TW_Task_status_str (OPA_load_int (&(dp->parent->status))));
 					tstatus = tp->dep_handler.Status_change (tp->dispatcher_obj,
 															 dp->parent->dispatcher_obj, dstatus,
 															 pstatus, tp->dep_handler.Data);
-					if (tstatus != TW_Task_STAT_WAITING) break;
+					if (tstatus != TW_Task_STAT_DEPHOLD) break;
 				}
 			}
 		}
 	} else {
-		tstatus = TW_Task_STAT_QUEUEING;
+		tstatus = TW_Task_STAT_READY;
 	}
 
-	// Set engine
-	tp->ep = ep;
-
-	err = TWABTI_Task_update_status (tp, TW_Task_STAT_WAITING, tstatus, &success);
+	err = TWABTI_Task_update_status (tp, TW_Task_STAT_DEPHOLD, tstatus, &success);
 	CHECK_ERR
 
 err_out:;
@@ -178,6 +204,7 @@ err_out:;
 
 	TWI_Rwlock_wunlock (&(tp->lock));
 
+	DEBUG_EXIT_FUNC (2);
 	return err;
 }
 
@@ -187,10 +214,12 @@ terr_t TWABT_Task_retract (TW_Handle_t htask) {
 	TWI_Bool_t success;
 	TWABT_Task_t *tp = (TWABT_Task_t *)htask;
 
+	DEBUG_ENTER_FUNC (2);
+
 	while (1) {
 		status = OPA_load_int (&(tp->status));
-		if (status == TW_Task_STAT_WAITING || status == TW_Task_STAT_QUEUEING) {
-			err = TWABTI_Task_update_status (tp, status, TW_Task_STAT_ABORT, &success);
+		if (status == TW_Task_STAT_DEPHOLD || status == TW_Task_STAT_READY) {
+			err = TWABTI_Task_update_status (tp, status, TW_Task_STAT_ABORTED, &success);
 			CHECK_ERR
 
 			if (success == TWI_TRUE) break;
@@ -199,7 +228,10 @@ terr_t TWABT_Task_retract (TW_Handle_t htask) {
 		}
 	}
 
+	DEBUG_PRINTF (1, "Task %p retracted\n", (void *)tp);
+
 err_out:;
+	DEBUG_EXIT_FUNC (2);
 	return err;
 }
 
@@ -212,10 +244,14 @@ terr_t TWABT_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 	ttime_t stoptime;
 	TWABT_Task_t *tp = (TWABT_Task_t *)htask;
 
+	DEBUG_ENTER_FUNC (2);
+
+	DEBUG_PRINTF (1, "Waiting for task %p\n", (void *)tp);
+
 	if (timeout == TW_TIMEOUT_NEVER) {
 		while (1) {
 			stat = OPA_load_int (&(tp->status));
-			if (stat == TW_Task_STAT_COMPLETE || stat == TW_Task_STAT_ABORT ||
+			if (stat == TW_Task_STAT_COMPLETED || stat == TW_Task_STAT_ABORTED ||
 				stat == TW_Task_STAT_FAILED)
 				break;
 
@@ -226,7 +262,7 @@ terr_t TWABT_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 		stoptime = TWI_Time_now () + timeout;
 		while (TWI_Time_now () < stoptime) {
 			stat = OPA_load_int (&(tp->status));
-			if (stat == TW_Task_STAT_COMPLETE || stat == TW_Task_STAT_ABORT ||
+			if (stat == TW_Task_STAT_COMPLETED || stat == TW_Task_STAT_ABORTED ||
 				stat == TW_Task_STAT_FAILED)
 				break;
 			if (tp->ep && tp->ep->ness == 0) {
@@ -235,9 +271,11 @@ terr_t TWABT_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 			} else {
 			}
 		}
-		if (stat != TW_Task_STAT_COMPLETE) { ASSIGN_ERR (TW_ERR_TIMEOUT) }
+		if (stat != TW_Task_STAT_COMPLETED) { ASSIGN_ERR (TW_ERR_TIMEOUT) }
 	}
+
 err_out:;
+	DEBUG_EXIT_FUNC (2);
 	return err;
 }
 
@@ -246,6 +284,8 @@ terr_t TWABT_Task_wait (TW_Handle_t *htasks, int num_tasks, ttime_t timeout) {
 	terr_t err = TW_SUCCESS;
 	int i;
 	ttime_t stoptime, now;
+
+	DEBUG_ENTER_FUNC (2);
 
 	if (timeout == TW_TIMEOUT_NEVER) {
 		for (i = 0; i < num_tasks; i++) {
@@ -263,6 +303,7 @@ terr_t TWABT_Task_wait (TW_Handle_t *htasks, int num_tasks, ttime_t timeout) {
 		if (i < num_tasks) { RET_ERR (TW_ERR_TIMEOUT) }
 	}
 err_out:;
+	DEBUG_EXIT_FUNC (2);
 	return err;
 }
 
@@ -271,6 +312,8 @@ terr_t TWABT_Task_add_dep (TW_Handle_t child, TW_Handle_t parent) {
 	TWABT_Task_t *cp = (TWABT_Task_t *)child;
 	TWABT_Task_t *pp = (TWABT_Task_t *)parent;
 	TWABT_Task_dep_t *dp;
+
+	DEBUG_ENTER_FUNC (2);
 
 	TWI_Rwlock_rlock (&(cp->lock));
 
@@ -286,9 +329,12 @@ terr_t TWABT_Task_add_dep (TW_Handle_t child, TW_Handle_t parent) {
 	err = TWI_Nb_list_insert_front (cp->parents, dp);
 	CHECK_ERR
 
+	DEBUG_PRINTF (1, "Task %p depends on task %p\n", (void *)cp, (void *)pp);
+
 err_out:;
 	TWI_Rwlock_runlock (&(cp->lock));
 
+	DEBUG_EXIT_FUNC (2);
 	return err;
 }
 
@@ -299,6 +345,8 @@ terr_t TWABT_Task_rm_dep (TW_Handle_t child, TW_Handle_t parent) {
 	TWABT_Task_t *pp = (TWABT_Task_t *)parent;
 	TWABT_Task_dep_t *dp;
 	TWI_Nb_list_itr_t itr;
+
+	DEBUG_ENTER_FUNC (2);
 
 	TWI_Rwlock_rlock (&(cp->lock));
 
@@ -320,16 +368,21 @@ terr_t TWABT_Task_rm_dep (TW_Handle_t child, TW_Handle_t parent) {
 	}
 	if (!itr) { ASSIGN_ERR (TW_ERR_NOT_FOUND) }
 
+	DEBUG_PRINTF (1, "Task %p no longer depends on task %p\n", (void *)cp, (void *)pp);
+
 err_out:;
 	TWI_Nb_list_dec_ref (cp->parents);
 	TWI_Rwlock_runlock (&(cp->lock));
 
+	DEBUG_EXIT_FUNC (2);
 	return err;
 }
 
 terr_t TWABT_Task_inq (TW_Handle_t htask, TW_Task_inq_type_t inqtype, void *ret) {
 	terr_t err		 = TW_SUCCESS;
 	TWABT_Task_t *tp = (TWABT_Task_t *)htask;
+
+	DEBUG_ENTER_FUNC (2);
 
 	switch (inqtype) {
 		case TW_Task_inq_type_status:
@@ -347,5 +400,6 @@ terr_t TWABT_Task_inq (TW_Handle_t htask, TW_Task_inq_type_t inqtype, void *ret)
 	}
 
 err_out:;
+	DEBUG_EXIT_FUNC (2);
 	return err;
 }

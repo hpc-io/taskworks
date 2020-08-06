@@ -40,6 +40,15 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 	terr_t err = TW_SUCCESS;
 	char *env_val;
 
+#ifdef ENABLE_DEBUG
+	env_val = getenv ("TW_DEBUG_MSG_LVL");
+	if (env_val) {
+		TWI_Debug_level = atoi (env_val);
+	} else {
+		TWI_Debug_level = 0;
+	}
+#endif
+
 	// Overwrite backend option if environment variable is set
 	env_val = getenv ("TW_BACKEND");
 	if (env_val) {

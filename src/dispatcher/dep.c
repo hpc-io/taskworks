@@ -34,7 +34,7 @@ TW_Task_dep_handler_t TWI_Task_dep_null = {
 };
 TW_Task_dep_handler_t TW_Task_dep_all_complete;
 TW_Task_dep_handler_t TWI_Task_dep_all_complete = {
-	TW_Task_STAT_COMPLETE,
+	TW_Task_STAT_COMPLETED,
 	NULL,
 	TWI_Task_dep_all_complete_init,
 	TWI_Task_dep_all_complete_finalize,
@@ -49,14 +49,14 @@ int TWI_Task_dep_all_complete_status_change (TW_Task_handle_t TWI_UNUSED task,
 	int is_zero;
 	OPA_int_t *cp = (OPA_int_t *)dep_data;
 
-	if (new_status == TW_Task_STAT_COMPLETE) {
+	if (new_status == TW_Task_STAT_COMPLETED) {
 		is_zero = OPA_decr_and_test_int (cp);
-		if (is_zero) return TW_Task_STAT_QUEUEING;
-	} else if (new_status == TW_Task_STAT_ABORT || new_status == TW_Task_STAT_FAILED) {
-		return TW_Task_STAT_ABORT;
+		if (is_zero) return TW_Task_STAT_READY;
+	} else if (new_status == TW_Task_STAT_ABORTED || new_status == TW_Task_STAT_FAILED) {
+		return TW_Task_STAT_ABORTED;
 	}
 
-	return TW_Task_STAT_WAITING;
+	return TW_Task_STAT_DEPHOLD;
 }
 
 int TWI_Task_dep_all_complete_init (TW_Task_handle_t TWI_UNUSED task,

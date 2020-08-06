@@ -58,7 +58,7 @@ int main (int argc, char *argv[]) {
 	for (i = 0; i < NUM_TASKS; i++) {
 		err = TW_Task_get_status (task[i], &status);
 		CHECK_ERR
-		EXP_VAL (status, TW_Task_STAT_COMPLETE, "%d")
+		EXP_VAL (status, TW_Task_STAT_COMPLETED, "%d")
 	}
 
 	for (i = 0; i < NUM_TASKS; i++) {

@@ -21,6 +21,8 @@ terr_t TWABTI_Task_free (TWABT_Task_t *tp) {  // Free up a task
 
 	TWI_Rwlock_wlock (&(tp->lock));
 
+	DEBUG_PRINTF (1, "Freeing task %p\n", (void *)tp);
+
 	// Remove all dependencies
 	TWI_Nb_list_inc_ref (tp->childs);
 	itr = TWI_Nb_list_begin (tp->childs);  // Childs
@@ -29,7 +31,10 @@ terr_t TWABTI_Task_free (TWABT_Task_t *tp) {  // Free up a task
 
 		// Decrease ref count, if we are the last one, free the dep struct
 		is_zero = OPA_decr_and_test_int (&(dp->ref));
-		if (is_zero) { TWI_Free (dp); }
+		if (is_zero) {
+			// printf ("Freeing dep (%x, %x)\n", dp->child, dp->parent);
+			TWI_Free (dp);
+		}
 
 		itr = TWI_Nb_list_next (itr);
 	}
@@ -41,7 +46,10 @@ terr_t TWABTI_Task_free (TWABT_Task_t *tp) {  // Free up a task
 
 		// Decrease ref count, if we are the last one, free the dep struct
 		is_zero = OPA_decr_and_test_int (&(dp->ref));
-		if (is_zero) { TWI_Free (dp); }
+		if (is_zero) {
+			// printf ("Freeing dep (%x, %x)\n", dp->child, dp->parent);
+			TWI_Free (dp);
+		}
 
 		itr = TWI_Nb_list_next (itr);
 	}
@@ -86,7 +94,7 @@ terr_t TWABTI_Task_run (TWABT_Task_t *tp, TWI_Bool_t *successp) {
 	TWI_Bool_t success;
 
 	// The task can already be done by the main thread or other ES from queue of other priority
-	err = TWABTI_Task_update_status (tp, TW_Task_STAT_QUEUEING, TW_Task_STAT_RUNNING, &success);
+	err = TWABTI_Task_update_status (tp, TW_Task_STAT_READY, TW_Task_STAT_RUNNING, &success);
 	CHECK_ERR
 
 	if (success == TWI_TRUE) {
@@ -97,7 +105,7 @@ terr_t TWABTI_Task_run (TWABT_Task_t *tp, TWI_Bool_t *successp) {
 			ret = 0;
 
 		if (ret == 0) {
-			TWABTI_Task_update_status (tp, TW_Task_STAT_RUNNING, TW_Task_STAT_COMPLETE, NULL);
+			TWABTI_Task_update_status (tp, TW_Task_STAT_RUNNING, TW_Task_STAT_COMPLETED, NULL);
 		} else {
 			TWABTI_Task_update_status (tp, TW_Task_STAT_RUNNING, TW_Task_STAT_FAILED, NULL);
 		}
@@ -113,24 +121,28 @@ static terr_t TWABTI_Task_run_dep_core (TWABT_Task_t *tp,
 										TWI_Hash_handle_t h,
 										TWI_Bool_t *successp) {
 	terr_t err		   = TW_SUCCESS;
-	TWI_Bool_t success = TWI_FALSE;
+	TWI_Bool_t success = TWI_FALSE, notexist;
 	int status;
 	TWABT_Task_dep_t *dp;
 	TWI_Nb_list_itr_t i;
 
+	DEBUG_PRINTF (1, "Trying to run task %p with calling thread\n", (void *)tp);
+
 	while (success != TWI_TRUE) {
 		status = OPA_load_int (&(tp->status));
-		if (status == TW_Task_STAT_QUEUEING) {
+		if (status == TW_Task_STAT_READY) {
 			err = TWABTI_Task_run (tp, &success);
 			CHECK_ERR
-		} else if (status == TW_Task_STAT_WAITING) {
+		} else if (status == TW_Task_STAT_DEPHOLD) {
 			TWI_Nb_list_dec_ref (tp->parents);
 			i = TWI_Nb_list_begin (tp->parents);
 			while (i != TWI_Nb_list_end (tp->parents)) {
 				dp = (TWABT_Task_dep_t *)i->data;
 
 				if (OPA_load_int (&(dp->ref)) == 2) {
-					if (TWI_Hash_insert (h, dp->parent) == TW_SUCCESS) {
+					err = TWI_Hash_try_insert (h, dp->parent, &notexist);
+					CHECK_ERR
+					if (notexist) {
 						err = TWABTI_Task_run_dep_core (dp->parent, h, &success);
 						if (err != TW_SUCCESS) TWI_Nb_list_dec_ref (tp->parents);
 						CHECK_ERR
@@ -183,19 +195,22 @@ terr_t TWABTI_Task_update_status (TWABT_Task_t *tp,
 	// Old stat need to be different
 	if (old_stat != new_stat) {
 		if (old_stat == OPA_cas_int (&(tp->status), old_stat, new_stat)) {
+			DEBUG_PRINTF (1, "task %p status changed to %s\n", (void *)tp,
+						  TW_Task_status_str (OPA_load_int (&(tp->status))));
+
 			// Notify child tasks
 			err = TWABTI_Task_notify_parent_status (tp, old_stat, new_stat);
 			CHECK_ERR
 
 			// Take action based on new status
 			switch (new_stat) {
-				case TW_Task_STAT_QUEUEING:
+				case TW_Task_STAT_READY:
 					err = TWABTI_Task_queue (tp);
 					CHECK_ERR
 					break;
-				case TW_Task_STAT_ABORT:
+				case TW_Task_STAT_ABORTED:
 				case TW_Task_STAT_FAILED:
-				case TW_Task_STAT_COMPLETE:
+				case TW_Task_STAT_COMPLETED:
 					if (tp->ep) {
 						err = TWI_Nb_list_del (tp->ep->tasks, tp);
 						CHECK_ERR
@@ -237,7 +252,7 @@ terr_t TWABTI_Task_queue (TWABT_Task_t *tp) {
 	terr_t err = TW_SUCCESS;
 	int abterr;
 
-	if (OPA_load_int (&(tp->status)) != TW_Task_STAT_QUEUEING) { RET_ERR (TW_ERR_STATUS) }
+	if (OPA_load_int (&(tp->status)) != TW_Task_STAT_READY) { RET_ERR (TW_ERR_STATUS) }
 
 	if (tp->handler) {
 		if (tp->abt_task != ABT_TASK_NULL) {
@@ -253,7 +268,7 @@ terr_t TWABTI_Task_queue (TWABT_Task_t *tp) {
 			CHECK_ABTERR
 		}
 	} else {
-		err = TWABTI_Task_update_status (tp, TW_Task_STAT_QUEUEING, TW_Task_STAT_COMPLETE, NULL);
+		err = TWABTI_Task_update_status (tp, TW_Task_STAT_READY, TW_Task_STAT_COMPLETED, NULL);
 		CHECK_ERR
 	}
 
@@ -273,14 +288,20 @@ terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new
 	while (itr != TWI_Nb_list_end (tp->childs)) {
 		dp = itr->data;
 		if (OPA_load_int (&(dp->ref)) == 2) {
-			stat_before = OPA_load_int (&(dp->child->status));
-			if (stat_before == TW_Task_STAT_WAITING) {
-				stat_after = dp->child->dep_handler.Status_change (
-					dp->child->dispatcher_obj, tp->dispatcher_obj, old_stat, new_stat,
-					dp->child->dep_handler.Data);
-				if (stat_before != stat_after) {
-					err = TWABTI_Task_update_status (dp->child, stat_before, stat_after, NULL);
-					CHECK_ERR
+			if (OPA_cas_int (&(dp->status), old_stat, new_stat) == old_stat) {
+				stat_before = OPA_load_int (&(dp->child->status));
+				if (stat_before == TW_Task_STAT_DEPHOLD &&
+					(dp->child->dep_handler.Mask & new_stat)) {
+					DEBUG_PRINTF (1, "notify task %p, status of task %p is %s\n",
+								  (void *)(dp->child), (void *)tp,
+								  TW_Task_status_str (OPA_load_int (&(tp->status))));
+					stat_after = dp->child->dep_handler.Status_change (
+						dp->child->dispatcher_obj, tp->dispatcher_obj, old_stat, new_stat,
+						dp->child->dep_handler.Data);
+					if (stat_before != stat_after) {
+						err = TWABTI_Task_update_status (dp->child, stat_before, stat_after, NULL);
+						CHECK_ERR
+					}
 				}
 			}
 		}

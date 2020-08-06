@@ -18,9 +18,9 @@
 #include "dispatcher.h"
 /// \endcond
 
-#define TW_Task_STAT_ALL                                                                          \
-	(TW_Task_STAT_PENDING | TW_Task_STAT_WAITING | TW_Task_STAT_QUEUEING | TW_Task_STAT_RUNNING | \
-	 TW_Task_STAT_COMPLETE | TW_Task_STAT_ABORT | TW_Task_STAT_FAILED)
+#define TW_Task_STAT_ALL                                                                    \
+	(TW_Task_STAT_FREE | TW_Task_STAT_DEPHOLD | TW_Task_STAT_READY | TW_Task_STAT_RUNNING | \
+	 TW_Task_STAT_COMPLETED | TW_Task_STAT_ABORTED | TW_Task_STAT_FAILED)
 
 // Set event arg
 extern terr_t TW_Event_arg_set_file (TW_Event_args_handle_t harg, TW_Fd_t fd, int events) {

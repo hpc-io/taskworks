@@ -23,22 +23,23 @@ typedef struct TW_Obj_t *TW_Task_handle_t;
  * We do not use enum because it is not supported by openpa
  */
 // The task hasn't been commited, user can modify the task
-#define TW_Task_STAT_PENDING 0x1
-#define TW_Task_STAT_WAITING 0x2  // Commited in the flow graph, waiting on job dependency
+#define TW_Task_STAT_FREE	 0x1
+#define TW_Task_STAT_DEPHOLD 0x2  // Commited in the flow graph, waiting on job dependency
 // Ready for processing. Waiting in the job queue for available worker
-#define TW_Task_STAT_QUEUEING 0x4
-#define TW_Task_STAT_RUNNING  0x8	// A worker is handling the job
-#define TW_Task_STAT_COMPLETE 0x10	// The job is completed
+#define TW_Task_STAT_READY	   0x4
+#define TW_Task_STAT_RUNNING   0x8	 // A worker is handling the job
+#define TW_Task_STAT_COMPLETED 0x10	 // The job is completed
 // The dependency can never be satisfied (eg. parent job failed). The job is removed from the flow
 // graph
-#define TW_Task_STAT_ABORT	0x20
-#define TW_Task_STAT_FAILED 0x40
+#define TW_Task_STAT_ABORTED 0x20
+#define TW_Task_STAT_FAILED	 0x40
 
 /* Task priority
  * We do not use enum because it is not supported by openpa
  */
 #define TW_TASK_PRIORITY_URGENT	  1
 #define TW_TASK_PRIORITY_STANDARD 2
+#define TW_TASK_PRIORITY_LAZY	  3
 
 /* Predefined dependency handler
  * We do not use enum because it is not supported by openpa
@@ -151,6 +152,9 @@ extern terr_t TW_Task_get_tag (TW_Task_handle_t task, int *tagp);
 
 // get dep. tasks
 // get task of certain tag
+
+// Misc
+const char *TW_Task_status_str (int status);
 
 extern TW_Task_dep_handler_t TW_Task_dep_null;
 extern TW_Task_dep_handler_t TW_Task_dep_all_complete;

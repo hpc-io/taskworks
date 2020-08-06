@@ -12,25 +12,24 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <stdlib.h>
 #include <taskworks_internal.h>
+#ifdef ENABLE_DEBUG
+#define DEBUG_PRINTF(L, M, ...)                         \
+	{                                                   \
+		if (TWI_Debug_level >= L) {                     \
+			int tid = TWI_Get_tid ();                   \
+			printf ("Thread %d: " M, tid, __VA_ARGS__); \
+		}                                               \
+	}
+#else
+#define DEBUG_PRINTF(L, M, ...) \
+	{}
+#endif
 
-typedef struct TWI_Hash_node_t {
-	void *data;
-	struct TWI_Hash_node_t *next;
-} TWI_Hash_node_t;
+#define DEBUG_ENTER_FUNC(L) DEBUG_PRINTF (L, "Entering %s", __func__)
+#define DEBUG_EXIT_FUNC(L)	DEBUG_PRINTF (L, "Leaving %s", __func__)
 
-typedef struct TWI_Hash_t {
-	size_t idx_mask;
-	TWI_Hash_node_t **buckets;
-} TWI_Hash_t;
-typedef TWI_Hash_t *TWI_Hash_handle_t;
+extern int TWI_Debug_level;
 
-terr_t TWI_Hash_create (unsigned int idx_len, TWI_Hash_handle_t *h);
-terr_t TWI_Hash_init (TWI_Hash_handle_t h, unsigned int idx_len);
-terr_t TWI_Hash_finalize (TWI_Hash_handle_t h);
-terr_t TWI_Hash_free (TWI_Hash_handle_t h);
-terr_t TWI_Hash_insert (TWI_Hash_handle_t h, void *data);
-terr_t TWI_Hash_try_insert (TWI_Hash_handle_t h, void *data, TWI_Bool_t *success);
-TWI_Bool_t TWI_Hash_exists (TWI_Hash_handle_t h, void *data);
-terr_t TWI_Hash_del (TWI_Hash_handle_t h, void *data);
+int TWI_Get_tid (void);
