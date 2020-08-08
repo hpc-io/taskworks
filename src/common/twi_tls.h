@@ -8,13 +8,24 @@
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Internal memory management routine */
+/* Cross-platform read write lock wrapper */
 
 #pragma once
 
-#include <stdatomic.h>
-#include <stdlib.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
 
-void *TWI_Malloc (size_t size);
-void *TWI_Realloc (void *old_ptr, size_t size);
-void TWI_Free (void *ptr);
+#ifdef _WIN32
+typedef DWORD TWI_Tls_t;
+#else
+typedef pthread_key_t TWI_Tls_t;
+#endif
+typedef TWI_Tls_t *TWI_Tls_handle_t;
+
+terr_t TWI_Tls_init (TWI_Tls_handle_t m);
+void TWI_Tls_finalize (TWI_Tls_t m);
+void *TWI_Tls_get (TWI_Tls_t m);
+void TWI_Tls_store (TWI_Tls_t m, void *data);

@@ -8,13 +8,9 @@
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Internal memory management routine */
+/* TaskWroks thread driver */
 
 #pragma once
-
-#include <stdatomic.h>
-#include <stdlib.h>
-
-void *TWI_Malloc (size_t size);
-void *TWI_Realloc (void *old_ptr, size_t size);
-void TWI_Free (void *ptr);
+#ifdef ENABLE_PARALLEL
+#include <mpi.h>
+#endif

@@ -14,6 +14,7 @@
 
 #include <opa_primitives.h>
 
+#include "common.h"
 #include "twi_rwlock.h"
 
 typedef struct TWI_Nb_list_node_t {
@@ -39,24 +40,6 @@ typedef TWI_Nb_list_t *TWI_Nb_list_handle_t;
 #define TWI_Nb_list_STAT_RDY   0x2	// No one using
 #define TWI_Nb_list_STAT_ACC   0x4	// Accessing, no modify
 #define TWI_Nb_list_STAT_MOD   0x8	// Modifying, no other thread allowed
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Copyright (C) 2020, Lawrence Berkeley National Laboratory.                *
- * All rights reserved.                                                      *
- *                                                                           *
- * This file is part of Taskworks. The full Taskworks copyright notice,
- *
- * including terms governing use, modification, and redistribution, is       *
- * contained in the file COPYING at the root of the source code distribution *
- * tree.                                                                     *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-/* Thread safe List */
-
-#include <stdint.h>
-
-#include "taskworks_internal.h"
-#include "twi_nb_list.h"
 
 #define DEL_FLAG  0x01ULL
 #define FLAG_MASK 0xfffffffffffffff4ULL

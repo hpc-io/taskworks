@@ -18,6 +18,7 @@
 #include "common.h"
 #include "debug.h"
 #include "driver.h"
+#include "twi_disposer.h"
 #include "twi_err.h"
 #include "twi_hash.h"
 #include "twi_mem.h"
@@ -25,6 +26,7 @@
 #include "twi_nb_list.h"
 #include "twi_rwlock.h"
 #include "twi_time.h"
+#include "twi_tls.h"
 #include "twi_ts_vector.h"
 
 #define TWI_TASK_NUM_PRIORITY_LEVEL (TW_TASK_PRIORITY_LAZY + 1)
