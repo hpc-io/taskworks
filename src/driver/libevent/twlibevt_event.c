@@ -88,7 +88,7 @@ terr_t TWLIBEVT_Event_commit (TW_Handle_t event, TW_Handle_t loop) {
 			ASSIGN_ERR (TW_ERR_INVAL)
 	}
 
-	ep->event = event_new (lp->base, fd, evt_flags | EV_PERSIST, cb, ep);
+	ep->event = event_new (lp->base, fd, evt_flags, cb, ep);
 	CHECK_LIBEVTPTR (ep->event)
 
 	ep->lp = lp;

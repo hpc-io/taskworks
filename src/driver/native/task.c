@@ -24,7 +24,7 @@ typedef struct TW_task {
 	TW_Task_handler_t cb;  // Function to run
 	void *cb_data;		   // Input parameters to the task function
 	terr_t ret;			   // Return value of the task function, only meanningfull when
-				 // stat is TW_Task_stat_completed # use void
+				 // stat is TW_TASK_STAT_completed # use void
 
 	TW_Task_dep_handler_t dep_handler;	// Function that decide the status of the task based on
 										// dependency

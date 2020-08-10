@@ -48,7 +48,7 @@ terr_t TWI_Disposer_init (TWI_Disposer_handle_t dp) {
 
 	dp->nt		 = 0;
 	dp->nt_alloc = 32;
-	dp->tss		 = (int *)TWI_Malloc (sizeof (uint64_t) * (size_t) (dp->nt_alloc));
+	dp->tss		 = (int volatile *)TWI_Malloc (sizeof (volatile int) * (size_t) (dp->nt_alloc));
 
 err_out:;
 	return err;
@@ -86,30 +86,47 @@ void TWI_Disposer_join (TWI_Disposer_handle_t dp) {
 	if (cnt == 0) {	 // the first time we join
 		TWI_Mutex_lock (dp->lock);
 
-		id = dp->nt++;
-		TWI_Tls_store (dp->tid, (void *)(size_t) (id));	 // When we join
+		id = (int)(size_t) (tmp = (TWI_Tls_get (dp->tid)));
+		if (id == 0) {	// This thread haven't join before, need a new ID
+			id = dp->nt++;
+			TWI_Tls_store (dp->tid, (void *)(size_t) (id + 1));	 // 0 means never join, store id + 1
+		} else {
+			id--;  // We joined before, reuse our old id
+		}
 
 		if (dp->nt == dp->nt_alloc) {
 			dp->nt_alloc *= 2;
-			dp->tss = (int *)TWI_Realloc (dp->tss, sizeof (int) * (size_t) (dp->nt_alloc));
+			dp->tss = (int volatile *)TWI_Realloc (dp->tss,
+												   sizeof (volatile int) * (size_t) (dp->nt_alloc));
 		}
 
 		dp->tss[id] = OPA_load_int (&(dp->ts));
+
+		DEBUG_PRINTF (1, "Joins disposer %p as thread %d at timestamp %d\n", (void *)(dp), id,
+					  dp->tss[id]);
 
 		TWI_Mutex_unlock (dp->lock);
 	}
 }
 
 void TWI_Disposer_leave (TWI_Disposer_handle_t dp) {
-	int cnt;
+	int cnt, id;
 	void *tmp;
 
 	cnt = ((int)(size_t) (tmp = TWI_Tls_get (dp->cnt))) - 1;
 	TWI_Tls_store (dp->cnt, (void *)(size_t)cnt);
 
-	if (cnt == 0) {	 // The last time we leave
+	if (cnt == 0) {	 // The last time we leave, actual leave
 		TWI_Mutex_lock (dp->lock);
-		dp->nt--;
+
+		id = (int)(size_t) (tmp = (TWI_Tls_get (dp->tid))) - 1;
+
+		// dp->nt--;	// Can't just decrease nt as every thread has it's own exact position
+
+		dp->tss[id] = INT32_MAX;  // Set our ts to int_max, we always agree
+
+		DEBUG_PRINTF (1, "Thread %d leave disposer %p at timestamp %d\n", id, (void *)(dp),
+					  OPA_load_int (&(dp->ts)));
 		TWI_Mutex_unlock (dp->lock);
 	}
 }
@@ -130,6 +147,8 @@ terr_t TWI_Disposer_dispose (TWI_Disposer_handle_t dp, void *obj, TW_Trash_handl
 	} while (OPA_cas_ptr (&(dp->head), tp->next, tp) != tp->next);
 	// TWI_Mutex_runlock (dp->lock);
 
+	DEBUG_PRINTF (1, "Dispose %p in disposer %p at timestamp %d\n", obj, (void *)(dp), tp->ts);
+
 err_out:;
 	return err;
 }
@@ -142,41 +161,51 @@ void TWI_Disposer_flush (TWI_Disposer_handle_t dp) {
 	void *tmp;
 	TWI_Trash_t *j, *k;
 
-	id = (int)(size_t) (tmp = TWI_Tls_get (dp->tid));
+	id = (int)(size_t) (tmp = TWI_Tls_get (dp->tid)) - 1;
 
-	dp->tss[id] = OPA_load_int (&(dp->ts));
+	tmin = OPA_load_int (&(dp->ts));  // tmin abuse as tnow
 
-	// Check for every BIN_SIZE items
-	if (dp->tss[id] - dp->tmin > BIN_SIZE) {
-		// Only one thread need to do it
-		TWI_Mutex_trylock (dp->lock, &locked);
-		if (locked) {
-			// Find min agreed time stamp
-			tmin = 0;
-			for (i = 0; i < dp->nt; i++) {
-				if (tmin < dp->tss[i]) tmin = dp->tss[i];
-			}
+	if (dp->tss[id] < tmin) {
+		dp->tss[id] = tmin;
+		DEBUG_PRINTF (1, "Thread %d in disposer %p agree on timestamp %d\n", id, (void *)(dp),
+					  dp->tss[id]);
 
-			// Search for first node agreed by everyone
-			for (j = OPA_load_ptr (&(dp->head)); j; j = k) {
-				k = j->next;
-
-				if (j->ts <= tmin) {
-					j->next = NULL;
-					break;
+		// Check for every BIN_SIZE items
+		if (dp->tss[id] - dp->tmin > BIN_SIZE) {
+			// Only one thread need to do it
+			TWI_Mutex_trylock (dp->lock, &locked);
+			if (locked) {
+				// Find min agreed time stamp
+				tmin = INT32_MAX;
+				for (i = 0; i < dp->nt; i++) {
+					if (tmin > dp->tss[i]) tmin = dp->tss[i];
 				}
-			}
 
-			// For easier implementation, we only delete nodes afterward, leave the node itself to
-			// next time
-			for (; k; k = j) {
-				j = k->next;
-				k->handler (k->obj);
-				TWI_Free (k);
-			}
+				DEBUG_PRINTF (
+					1, "Thread %d in disposer %p begin freeing objects before timestamp %d\n", id,
+					(void *)(dp), tmin);
 
-			dp->tmin = tmin;
-			TWI_Mutex_unlock (dp->lock);
+				// Search for first node agreed by everyone
+				for (j = OPA_load_ptr (&(dp->head)); j; j = k) {
+					k = j->next;
+
+					if (j->ts <= tmin) {
+						j->next = NULL;
+						break;
+					}
+				}
+
+				// For easier implementation, we only delete nodes afterward, leave the node itself
+				// to next time
+				for (; k; k = j) {
+					j = k->next;
+					k->handler (k->obj);
+					TWI_Free (k);
+				}
+
+				dp->tmin = tmin;
+				TWI_Mutex_unlock (dp->lock);
+			}
 		}
 	}
 }

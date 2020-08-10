@@ -32,8 +32,8 @@ typedef struct TWI_Disposer_t {
 	int tmin;	   // Min time agreed by all threads
 
 	int nt_alloc;
-	int nt;	   // Num participating threads
-	int *tss;  // Time stamp of all threads
+	int nt;				// Num participating threads
+	int volatile *tss;	// Time stamp of all threads
 
 	TWI_Tls_t cnt;	// How many times the thread has joined the system, allow recursive join
 	TWI_Tls_t tid;	// Thread ID in this system

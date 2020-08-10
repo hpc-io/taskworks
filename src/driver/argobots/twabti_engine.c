@@ -15,6 +15,7 @@
 terr_t TWABTI_Engine_free (TWABT_Engine_t *ep) {
 	terr_t err = TW_SUCCESS;
 	int abterr;
+	TWI_Nb_list_itr_t j;
 	int i;
 
 	// Stop and free the ESs
@@ -24,7 +25,6 @@ terr_t TWABTI_Engine_free (TWABT_Engine_t *ep) {
 		abterr = ABT_xstream_free (ep->ess + i);
 		CHECK_ABTERR
 	}
-	TWI_Free (ep->ess);
 
 	// Free the schedulars
 	/* Scheduler freed automatically when ES get freed
@@ -33,18 +33,34 @@ terr_t TWABTI_Engine_free (TWABT_Engine_t *ep) {
 		// CHECK_ABTERR
 	}
 	*/
-	TWI_Free (ep->schedulers);
 
-	TWI_Nb_list_free (ep->tasks);
+	// Retract all tasks
+	TWI_Nb_list_inc_ref (ep->tasks);
+	for (j = TWI_Nb_list_begin (ep->tasks); j != TWI_Nb_list_end (ep->tasks);
+		 j = TWI_Nb_list_next (j)) {
+		err = TWABT_Task_retract ((TWABT_Task_t *)j->data);
+		CHECK_ERR
+	}
+	TWI_Nb_list_dec_ref (ep->tasks);
 
 	// Pools freed automatically when all schedulers get freed
 	////abterr = ABT_pool_free (&(ep->pool));
 
 	if (ep->evt_loop) { ep->evt_driver->Loop_free (ep->evt_loop); }
-	TWI_Mutex_finalize (&(ep->evt_lock));
 
-	TWI_Free (ep);
+	err = TWI_Disposer_dispose (TWABTI_Disposer, (void *)ep, TWABTI_Engine_free_core);
+	CHECK_ERR
 
 err_out:;
 	return err;
+}
+
+void TWABTI_Engine_free_core (void *obj) {
+	TWABT_Engine_t *ep = (TWABT_Engine_t *)obj;
+
+	TWI_Free (ep->ess);
+	TWI_Free (ep->schedulers);
+	TWI_Nb_list_free (ep->tasks);
+	TWI_Mutex_finalize (&(ep->evt_lock));
+	TWI_Free (ep);
 }

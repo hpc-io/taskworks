@@ -56,7 +56,7 @@ int main (int argc, char *argv[]) {
 	for (i = 0; i < NUM_TASKS; i++) {
 		datas[i].tid = i;
 		datas[i].pre = &last;
-		err			 = TW_Task_create (task_fn, datas + i, TW_TASK_DEP_ALL_COMPLETE, 0, task + i);
+		err			 = TW_Task_create (task_fn, datas + i, TW_TASK_DEP_ALL_COMPLETE, i, task + i);
 		CHECK_ERR
 
 		if (i) {
@@ -76,7 +76,7 @@ int main (int argc, char *argv[]) {
 		err = TW_Task_get_status (task[i], &status);
 		CHECK_ERR
 
-		EXP_VAL (status, TW_Task_STAT_DEPHOLD, "%d")
+		EXP_VAL (status, TW_TASK_STAT_DEPHOLD, "%d")
 	}
 
 	/* Now commit the first task */
@@ -92,7 +92,7 @@ int main (int argc, char *argv[]) {
 		err = TW_Task_get_status (task[i], &status);
 		CHECK_ERR
 
-		EXP_VAL (status, TW_Task_STAT_COMPLETED, "%d")
+		EXP_VAL (status, TW_TASK_STAT_COMPLETED, "%d")
 	}
 
 	for (i = 0; i < NUM_TASKS; i++) {

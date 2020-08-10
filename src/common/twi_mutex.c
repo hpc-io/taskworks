@@ -122,8 +122,12 @@ void TWI_Mutex_finalize (TWI_Mutex_handle_t m) {
 void TWI_Mutex_lock (TWI_Mutex_handle_t m) {
 	int perr;
 
+	DEBUG_PRINTF (3, "Locking %p\n", (void *)m);
+
 	perr = pthread_mutex_lock (m);
 	CHECK_MERR
+
+	DEBUG_PRINTF (3, "Locked %p\n", (void *)m);
 }
 void TWI_Mutex_trylock (TWI_Mutex_handle_t m, int *success) {
 	int perr;
@@ -139,7 +143,11 @@ void TWI_Mutex_trylock (TWI_Mutex_handle_t m, int *success) {
 void TWI_Mutex_unlock (TWI_Mutex_handle_t m) {
 	int perr;
 
+	DEBUG_PRINTF (3, "Unlocking %p\n", (void *)m);
+
 	perr = pthread_mutex_unlock (m);
 	CHECK_MERR
+
+	DEBUG_PRINTF (3, "Unlocked %p\n", (void *)m);
 }
 #endif

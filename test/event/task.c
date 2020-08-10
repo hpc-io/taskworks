@@ -13,8 +13,8 @@
 #include <stdatomic.h>
 #include <twtest.h>
 
-#define NUM_WORKERS 4
-#define NUM_TASKS	10
+#define NUM_WORKERS 1
+#define NUM_TASKS	1
 
 TWT_Semaphore sem;
 
@@ -24,11 +24,12 @@ int task_fn (void *data) {
 	return 0;
 }
 
-int event_fn (TW_Event_handle_t evt, TW_Event_args_t *arg, void *data);
-int event_fn (TW_Event_handle_t evt, TW_Event_args_t __attribute__ ((unused)) * arg, void *data) {
-	++(*((atomic_int *)data));
+void event_fn (TW_Task_handle_t task, int status);
+void event_fn (TW_Task_handle_t task, int status) {
+	void *data;
 
-	TW_Event_retract (evt);
+	TW_Task_get_data (task, &data);
+	++(*((atomic_int *)data));
 
 	TWT_Sem_inc (sem);
 
@@ -40,11 +41,10 @@ int main (int argc, char *argv[]) {
 	int nerr   = 0;
 	int i;
 	int status;
-	atomic_int ctr, ctr2;
+	atomic_int ctr;
 	TW_Engine_handle_t eng;
 	TW_Event_args_t arg;
 	TW_Task_handle_t task[NUM_TASKS];
-	TW_Event_handle_t events[NUM_TASKS];
 
 	PRINT_TEST_MSG ("Check if TaskWork can create and free engines");
 
@@ -57,18 +57,10 @@ int main (int argc, char *argv[]) {
 	err = TW_Engine_create (NUM_WORKERS, &eng);
 	CHECK_ERR
 
-	ctr = ctr2 = 0;
+	ctr = 0;
 	for (i = 0; i < NUM_TASKS; i++) {
-		err = TW_Task_create (task_fn, &ctr, TW_TASK_DEP_NULL, 0, task + i);
-		CHECK_ERR
-		err = TW_Event_arg_set_task (&arg, task[i], TW_Task_STAT_COMPLETED);
-		CHECK_ERR
-		err = TW_Event_create (event_fn, &ctr2, arg, events + i);
-		CHECK_ERR
-	}
-
-	for (i = 0; i < NUM_TASKS; i++) {
-		err = TW_Event_commit (events[i], eng);
+		err = TW_Task_create_ex (task_fn, &ctr, TW_TASK_DEP_NULL, 0, TW_TASK_PRIORITY_STANDARD,
+								 event_fn, TW_TASK_STAT_COMPLETED, task + i);
 		CHECK_ERR
 	}
 
@@ -83,22 +75,19 @@ int main (int argc, char *argv[]) {
 	}
 
 	for (i = 0; i < NUM_TASKS; i++) {
-		err = TWT_Sem_dec (sem);
+		// err = TWT_Sem_dec (sem);
 		CHECK_ERR
 	}
 
 	for (i = 0; i < NUM_TASKS; i++) {
 		err = TW_Task_free (task[i]);
 		CHECK_ERR
-		err = TW_Event_free (events[i]);
-		CHECK_ERR
 	}
 
 	err = TWT_Sem_free (sem);
 	CHECK_ERR
 
-	EXP_VAL (ctr, NUM_TASKS, "%d");
-	EXP_VAL (ctr2, ctr, "%d");
+	EXP_VAL (ctr, NUM_TASKS * 2, "%d");
 
 	err = TW_Engine_free (eng);
 	CHECK_ERR

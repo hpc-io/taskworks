@@ -17,6 +17,8 @@ terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 						  TW_Task_dep_handler_t dep_handler,
 						  int tag,
 						  int priority,
+						  TW_Task_status_handler_t stat_handler,
+						  int status_mask,
 						  void *dispatcher_obj,
 						  TW_Handle_t *htask) {	 // Create a new task
 	terr_t err		 = TW_SUCCESS;
@@ -34,17 +36,16 @@ terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 	CHECK_ERR
 	err = TWI_Nb_list_create (&(tp->childs));
 	CHECK_ERR
-	err = TWI_Nb_list_create (&(tp->events));
-	CHECK_ERR
 	tp->handler		   = task_cb;
 	tp->data		   = task_data;
 	tp->dep_handler	   = dep_handler;
+	tp->status_handler = stat_handler;
+	tp->status_mask	   = status_mask;
 	tp->tag			   = tag;
 	tp->priority	   = priority;
 	tp->ep			   = NULL;
-	tp->abt_task	   = ABT_TASK_NULL;
 	tp->dispatcher_obj = dispatcher_obj;
-	OPA_store_int (&(tp->status), TW_Task_STAT_FREE);
+	OPA_store_int (&(tp->status), TW_TASK_STAT_IDLE);
 
 	// Add to opened task list
 	TWI_Ts_vector_push_back (TWABTI_Tasks, tp);
@@ -94,7 +95,7 @@ terr_t TWABT_Task_create_barrier (TW_Handle_t engine,  // Must have option of gl
 
 	// Create task
 	err = TWABT_Task_create (NULL, NULL, TW_TASK_DEP_ALL_COMPLETE, tag, TW_TASK_PRIORITY_STANDARD,
-							 dispatcher_obj, (TW_Handle_t *)(&tp));
+							 NULL, 0, dispatcher_obj, (TW_Handle_t *)(&tp));
 	CHECK_ERR
 
 	// Set up dependency
@@ -132,6 +133,7 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 	int pstatus, dstatus, tstatus;
 	TWABT_Engine_t *ep = (TWABT_Engine_t *)engine;
 	TWABT_Task_t *tp   = (TWABT_Task_t *)htask;
+	TWABT_Task_t *pp;
 	TWABT_Task_dep_t *dp;
 	TWI_Nb_list_itr_t i;
 
@@ -139,7 +141,7 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 
 	DEBUG_PRINTF (1, "Committing task %p\n", (void *)tp);
 
-	err = TWABTI_Task_update_status (tp, TW_Task_STAT_FREE, TW_Task_STAT_DEPHOLD, &success);
+	err = TWABTI_Task_update_status (tp, TW_TASK_STAT_IDLE, TW_TASK_STAT_DEPHOLD, &success);
 	CHECK_ERR
 	if (success != TWI_TRUE) { RET_ERR (TW_ERR_STATUS) }
 
@@ -166,37 +168,40 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 	for (i = TWI_Nb_list_begin (tp->parents); i != TWI_Nb_list_end (tp->parents);
 		 i = TWI_Nb_list_next (i)) {
 		dp = i->data;
+		pp = (TWABT_Task_t *)OPA_load_ptr (&(dp->parent));
 
 		// Add to parent dep list
-		TWI_Nb_list_insert_front (dp->parent->childs, dp);
+		if (pp) { TWI_Nb_list_insert_front (pp->childs, dp); }
 	}
 
 	// Check if we need to notify dependency change
 	i = TWI_Nb_list_begin (tp->parents);
 	if (i != TWI_Nb_list_end (tp->parents)) {
-		tstatus = TW_Task_STAT_DEPHOLD;
+		tstatus = TW_TASK_STAT_DEPHOLD;
 		for (; i != TWI_Nb_list_end (tp->parents); i = TWI_Nb_list_next (i)) {
 			dp = i->data;
-
-			pstatus = OPA_load_int (&(dp->parent->status));
-			dstatus = OPA_load_int (&(dp->status));
-			if (OPA_cas_int (&(dp->status), dstatus, pstatus) == dstatus) {
-				if (tp->dep_handler.Mask & pstatus) {
-					DEBUG_PRINTF (1, "notify task %p, status of task %p is %s\n",
-								  (void *)(dp->child), (void *)(dp->parent),
-								  TW_Task_status_str (OPA_load_int (&(dp->parent->status))));
-					tstatus = tp->dep_handler.Status_change (tp->dispatcher_obj,
-															 dp->parent->dispatcher_obj, dstatus,
-															 pstatus, tp->dep_handler.Data);
-					if (tstatus != TW_Task_STAT_DEPHOLD) break;
+			pp = (TWABT_Task_t *)OPA_load_ptr (&(dp->parent));
+			if (pp) {
+				pstatus = OPA_load_int (&(pp->status));
+				dstatus = OPA_load_int (&(dp->status));
+				if (OPA_cas_int (&(dp->status), dstatus, pstatus) == dstatus) {
+					if (tp->dep_handler.Mask & pstatus) {
+						DEBUG_PRINTF (1, "notify task %p, status of task %p is %s\n",
+									  (void *)(OPA_load_ptr (&(dp->child))), (void *)(pp),
+									  TW_Task_status_str (pstatus));
+						tstatus =
+							tp->dep_handler.Status_change (tp->dispatcher_obj, pp->dispatcher_obj,
+														   dstatus, pstatus, tp->dep_handler.Data);
+						if (tstatus != TW_TASK_STAT_DEPHOLD) break;
+					}
 				}
 			}
 		}
 	} else {
-		tstatus = TW_Task_STAT_READY;
+		tstatus = TW_TASK_STAT_READY;
 	}
 
-	err = TWABTI_Task_update_status (tp, TW_Task_STAT_DEPHOLD, tstatus, &success);
+	err = TWABTI_Task_update_status (tp, TW_TASK_STAT_DEPHOLD, tstatus, &success);
 	CHECK_ERR
 
 err_out:;
@@ -218,11 +223,14 @@ terr_t TWABT_Task_retract (TW_Handle_t htask) {
 
 	while (1) {
 		status = OPA_load_int (&(tp->status));
-		if (status == TW_Task_STAT_DEPHOLD || status == TW_Task_STAT_READY) {
-			err = TWABTI_Task_update_status (tp, status, TW_Task_STAT_ABORTED, &success);
+		if (status == TW_TASK_STAT_DEPHOLD || status == TW_TASK_STAT_READY) {
+			err = TWABTI_Task_update_status (tp, status, TW_TASK_STAT_ABORTED, &success);
 			CHECK_ERR
 
-			if (success == TWI_TRUE) break;
+			if (success == TWI_TRUE) {
+				*(tp->abt_task_ctx) = NULL;
+				break;
+			}
 		} else {
 			RET_ERR (TW_ERR_STATUS)
 		}
@@ -251,9 +259,8 @@ terr_t TWABT_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 	if (timeout == TW_TIMEOUT_NEVER) {
 		while (1) {
 			stat = OPA_load_int (&(tp->status));
-			if (stat == TW_Task_STAT_COMPLETED || stat == TW_Task_STAT_ABORTED ||
-				stat == TW_Task_STAT_FAILED) {
-				if (tp->abt_task) { ABT_task_join (tp->abt_task); }
+			if (stat == TW_TASK_STAT_COMPLETED || stat == TW_TASK_STAT_ABORTED ||
+				stat == TW_TASK_STAT_FAILED) {
 				break;
 			}
 
@@ -264,9 +271,8 @@ terr_t TWABT_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 		stoptime = TWI_Time_now () + timeout;
 		while (TWI_Time_now () < stoptime) {
 			stat = OPA_load_int (&(tp->status));
-			if (stat == TW_Task_STAT_COMPLETED || stat == TW_Task_STAT_ABORTED ||
-				stat == TW_Task_STAT_FAILED) {
-				if (tp->abt_task) { ABT_task_join (tp->abt_task); }
+			if (stat == TW_TASK_STAT_COMPLETED || stat == TW_TASK_STAT_ABORTED ||
+				stat == TW_TASK_STAT_FAILED) {
 				break;
 			}
 			if (tp->ep && tp->ep->ness == 0) {
@@ -275,7 +281,7 @@ terr_t TWABT_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 			} else {
 			}
 		}
-		if (stat != TW_Task_STAT_COMPLETED) { ASSIGN_ERR (TW_ERR_TIMEOUT) }
+		if (stat != TW_TASK_STAT_COMPLETED) { ASSIGN_ERR (TW_ERR_TIMEOUT) }
 	}
 
 err_out:;
@@ -324,8 +330,8 @@ terr_t TWABT_Task_add_dep (TW_Handle_t child, TW_Handle_t parent) {
 	dp = (TWABT_Task_dep_t *)TWI_Malloc (sizeof (TWABT_Task_dep_t));
 	CHECK_PTR (dp)
 
-	dp->parent = pp;
-	dp->child  = cp;
+	OPA_store_ptr (&(dp->parent), pp);
+	OPA_store_ptr (&(dp->child), cp);
 	OPA_store_int (&(dp->ref), 2);
 	OPA_store_int (&(dp->status), 0);
 
@@ -343,8 +349,7 @@ err_out:;
 }
 
 terr_t TWABT_Task_rm_dep (TW_Handle_t child, TW_Handle_t parent) {
-	terr_t err = TW_SUCCESS;
-	int is_zero;
+	terr_t err		 = TW_SUCCESS;
 	TWABT_Task_t *cp = (TWABT_Task_t *)child;
 	TWABT_Task_t *pp = (TWABT_Task_t *)parent;
 	TWABT_Task_dep_t *dp;
@@ -362,9 +367,8 @@ terr_t TWABT_Task_rm_dep (TW_Handle_t child, TW_Handle_t parent) {
 		dp = itr->data;
 
 		// Decrease ref count, if we are the last one, free the dep struct
-		if (dp->parent == pp) {
-			is_zero = OPA_decr_and_test_int (&(dp->ref));
-			if (is_zero) { TWI_Free (dp); }
+		if (OPA_load_ptr (&(dp->parent)) == pp) {
+			OPA_store_ptr (&(dp->child), NULL);
 			break;
 		}
 

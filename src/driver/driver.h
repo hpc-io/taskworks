@@ -54,6 +54,8 @@ typedef struct TW_Driver_t {
 						   TW_Task_dep_handler_t dep_handler,
 						   int tag,
 						   int priority,
+						   TW_Task_status_handler_t stat_handler,
+						   int status_mask,
 						   void *dispatcher_obj,
 						   TW_Handle_t *htask);	 // Create a new task
 

@@ -35,6 +35,8 @@ terr_t TW_Task_create_ex (TW_Task_handler_t task_cb,
 						  TW_Task_dep_handler_t dep_handler,
 						  int tag,
 						  int priority,
+						  TW_Task_status_handler_t stat_handler,
+						  int status_mask,
 						  TW_Task_handle_t *task) {
 	terr_t err = TW_SUCCESS;
 	TW_Obj_handle_t tp;
@@ -47,8 +49,8 @@ terr_t TW_Task_create_ex (TW_Task_handler_t task_cb,
 	tp->objtype = TW_Obj_type_task;
 	tp->driver	= TWI_Active_driver;
 
-	err = tp->driver->Task_create (task_cb, task_data, dep_handler, tag, priority, tp,
-								   &(tp->driver_obj));
+	err = tp->driver->Task_create (task_cb, task_data, dep_handler, tag, priority, stat_handler,
+								   status_mask, tp, &(tp->driver_obj));
 	CHECK_ERR
 
 	*task = tp;
@@ -74,8 +76,8 @@ terr_t TW_Task_create (TW_Task_handler_t task_cb,
 					   TW_Task_dep_handler_t dep_handler,
 					   int tag,
 					   TW_Task_handle_t *task) {
-	return TW_Task_create_ex (task_cb, task_data, dep_handler, tag, TW_TASK_PRIORITY_STANDARD,
-							  task);
+	return TW_Task_create_ex (task_cb, task_data, dep_handler, tag, TW_TASK_PRIORITY_STANDARD, NULL,
+							  0, task);
 }
 
 terr_t TW_Task_free (TW_Task_handle_t task) {
@@ -266,22 +268,24 @@ err_out:;
 }
 
 const char *TW_Task_status_str (int status) {
-	if (status & TW_Task_STAT_FREE) {
-		return "free";
-	} else if (status & TW_Task_STAT_DEPHOLD) {
+	if (status & TW_TASK_STAT_IDLE) {
+		return "idle";
+	} else if (status & TW_TASK_STAT_DEPHOLD) {
 		return "dep. hold";
-	} else if (status & TW_Task_STAT_READY) {
+	} else if (status & TW_TASK_STAT_READY) {
 		return "ready";
-	} else if (status & TW_Task_STAT_RUNNING) {
+	} else if (status & TW_TASK_STAT_QUEUE) {
+		return "queuing";
+	} else if (status & TW_TASK_STAT_RUNNING) {
 		return "running";
-	} else if (status & TW_Task_STAT_COMPLETED) {
+	} else if (status & TW_TASK_STAT_COMPLETED) {
 		return "completed";
-	} else if (status & TW_Task_STAT_ABORTED) {
+	} else if (status & TW_TASK_STAT_ABORTED) {
 		return "aborted";
-	} else if (status & TW_Task_STAT_FAILED) {
+	} else if (status & TW_TASK_STAT_FAILED) {
 		return "failed";
-	} else if (status & TW_Task_STAT_TRANS) {
-		return "transition";
+	} else if (status & TW_TASK_STAT_FINAL) {
+		return "finalizing";
 	}
 
 	return "unknown";

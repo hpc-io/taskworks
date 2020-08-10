@@ -43,6 +43,8 @@ TW_Driver_t TWABT_Driver = {
 	TWABT_Event_retract,  // Stop watching
 };
 
+TWI_Disposer_handle_t TWABTI_Disposer = NULL;
+
 TWI_Ts_vector_handle_t TWABTI_Engines = NULL;
 TWI_Ts_vector_handle_t TWABTI_Tasks	  = NULL;
 TWI_Ts_vector_handle_t TWABTI_Events  = NULL;
@@ -59,6 +61,9 @@ static int TWABT_Abt_need_finalize = 0;
 terr_t TWABT_Init (int TWI_UNUSED *argc, char TWI_UNUSED ***argv) {
 	terr_t err = TW_SUCCESS;
 	int abterr;
+
+	TWABTI_Disposer = TWI_Disposer_create ();
+	CHECK_PTR (TWABTI_Disposer);
 
 	// Initialize argobot if not yet innitialized
 	if (ABT_initialized () != ABT_SUCCESS) {
@@ -126,6 +131,8 @@ terr_t TWABT_Finalize (void) {
 		abterr = ABT_finalize ();
 		CHECK_ABTERR
 	}
+
+	TWI_Disposer_free (TWABTI_Disposer);
 
 err_out:;
 	return err;

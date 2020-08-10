@@ -18,9 +18,9 @@
 #include "dispatcher.h"
 /// \endcond
 
-#define TW_Task_STAT_ALL                                                                    \
-	(TW_Task_STAT_FREE | TW_Task_STAT_DEPHOLD | TW_Task_STAT_READY | TW_Task_STAT_RUNNING | \
-	 TW_Task_STAT_COMPLETED | TW_Task_STAT_ABORTED | TW_Task_STAT_FAILED)
+#define TW_TASK_STAT_ALL                                                                    \
+	(TW_TASK_STAT_IDLE | TW_TASK_STAT_DEPHOLD | TW_TASK_STAT_READY | TW_TASK_STAT_RUNNING | \
+	 TW_TASK_STAT_COMPLETED | TW_TASK_STAT_ABORTED | TW_TASK_STAT_FAILED)
 
 // Set event arg
 extern terr_t TW_Event_arg_set_file (TW_Event_args_handle_t harg, TW_Fd_t fd, int events) {
@@ -83,7 +83,7 @@ extern terr_t TW_Event_arg_set_task (TW_Event_args_handle_t harg,
 
 	CHK_HANDLE (task, TW_Obj_type_task);
 
-	if ((status | TW_Task_STAT_ALL) != TW_Task_STAT_ALL) ASSIGN_ERR (TW_ERR_INVAL);
+	if ((status | TW_TASK_STAT_ALL) != TW_TASK_STAT_ALL) ASSIGN_ERR (TW_ERR_INVAL);
 
 	args.task	= task->driver_obj;
 	args.status = status;
@@ -153,4 +153,26 @@ terr_t TW_Event_retract (TW_Event_handle_t event) {
 
 err_out:;
 	return err;
+}
+
+const char *TW_Event_status_str (int status) {
+	if (status & TW_EVENT_STAT_IDLE) {
+		return "idle";
+	} else if (status & TW_EVENT_STAT_WATCHING) {
+		return "watching";
+	} else if (status & TW_EVENT_STAT_TRIGGER) {
+		return "triggered";
+		//} else if (status & TW_EVENT_STAT_QUEUE) {
+		//	return "queuing";
+	} else if (status & TW_EVENT_STAT_RUNNING) {
+		return "running";
+		//} else if (status & TW_EVENT_STAT_COMPLETED) {
+		//	return "completed";
+	} else if (status & TW_EVENT_STAT_FAILED) {
+		return "failed";
+	} else if (status & TW_EVENT_STAT_TRANS) {
+		return "transition";
+	}
+
+	return "unknown";
 }

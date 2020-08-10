@@ -13,6 +13,7 @@
 
 #include "twi_nb_list.h"
 
+#include <assert.h>
 #include <stdint.h>
 
 #include "taskworks_internal.h"
@@ -129,7 +130,7 @@ terr_t TWI_Nb_list_insert_front (TWI_Nb_list_handle_t l, void *data) {
 	CHECK_ERR
 
 	DEC_REF;
-
+	assert (OPA_load_ptr (&(l->head.next)) != NULL);
 err_out:;
 	return err;
 }
@@ -187,7 +188,7 @@ terr_t TWI_Nb_list_insert_at (TWI_Nb_list_handle_t l,
 	*/
 
 	if (successp) { *successp = success; }
-
+	assert (OPA_load_ptr (&(l->head.next)) != NULL);
 err_out:;
 	if (err || (!success)) { TWI_Free (new_node); }
 
@@ -242,7 +243,7 @@ terr_t TWI_Nb_list_del_at (TWI_Nb_list_handle_t l, TWI_Nb_list_itr_t pos, int *s
 	}
 
 	if (successp) *successp = success;
-
+	assert (OPA_load_ptr (&(l->head.next)) != NULL);
 	// err_out:;
 	DEC_REF;
 	return err;
@@ -294,6 +295,8 @@ terr_t TWI_Nb_list_del (TWI_Nb_list_handle_t l, void *data) {
 			}
 		}
 	*/
+
+	assert (OPA_load_ptr (&(l->head.next)) != NULL);
 err_out:;
 	DEC_REF;
 	return err;

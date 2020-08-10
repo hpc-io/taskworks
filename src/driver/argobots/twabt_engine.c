@@ -146,27 +146,26 @@ err_out:;
  */
 terr_t TWABT_Engine_do_work (TW_Handle_t engine, ttime_t timeout) {
 	terr_t err = TW_SUCCESS;
-	TWI_Bool_t have_job;
 	ttime_t stoptime;
 	TWI_Nb_list_itr_t i;
 	TWABT_Task_t *tp;
 	TWABT_Engine_t *ep = (TWABT_Engine_t *)engine;
 
-	TWI_Nb_list_inc_ref (ep->tasks);
-	i		 = TWI_Nb_list_begin (ep->tasks);
 	stoptime = TWI_Time_now () + timeout;
-	do {
+
+	TWI_Nb_list_inc_ref (ep->tasks);
+
+	for (i = TWI_Nb_list_begin (ep->tasks);
+		 i != TWI_Nb_list_end (ep->tasks) && TWI_Time_now () < stoptime; i = TWI_Nb_list_next (i)) {
 		tp = (TWABT_Task_t *)i->data;
 
-		if (OPA_load_int (&(tp->status)) == TW_Task_STAT_READY) {
-			err = TWABTI_Task_run (tp, &have_job);
+		if (OPA_load_int (&(tp->status)) == TW_TASK_STAT_QUEUE) {
+			err = TWABTI_Task_run (tp, NULL);
 			CHECK_ERR
 		}
 
-		if (timeout == TW_ONCE || (!have_job)) break;
-
-		i = TWI_Nb_list_next (i);
-	} while (TWI_Time_now () < stoptime && have_job);
+		if (timeout == TW_ONCE) break;
+	}
 
 err_out:;
 	TWI_Nb_list_dec_ref (ep->tasks);

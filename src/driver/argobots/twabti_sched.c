@@ -74,6 +74,8 @@ void TWABTI_Sched_run (ABT_sched sched) {
 	ABT_bool stop;
 	TWABT_Engine_t *ep;
 
+	TWI_Disposer_join (TWABTI_Disposer);
+
 	abterr = ABT_sched_get_data (sched, (void **)(&ep));
 	CHECK_ABTERR
 
@@ -90,7 +92,11 @@ void TWABTI_Sched_run (ABT_sched sched) {
 		abterr = ABT_sched_has_to_stop (sched, &stop);
 		CHECK_ABTERR
 		if (stop == ABT_TRUE) { break; }
+
+		TWI_Disposer_flush (TWABTI_Disposer);
 	}
+
+	TWI_Disposer_leave (TWABTI_Disposer);
 
 	/* //TODO: Check for event
 	work_count = 0;

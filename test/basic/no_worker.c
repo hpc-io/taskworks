@@ -13,7 +13,7 @@
 #include <stdatomic.h>
 #include <twtest.h>
 
-#define NUM_TASKS 10
+#define NUM_TASKS 2
 
 int task_fn (void *data);
 int task_fn (void *data) {
@@ -60,14 +60,18 @@ int main (int argc, char *argv[]) {
 	for (i = 0; i <= NUM_TASKS / 2; i++) {
 		err = TW_Task_get_status (task[i], &status);
 		CHECK_ERR
-		EXP_VAL (status, TW_Task_STAT_COMPLETED, "%d")
+		EXP_VAL (status, TW_TASK_STAT_COMPLETED, "%d")
 	}
 	EXP_VAL (ctr, (NUM_TASKS / 2 + 1), "%d");
 
 	// Run 1 additional task
 	err = TW_Engine_progress (eng);
 	CHECK_ERR
-	EXP_VAL (ctr, (NUM_TASKS / 2 + 2), "%d");
+	if (NUM_TASKS > 2) {
+		EXP_VAL (ctr, (NUM_TASKS / 2 + 2), "%d");
+	} else {
+		EXP_VAL (ctr, (NUM_TASKS / 2 + 1), "%d");  // No more task to run
+	}
 
 	for (i = 0; i < NUM_TASKS; i++) {
 		err = TW_Task_wait (task[i], TW_TIMEOUT_NEVER);
@@ -77,7 +81,7 @@ int main (int argc, char *argv[]) {
 	for (i = 0; i < NUM_TASKS; i++) {
 		err = TW_Task_get_status (task[i], &status);
 		CHECK_ERR
-		EXP_VAL (status, TW_Task_STAT_COMPLETED, "%d")
+		EXP_VAL (status, TW_TASK_STAT_COMPLETED, "%d")
 	}
 
 	for (i = 0; i < NUM_TASKS; i++) {

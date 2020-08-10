@@ -27,17 +27,19 @@ terr_t TWABT_Event_create (TW_Event_handler_t evt_cb,
 	ep->data		   = evt_data;
 	ep->dispatcher_obj = dispatcher_obj;
 	ep->eng			   = NULL;
-	ep->abt_task	   = ABT_TASK_NULL;
-	if (args.type == TW_Event_type_task) {
-		ep->driver_obj	= args.args.task.task;
-		ep->status_flag = args.args.task.status;
-		ep->driver		= NULL;
+	if (args.type == TW_Event_type_timer) {
+		ep->repeat = args.args.timer.repeat_count;
 	} else {
-		ep->driver = TWI_Active_evt_driver;
-		ep->driver->Event_create (TWABTI_Event_cb, ep, args, &(ep->driver_obj));
+		ep->repeat = TW_INFINITE;
 	}
+	OPA_store_int (&(ep->status), TW_EVENT_STAT_IDLE);
+	ep->driver = TWI_Active_evt_driver;
+	ep->driver->Event_create (TWABTI_Event_cb, ep, args, &(ep->driver_obj));
 
 	*hevt = ep;
+
+	DEBUG_PRINTF (1, "Created event %p, handler: %p, data: %p\n", (void *)ep,
+				  (void *)(long long)(ep->handler), (void *)(ep->data));
 
 err_out:;
 	if (err) {
@@ -47,67 +49,90 @@ err_out:;
 }
 terr_t TWABT_Event_free (TW_Handle_t hevt) {
 	terr_t err = TW_SUCCESS;
-	int abterr;
+	TWI_Bool_t success;
 	TWABT_Event_t *ep = (TWABT_Event_t *)hevt;
 
-	if (ep->abt_task != ABT_TASK_NULL) {
-		abterr = ABT_task_free (&(ep->abt_task));
-		CHECK_ABTERR
+	err = TWABTI_Event_update_status (ep, TW_EVENT_STAT_ANY ^ TW_EVENT_STAT_INVAL,
+									  TW_EVENT_STAT_INVAL, &success);
+	CHECK_ERR
+
+	if (success) {
+		err = ep->driver->Event_free (ep->driver_obj);
+		CHECK_ERR
+
+		err = TWI_Disposer_dispose (TWABTI_Disposer, ep, TWABTI_Event_free);
+		CHECK_ERR
+	} else {
+		ASSIGN_ERR (TW_ERR_STATUS)
 	}
 
-	if (ep->driver) { ep->driver->Event_free (ep->driver_obj); }
+	DEBUG_PRINTF (1, "Freed event %p\n", (void *)ep);
 
 err_out:;
-	TWI_Free (ep);
 	return err;
 }
 
 // Commit event, start watching
 terr_t TWABT_Event_commit (TW_Handle_t hevt, TW_Handle_t engine) {
-	terr_t err			 = TW_SUCCESS;
+	terr_t err = TW_SUCCESS;
+	TWI_Bool_t success;
 	TWABT_Event_t *ep	 = (TWABT_Event_t *)hevt;
 	TWABT_Engine_t *engp = (TWABT_Engine_t *)engine;
 
-	ep->eng = engp;
-	if (ep->driver) {
+	err = TWABTI_Event_update_status (ep, TW_EVENT_STAT_IDLE | TW_EVENT_STAT_FAILED,
+									  TW_EVENT_STAT_TRANS, &success);
+	CHECK_ERR
+
+	if (success) {
+		ep->eng = engp;
 		if (engp->evt_driver != ep->driver) ASSIGN_ERR (TW_ERR_INCOMPATIBLE_OBJECT)
 		err = ep->driver->Event_commit (ep->driver_obj, engp->evt_loop);
 		CHECK_ERR
-	} else {  // Currently, the only event handled by the driver is task repated event
-		TWABT_Task_t *tp = (TWABT_Task_t *)ep->driver_obj;
-		TWABT_Task_monitor_t *mp =
-			(TWABT_Task_monitor_t *)TWI_Malloc (sizeof (TWABT_Task_monitor_t));
 
-		CHECK_PTR (mp)
-		mp->evt = ep;
-		OPA_store_int (&(mp->ref), 2);
+		DEBUG_PRINTF (1, "Event %p commited to engine %p\n", (void *)ep, (void *)engp);
 
-		TWI_Nb_list_insert_front (tp->events, mp);
-
-		ep->driver_obj = mp;
+		err =
+			TWABTI_Event_update_status (ep, TW_EVENT_STAT_TRANS, TW_EVENT_STAT_WATCHING, &success);
+		CHECK_ERR
+	} else {
+		ASSIGN_ERR (TW_ERR_STATUS)
 	}
 
 err_out:;
-	if (err) { ep->eng = NULL; }
+	if (err) {
+		ep->eng = NULL;
+		OPA_cas_int (&(ep->status), TW_EVENT_STAT_TRANS, TW_EVENT_STAT_IDLE);
+	}
 	return err;
 }
 
 // Stop watching
 terr_t TWABT_Event_retract (TW_Handle_t hevt) {
-	terr_t err		  = TW_SUCCESS;
+	terr_t err = TW_SUCCESS;
+	TWI_Bool_t success;
 	TWABT_Event_t *ep = (TWABT_Event_t *)hevt;
 
-	if (ep->driver) {
-		err = ep->driver->Event_retract (ep->driver_obj);
-		CHECK_ERR
+	if (OPA_load_int (&(ep->status)) == TW_EVENT_STAT_RUNNING ||
+		OPA_load_int (&(ep->status)) == TW_EVENT_STAT_TRIGGER) {
+		ep->repeat = 0;
 	} else {
-		int iszero;
-		TWABT_Task_monitor_t *mp = (TWABT_Task_monitor_t *)ep->driver_obj;
+		err =
+			TWABTI_Event_update_status (ep, TW_EVENT_STAT_WATCHING, TW_EVENT_STAT_TRANS, &success);
+		CHECK_ERR
 
-		iszero = OPA_decr_and_test_int (&(mp->ref));
-		if (iszero) { TWI_Free (mp); }
+		if (success) {
+			err = ep->driver->Event_retract (ep->driver_obj);
+			CHECK_ERR
+
+			ep->eng = NULL;
+
+			DEBUG_PRINTF (1, "Retracted event %p\n", (void *)ep);
+
+			err =
+				TWABTI_Event_update_status (ep, TW_EVENT_STAT_TRANS, TW_EVENT_STAT_IDLE, &success);
+			CHECK_ERR
+		}
 	}
-	ep->eng = NULL;
 
 err_out:;
 	return err;
