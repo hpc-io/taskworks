@@ -20,7 +20,8 @@ TESTPROGRAMS =  init \
                 engine \
                 file \
                 timer \
-                task
+                task \
+                socket
 
 # mutual_dep
 

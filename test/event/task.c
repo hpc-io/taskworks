@@ -75,7 +75,7 @@ int main (int argc, char *argv[]) {
 	}
 
 	for (i = 0; i < NUM_TASKS; i++) {
-		// err = TWT_Sem_dec (sem);
+		err = TWT_Sem_dec (sem);
 		CHECK_ERR
 	}
 

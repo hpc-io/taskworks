@@ -57,6 +57,12 @@ typedef sem_t *TWT_Semaphore;
 		}                                                                                        \
 	}
 
+#define RAISE_ERR(M)                                                    \
+	{                                                                   \
+		printf ("Error at line %d in %s: %s\n", __LINE__, __FILE__, M); \
+		nerr++;                                                         \
+	}
+
 terr_t TWT_Sem_create (TWT_Semaphore *sem);
 terr_t TWT_Sem_dec (TWT_Semaphore sem);
 terr_t TWT_Sem_inc (TWT_Semaphore sem);
