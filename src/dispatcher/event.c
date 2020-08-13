@@ -18,12 +18,8 @@
 #include "dispatcher.h"
 /// \endcond
 
-#define TW_TASK_STAT_ALL                                                                    \
-	(TW_TASK_STAT_IDLE | TW_TASK_STAT_DEPHOLD | TW_TASK_STAT_READY | TW_TASK_STAT_RUNNING | \
-	 TW_TASK_STAT_COMPLETED | TW_TASK_STAT_ABORTED | TW_TASK_STAT_FAILED)
-
 // Set event arg
-extern terr_t TW_Event_arg_set_file (TW_Event_args_handle_t harg, TW_Fd_t fd, int events) {
+terr_t TW_Event_arg_set_file (TW_Event_args_handle_t harg, TW_Fd_t fd, int events) {
 	terr_t err = TW_SUCCESS;
 	TW_File_event_args_t args;
 
@@ -38,9 +34,8 @@ extern terr_t TW_Event_arg_set_file (TW_Event_args_handle_t harg, TW_Fd_t fd, in
 err_out:;
 	return err;
 }
-extern terr_t TW_Event_arg_set_socket (TW_Event_args_handle_t harg,
-									   TW_Socket_t socket,
-									   int events) {
+
+terr_t TW_Event_arg_set_socket (TW_Event_args_handle_t harg, TW_Socket_t socket, int events) {
 	terr_t err = TW_SUCCESS;
 	TW_Socket_event_args_t args;
 
@@ -56,9 +51,7 @@ err_out:;
 	return err;
 }
 
-extern terr_t TW_Event_arg_set_timer (TW_Event_args_handle_t harg,
-									  int64_t micro_sec,
-									  int repeat_count) {
+terr_t TW_Event_arg_set_timer (TW_Event_args_handle_t harg, int64_t micro_sec, int repeat_count) {
 	terr_t err = TW_SUCCESS;
 	TW_Timer_event_args_t args;
 
@@ -75,25 +68,20 @@ err_out:;
 	return err;
 }
 
-extern terr_t TW_Event_arg_set_task (TW_Event_args_handle_t harg,
-									 TW_Task_handle_t task,
-									 int status) {
+#ifdef TW_HAVE_MPI
+terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Request req) {
 	terr_t err = TW_SUCCESS;
-	TW_Task_event_args_t args;
+	TW_Mpi_event_args_t args;
 
-	CHK_HANDLE (task, TW_Obj_type_task);
+	args.req = req;
 
-	if ((status | TW_TASK_STAT_ALL) != TW_TASK_STAT_ALL) ASSIGN_ERR (TW_ERR_INVAL);
-
-	args.task	= task->driver_obj;
-	args.status = status;
-
-	harg->type		= TW_Event_type_task;
-	harg->args.task = args;
+	harg->type	   = TW_Event_type_mpi;
+	harg->args.mpi = args;
 
 err_out:;
 	return err;
 }
+#endif
 
 // Create, free
 terr_t TW_Event_create (TW_Event_handler_t evt_cb,

@@ -8,7 +8,8 @@
 
 SUFFIXES = .o .c .h .m4
 
-AM_CPPFLAGS  =  -I${top_srcdir}/src/include \
+AM_CPPFLAGS  =  -I${top_srcdir}/src \
+                -I${top_srcdir}/src/include \
                 -I${top_srcdir}/src/common \
                 -I${top_srcdir}/src/driver
                 

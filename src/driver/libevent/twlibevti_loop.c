@@ -12,13 +12,11 @@
 
 #include "twlibevt.h"
 
-terr_t TWLIBEVTI_Check_for_single_event (TW_Handle_t TWI_UNUSED loop, TWI_Bool_t *success) {
+terr_t TWLIBEVTI_Check_for_single_unmanaged_event (TWLIBEVT_Loop_t *lp, TWI_Bool_t *success) {
 	terr_t err = TW_SUCCESS;
-	// int evterr;
 	int i;
 	int size;
-	TWLIBEVT_Loop_t *lp = (TWLIBEVT_Loop_t *)loop;
-	TWLIBEVT_Event_t *ep;
+	TWLIBEVT_Event_t *ep = NULL;
 
 	*success = TWI_FALSE;
 
@@ -26,28 +24,51 @@ terr_t TWLIBEVTI_Check_for_single_event (TW_Handle_t TWI_UNUSED loop, TWI_Bool_t
 	size = (int)TWI_Ts_vector_size (lp->unmanaged_events);
 	for (i = 0; i < size; i++) {
 		ep = (TWLIBEVT_Event_t *)lp->unmanaged_events->data[i];
-		switch (ep->args.type) {
-			case TW_Event_type_mpi:;
-				/* code */
+#ifdef ENABLE_PARALLEL
+		if (ep->args.type == TW_Event_type_mpi) {
+			int mpierr;
+			int flag;
+			MPI_Status status;
+
+			mpierr = MPI_Test (&(ep->args.args.mpi.req), &flag, &status);
+			CHECK_MPIERR
+
+			if (flag) {
+				TWLIBEVTI_Evt_mpi_cb (ep, flag, status);
 				break;
-			case TW_Event_type_task:;
-				/* code */
-				break;
-			case TW_Event_type_file:;
-				/* fall through */
-				TWI_FALL_THROUGH;
-			case TW_Event_type_socket:;
-				/* fall through */
-				TWI_FALL_THROUGH;
-			case TW_Event_type_timer:;
-				/* fall through */
-				TWI_FALL_THROUGH;
-			default:;
-				break;
+			}
 		}
+#endif
 	}
 	TWI_Ts_vector_unlock (lp->unmanaged_events);
 
-	// err_out:;
+	// Remove from event queue
+	if (ep && i < size) { TWI_Ts_vector_swap_erase (lp->unmanaged_events, ep); }
+
+err_out:;
+
+	return err;
+}
+
+terr_t TWLIBEVTI_Check_for_single_event (TW_Handle_t loop, TWI_Bool_t *success) {
+	terr_t err = TW_SUCCESS;
+	int evterr;
+	TWLIBEVT_Loop_t *lp = (TWLIBEVT_Loop_t *)loop;
+
+	err = TWLIBEVTI_Check_for_single_unmanaged_event (lp, success);
+	CHECK_ERR
+
+	if (!(*success)) {	// No unmanagemen
+		evterr = event_base_loop (lp->base, EVLOOP_ONCE | EVLOOP_NONBLOCK);
+		if (evterr == 0) {
+			*success = TWI_TRUE;
+		} else if (evterr == 1) {
+			*success = TWI_FALSE;
+		} else {
+			CHECK_LIBEVTERR
+		}
+	}
+
+err_out:;
 	return err;
 }

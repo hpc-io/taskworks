@@ -10,8 +10,8 @@ AC_PREREQ(2.59)
 AC_INIT([taskworks], [0.1], [])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([src/include/taskworks.h])
-AC_CONFIG_HEADER([src/include/config.h])
+AC_CONFIG_SRCDIR([src/include/taskworks.h.in])
+AC_CONFIG_HEADER([src/config.h])
 
 # Init automake
 AM_INIT_AUTOMAKE
@@ -193,6 +193,7 @@ LT_INIT
 
 # Check if we can compile MPI program
 ENABLE_PARALLEL=no
+HAVE_MPI="#undefine TW_HAVE_MPI"
 if test "x$enable_parallel" = "xyes"; then
 	echo "enable_parallel=$enable_parallel"
 	AC_MSG_CHECKING([whether a simple MPI-IO C program can be linked])
@@ -226,6 +227,7 @@ if test "x$enable_parallel" = "xyes"; then
 	# We are building a parallel library
 	ENABLE_PARALLEL=yes
 	AC_DEFINE(ENABLE_PARALLEL, 1)
+	HAVE_MPI="#define TW_HAVE_MPI 1"
 fi
 AM_CONDITIONAL(ENABLE_PARALLEL, [test x$enable_parallel = xyes])
 
@@ -492,10 +494,13 @@ AC_SUBST([ENABLE_PARALLEL])
 AC_SUBST([ENABLE_ABT])
 AC_SUBST([ENABLE_LIBEVENT])
 
+AC_SUBST([HAVE_MPI])
+
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile 
 		src/libtw.settings
+		src/include/taskworks.h
 		src/driver/Makefile 
 		src/driver/argobots/Makefile 
 		src/driver/libevent/Makefile 

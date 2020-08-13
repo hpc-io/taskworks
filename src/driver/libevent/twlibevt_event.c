@@ -78,23 +78,24 @@ terr_t TWLIBEVT_Event_commit (TW_Handle_t event, TW_Handle_t loop) {
 			fd		   = -1;
 			cb		   = TWLIBEVTI_Evt_timer_cb;
 			break;
-		case TW_Event_type_task:;
-			/* fall through */
-			TWI_FALL_THROUGH;
 		case TW_Event_type_mpi:;
-			/* fall through */
-			TWI_FALL_THROUGH;
+			break;
 		default:;
 			ASSIGN_ERR (TW_ERR_INVAL)
 	}
 
-	ep->event = event_new (lp->base, fd, evt_flags, cb, ep);
-	CHECK_LIBEVTPTR (ep->event)
+	if (ep->args.type == TW_Event_type_mpi) {
+		err = TWI_Ts_vector_push_back (lp->unmanaged_events, ep);
+		CHECK_ERR
+	} else {
+		ep->event = event_new (lp->base, fd, evt_flags, cb, ep);
+		CHECK_LIBEVTPTR (ep->event)
 
-	ep->lp = lp;
+		ep->lp = lp;
 
-	evterr = event_add (ep->event, tvp);
-	CHECK_LIBEVTERR
+		evterr = event_add (ep->event, tvp);
+		CHECK_LIBEVTERR
+	}
 
 err_out:;
 	return err;

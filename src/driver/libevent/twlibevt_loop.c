@@ -59,23 +59,3 @@ terr_t TWLIBEVT_Loop_check_events (TW_Handle_t loop, ttime_t timeout) {
 err_out:;
 	return err;
 }
-
-terr_t TWLIBEVTI_Check_for_single_event (TW_Handle_t loop, TWI_Bool_t *success) {
-	terr_t err = TW_SUCCESS;
-	int evterr;
-	TWLIBEVT_Loop_t *lp = (TWLIBEVT_Loop_t *)loop;
-
-	// TODO: pull for unmanaged events
-
-	evterr = event_base_loop (lp->base, EVLOOP_ONCE | EVLOOP_NONBLOCK);
-	if (evterr == 0) {
-		*success = TWI_TRUE;
-	} else if (evterr == 1) {
-		*success = TWI_FALSE;
-	} else {
-		CHECK_LIBEVTERR
-	}
-
-err_out:;
-	return err;
-}

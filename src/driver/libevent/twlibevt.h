@@ -93,12 +93,14 @@ terr_t TWLIBEVT_Event_commit (TW_Handle_t event, TW_Handle_t loop);	 // Commit a
 terr_t TWLIBEVT_Event_retract (TW_Handle_t htask);					 // Remove event from the loop
 
 /* Loop internal functions */
-terr_t TWLIBEVTI_Check_for_single_event (TW_Handle_t TWI_UNUSED loop, TWI_Bool_t *success);
+terr_t TWLIBEVTI_Check_for_single_unmanaged_event (TWLIBEVT_Loop_t *lp, TWI_Bool_t *success);
+terr_t TWLIBEVTI_Check_for_single_event (TW_Handle_t loop, TWI_Bool_t *success);
 
 /* Event internal functions */
 void TWLIBEVTI_Evt_file_cb (evutil_socket_t socket, short flags, void *data);
 void TWLIBEVTI_Evt_socket_cb (evutil_socket_t socket, short flags, void *data);
 void TWLIBEVTI_Evt_timer_cb (evutil_socket_t socket, short flags, void *data);
+void TWLIBEVTI_Evt_mpi_cb (TWLIBEVT_Event_t *ep, int flag, MPI_Status stat);
 
 /* Misc */
 terr_t TWLIBEVT_Err_to_tw_err (int TWI_UNUSED abterr);

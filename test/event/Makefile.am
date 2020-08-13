@@ -23,6 +23,10 @@ TESTPROGRAMS =  init \
                 task \
                 socket
 
+if ENABLE_PARALLEL
+   TESTPROGRAMS += mpi
+endif
+
 # mutual_dep
 
 # When we need m4

@@ -29,6 +29,8 @@ terr_t TWABT_Event_create (TW_Event_handler_t evt_cb,
 	ep->eng			   = NULL;
 	if (args.type == TW_Event_type_timer) {
 		ep->repeat = args.args.timer.repeat_count;
+	} else if (args.type == TW_Event_type_mpi) {
+		ep->repeat = 1;
 	} else {
 		ep->repeat = TW_INFINITE;
 	}

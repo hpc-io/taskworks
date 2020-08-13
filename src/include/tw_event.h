@@ -18,6 +18,10 @@
 #include "unistd.h"
 #endif
 
+#ifdef TW_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #include "taskworks.h"
 #include "tw_task.h"
 
@@ -61,8 +65,9 @@ typedef enum TW_Event_type_t {
 	// File related event
 	TW_Event_type_file,
 	TW_Event_type_socket,  // Internet socket related events
-	TW_Event_type_task,	   // Task related event
-	TW_Event_type_mpi,	   // MPI related event
+#ifdef TW_HAVE_MPI
+	TW_Event_type_mpi,	// MPI related event
+#endif
 } TW_Event_type_t;
 
 typedef struct TW_File_event_args_t {
@@ -73,25 +78,29 @@ typedef struct TW_Socket_event_args_t {
 	TW_Socket_t socket;
 	int events;
 } TW_Socket_event_args_t;
-// typedef struct TW_MPI_event_args_t {
-//} TW_MPI_event_args_t;
-typedef struct TW_Task_event_args_t {
-	TW_Task_handle_t task;
-	int status;
-} TW_Task_event_args_t;
+
 typedef struct TW_Timer_event_args_t {
 	int64_t micro_sec;
 	int repeat_count;
 } TW_Timer_event_args_t;
+
+#ifdef TW_HAVE_MPI
+typedef struct TW_Mpi_event_args_t {
+	MPI_Request req;
+	int flag;
+	MPI_Status stat;
+} TW_Mpi_event_args_t;
+#endif
 
 typedef struct TW_Event_args_t {
 	TW_Event_type_t type;
 	union args {
 		TW_File_event_args_t file;
 		TW_Socket_event_args_t socket;
-		// TW_MPI_event_args_t socket;
-		TW_Task_event_args_t task;
 		TW_Timer_event_args_t timer;
+#ifdef TW_HAVE_MPI
+		TW_Mpi_event_args_t mpi;
+#endif
 	} args;
 } TW_Event_args_t;
 
@@ -109,9 +118,9 @@ extern terr_t TW_Event_arg_set_socket (TW_Event_args_handle_t harg, TW_Socket_t 
 extern terr_t TW_Event_arg_set_timer (TW_Event_args_handle_t harg,
 									  int64_t micro_sec,
 									  int repeat_count);
-extern terr_t TW_Event_arg_set_task (TW_Event_args_handle_t harg,
-									 TW_Task_handle_t task,
-									 int status);
+#ifdef TW_HAVE_MPI
+extern terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Request req);
+#endif
 
 // Create, free
 extern terr_t TW_Event_create (TW_Event_handler_t evt_cb,

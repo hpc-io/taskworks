@@ -95,3 +95,14 @@
 		PRINT_OS_ERR (R) \
 		goto err_out;    \
 	}
+
+#ifdef ENABLE_PARALLEL
+#define CHECK_MPIRET(R)         \
+	{                           \
+		if (R != MPI_SUCCESS) { \
+			PRINT_ERR (R)       \
+			goto err_out;       \
+		}                       \
+	}
+#define CHECK_MPIERR CHECK_MPIRET (mpierr)
+#endif

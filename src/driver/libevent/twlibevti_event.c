@@ -65,3 +65,19 @@ void TWLIBEVTI_Evt_timer_cb (evutil_socket_t TWI_UNUSED socket, short flags, voi
 		OPA_store_int (&(ep->status), EVT_STATUS_PENDING);
 	}
 }
+
+void TWLIBEVTI_Evt_mpi_cb (TWLIBEVT_Event_t *ep, int flag, MPI_Status stat) {
+	TW_Event_args_t arg;
+
+	if (OPA_cas_int (&(ep->status), EVT_STATUS_COMMITED, EVT_STATUS_RUNNING) ==
+		EVT_STATUS_COMMITED) {
+		arg				  = ep->args;
+		arg.type		  = TW_Event_type_mpi;
+		arg.args.mpi.flag = flag;
+		arg.args.mpi.stat = stat;
+
+		ep->handler (&arg, ep->data);
+
+		OPA_store_int (&(ep->status), EVT_STATUS_PENDING);
+	}
+}
