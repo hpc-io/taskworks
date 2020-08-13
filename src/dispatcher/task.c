@@ -286,6 +286,8 @@ const char *TW_Task_status_str (int status) {
 		return "failed";
 	} else if (status & TW_TASK_STAT_FINAL) {
 		return "finalizing";
+	} else if (status & TW_TASK_STAT_TRANS) {
+		return "transition";
 	}
 
 	return "unknown";

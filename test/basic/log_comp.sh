@@ -7,5 +7,5 @@
 # contained in the file COPYING at the root of the source code distribution 
 # tree.                                                                     
 
-
+echo $(top_srcdir)
 $1

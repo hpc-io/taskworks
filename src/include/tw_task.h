@@ -21,8 +21,9 @@ typedef struct TW_Obj_t *TW_Task_handle_t;
 
 /* Task status
  * We do not use enum because it is not supported by openpa
+ * Note: The value has meaning and cannot be reassigned arbitrarily. The status can only increase
+ * during a single commit session.
  */
-
 #define TW_TASK_STAT_INVAL	   0x0
 #define TW_TASK_STAT_IDLE	   0x1	 // The task hasn't been commited, user can modify the task
 #define TW_TASK_STAT_DEPHOLD   0x2	 // Commited in the flow graph, waiting on job dependency
@@ -35,6 +36,7 @@ typedef struct TW_Obj_t *TW_Task_handle_t;
 // graph
 #define TW_TASK_STAT_ABORTED 0x80
 #define TW_TASK_STAT_FAILED	 0x100
+#define TW_TASK_STAT_TRANS	 0x200	// Status in transition, unused
 
 /* Task priority
  * We do not use enum because it is not supported by openpa

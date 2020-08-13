@@ -84,8 +84,11 @@ void TWABTI_Task_free_core (void *obj) {  // Free up a task
 
 void TWABTI_Task_abttask_cb (void *task) {
 	TWABT_Task_t *tp = *((TWABT_Task_t **)task);
+
 	if (tp) {
 		*(tp->abt_task_ctx) = NULL;
+		while (OPA_load_int (&(tp->status)) == TW_TASK_STAT_READY)
+			;  // Wait until status changed to queue
 		TWABTI_Task_run (tp, NULL);
 	}
 
@@ -294,6 +297,7 @@ err_out:;
 
 terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new_stat) {
 	terr_t err = TW_SUCCESS;
+	int cur_stat;
 	int stat_before, stat_after;
 	TWI_Nb_list_itr_t itr;
 	TWABT_Task_dep_t *dp;
@@ -306,20 +310,41 @@ terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new
 		dp = itr->data;
 		cp = (TWABT_Task_t *)OPA_load_ptr (&(dp->child));
 		if (cp) {
-			if (OPA_cas_int (&(dp->status), old_stat, new_stat) == old_stat) {
-				stat_before = OPA_load_int (&(cp->status));
-				if (stat_before == TW_TASK_STAT_DEPHOLD && (cp->dep_handler.Mask & new_stat)) {
-					DEBUG_PRINTF (1, "notify task %p, status of task %p is %s\n", (void *)(cp),
-								  (void *)tp, TW_Task_status_str (OPA_load_int (&(tp->status))));
-					stat_after =
-						cp->dep_handler.Status_change (cp->dispatcher_obj, tp->dispatcher_obj,
-													   old_stat, new_stat, cp->dep_handler.Data);
-					if (stat_before != stat_after) {
-						err = TWABTI_Task_update_status (cp, stat_before, stat_after, NULL);
-						CHECK_ERR
+			cur_stat = OPA_load_int (&(dp->status));
+			while (cur_stat < new_stat) {
+				old_stat = cur_stat;
+				cur_stat = OPA_cas_int (&(dp->status), old_stat, new_stat);
+				if (cur_stat == old_stat) {
+					stat_before = OPA_load_int (&(cp->status));
+					if (stat_before == TW_TASK_STAT_DEPHOLD && (cp->dep_handler.Mask & new_stat)) {
+						DEBUG_PRINTF (1, "notify task %p, status of task %p is %s\n", (void *)(cp),
+									  (void *)tp,
+									  TW_Task_status_str (OPA_load_int (&(tp->status))));
+						stat_after = cp->dep_handler.Status_change (cp->dispatcher_obj,
+																	tp->dispatcher_obj, old_stat,
+																	new_stat, cp->dep_handler.Data);
+						if (stat_before != stat_after) {
+							err = TWABTI_Task_update_status (cp, stat_before, stat_after, NULL);
+							CHECK_ERR
+						}
+					} else {
+						DEBUG_PRINTF (1, "child task %p of task %p not interested in status %s\n",
+									  (void *)(cp), (void *)(OPA_load_ptr (&(dp->parent))),
+									  TW_Task_status_str (OPA_load_int (&(dp->status))));
 					}
+					break;
 				}
 			}
+#ifdef ENABLE_DEBUG
+			if (cur_stat >= new_stat) {
+				DEBUG_PRINTF (
+					1,
+					"notification of status %s to child task %p of task %p masked by status %s\n",
+					TW_Task_status_str (new_stat), (void *)(cp),
+					(void *)(OPA_load_ptr (&(dp->parent))),
+					TW_Task_status_str (OPA_load_int (&(dp->status))));
+			}
+#endif
 		}
 		itr = TWI_Nb_list_next (itr);
 	}

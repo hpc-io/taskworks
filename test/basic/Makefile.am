@@ -37,7 +37,7 @@ check_PROGRAMS = $(TESTPROGRAMS)
 TESTS = $(TESTPROGRAMS)
 TEST_EXTENSIONS = .sh
 LOG_COMPILER = $(srcdir)/log_comp.sh
-SH_LOG_COMPILER =
+SH_LOG_COMPILER=bash
 
 # build check targets but not invoke
 tests: all $(check_PROGRAMS)
