@@ -8,9 +8,8 @@
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* TaskWroks thread driver */
+/* Argobot specific error handling */
 
-#pragma once
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
+#include "twposix.h"
+
+terr_t TWPOSIX_Err_to_tw_err (int TWI_UNUSED perr) { return -1; }

@@ -6,19 +6,20 @@
 # contained in the file COPYING at the root of the source code distribution 
 # tree.                                                                     
 
-SUBDIRS = dispatcher driver common
+SUBDIRS = dispatcher driver common tal
 DIST_SUBDIRS = ${SUBDIRS}
 
 # Our main target, the task engine library
 lib_LTLIBRARIES=libtw.la
 libtw_la_SOURCES = 
 libtw_la_LIBADD  =  dispatcher/libtwdispatcher.la \
-                    common/libtwcommon.la
+                    common/libtwcommon.la \
+                    tal/posix/libtwposix.la
 
-if ENABLE_ABT
+if HAVE_ABT
    libtw_la_LIBADD += driver/argobots/libtwabt.la
 endif
-if ENABLE_LIBEVENT
+if HAVE_LIBEVENT
    libtw_la_LIBADD += driver/libevent/libtwlibevt.la
 endif
 

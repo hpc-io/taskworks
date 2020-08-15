@@ -20,12 +20,26 @@ TESTPROGRAMS =  init \
                 engine \
                 file \
                 timer \
-                task \
                 socket
 
-if ENABLE_PARALLEL
+if HAVE_MPI
    TESTPROGRAMS += mpi
 endif
+
+TEST_DRIVERS=
+TEST_EVTDRIVERS=
+
+if HAVE_ABT
+   TEST_DRIVERS += "ABT"
+endif
+
+if HAVE_LIBEVENT
+   TEST_EVTDRIVERS += "LIBEVENT"
+endif
+
+AM_TESTS_ENVIRONMENT = \
+DRIVERS=${TEST_DRIVERS} \
+EVTDRIVERS=${TEST_EVTDRIVERS}
 
 # mutual_dep
 

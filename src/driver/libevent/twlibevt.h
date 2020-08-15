@@ -24,9 +24,10 @@
 #include <event2/event.h>
 #include <event2/util.h>
 
+#include "driver.h"
 #include "taskworks_internal.h"
 
-#ifdef ENABLE_DEBUG
+#ifdef TWI_DEBUG
 
 #else
 #endif

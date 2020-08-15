@@ -14,7 +14,7 @@
 
 #include <stdint.h>
 
-#ifdef ENABLE_PARALLEL
+#ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 
@@ -23,7 +23,7 @@
 typedef struct TW_Obj_t *TW_Engine_handle_t;
 
 /*
-#ifdef ENABLE_PARALLEL
+#ifdef HAVE_MPI
 extern terr_t TW_Engine_init_par (
 	int num_worker,
 	MPI_Comm Comm,

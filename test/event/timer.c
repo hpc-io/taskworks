@@ -31,7 +31,8 @@
 
 #include <twtest.h>
 
-#define NTICK 2
+#define NUM_WORKERS 4
+#define NTICK		2
 
 TWT_Semaphore sem;
 
@@ -53,6 +54,7 @@ int main (int argc, char **argv) {
 	terr_t err = TW_SUCCESS;
 	int nerr   = 0;
 	int i;
+	int nworker		   = NUM_WORKERS;
 	atomic_int evtnerr = 0;
 	int ret;
 	TW_Fd_t fd;
@@ -62,13 +64,15 @@ int main (int argc, char **argv) {
 
 	PRINT_TEST_MSG ("Check if timer based event triggers correctly");
 
+	if (argc > 1) { nworker = atoi (argv[1]); }
+
 	err = TWT_Sem_create (&sem);
 	CHECK_ERR
 
 	err = TW_Init (TW_Backend_argobots, TW_Event_backend_libevent, &argc, &argv);
 	CHECK_ERR
 
-	err = TW_Engine_create (2, &eng);
+	err = TW_Engine_create (nworker, &eng);
 	CHECK_ERR
 
 	err = TW_Event_arg_set_timer (&arg, 1000, NTICK);

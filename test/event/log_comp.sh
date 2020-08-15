@@ -14,28 +14,31 @@ SEQ_RUN=
 NWORKERS=(2 4 8)
 NTASKS=(16 64 256)
 
-export TW_EVENT_BACKEND="NONE"
-
 for DRIVER in ${DRIVERS[@]}
 do
     export TW_BACKEND=${DRIVER}
 
-    for NWORKER in ${NWORKERS[@]}
+    for EVTDRIVER in ${EVTDRIVERS[@]}
     do
-        for NTASK in ${NTASKS[@]}
+        export TW_EVENT_BACKEND=${EVTDRIVER}
+
+        for NWORKER in ${NWORKERS[@]}
         do
-            echo "========================== Testing $1 on ${NTASK} tasks and ${NWORKER} workers using the ${DRIVER} driver =========================="
+            for NTASK in ${NTASKS[@]}
+            do
+                echo "========================== Testing $1 on ${NTASK} tasks and ${NWORKER} workers using the ${DRIVER} driver and ${EVTDRIVER} event driver =========================="
 
-            export TW_DEBUG_MSG_LVL=0           
-            echo "${SEQ_RUN} $1 ${NWORKER} ${NTASK}"
-            ${SEQ_RUN} $1 ${NWORKER} ${NTASK}
-
-            if [ $? -ne "0" ]; then
-                echo "Test failed. Rerun with full debug message."
-                export TW_DEBUG_MSG_LVL=10
+                export TW_DEBUG_MSG_LVL=0           
                 echo "${SEQ_RUN} $1 ${NWORKER} ${NTASK}"
                 ${SEQ_RUN} $1 ${NWORKER} ${NTASK}
-            fi
+
+                if [ $? -ne "0" ]; then
+                    echo "Test failed. Rerun with full debug message."
+                    export TW_DEBUG_MSG_LVL=10
+                    echo "${SEQ_RUN} $1 ${NWORKER} ${NTASK}"
+                    ${SEQ_RUN} $1 ${NWORKER} ${NTASK}
+                fi
+            done
         done
     done
 done

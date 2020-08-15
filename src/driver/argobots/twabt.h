@@ -17,12 +17,13 @@
 
 #include <abt.h>
 
+#include "driver.h"
 #include "taskworks_internal.h"
 #include "twabt_engine.h"
 #include "twabt_event.h"
 #include "twabt_task.h"
 
-#ifdef ENABLE_DEBUG
+#ifdef TWI_DEBUG
 #define TWABTI_PRINT_ERR(E)                                                                      \
 	{                                                                                            \
 		char errmsg[256];                                                                        \

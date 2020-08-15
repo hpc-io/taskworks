@@ -24,7 +24,7 @@
 
 #include "twi_ts_vector.h"
 
-#ifdef ENABLE_DEBUG
+#ifdef TWI_DEBUG
 #define CHECK_IDX                                                         \
 	{                                                                     \
 		if (index < 0 || index >= (int)TWI_Ts_vectori_get_size (v)) {     \
@@ -53,14 +53,20 @@
 		locked = 2;                    \
 	}
 
-#define RUNLOCK                                               \
-	{                                                         \
-		if (locked == 1) { TWI_Rwlock_runlock (&(v->lock)); } \
+#define RUNLOCK                              \
+	{                                        \
+		if (locked == 1) {                   \
+			TWI_Rwlock_runlock (&(v->lock)); \
+			locked = 0;                      \
+		}                                    \
 	}
 
-#define WUNLOCK                                               \
-	{                                                         \
-		if (locked == 2) { TWI_Rwlock_wunlock (&(v->lock)); } \
+#define WUNLOCK                              \
+	{                                        \
+		if (locked == 2) {                   \
+			TWI_Rwlock_wunlock (&(v->lock)); \
+			locked = 0;                      \
+		}                                    \
 	}
 
 #define UNLOCK                                   \
@@ -103,9 +109,9 @@ inline static terr_t TWI_Ts_vectori_expand (TWI_Ts_vector_handle_t v, size_t siz
 	WLOCK;
 
 	new_size = v->nalloc;
-	while (new_size < (size_t)size) { v->nalloc *= TWI_VECTOR_ALLOC_MULTIPLIER; }
+	while (new_size < (size_t)size) { new_size *= TWI_VECTOR_ALLOC_MULTIPLIER; }
 
-	ptr = TWI_Realloc (v->data, v->nalloc * sizeof (void *));
+	ptr = TWI_Realloc (v->data, new_size * sizeof (void *));
 	CHECK_PTR (ptr)
 
 	v->data	  = ptr;

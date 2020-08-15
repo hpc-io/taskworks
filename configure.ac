@@ -27,10 +27,10 @@ AC_DEFUN([UD_MSG_DEBUG],
 # Set the prefix to an taskworks directory in the source root.
 # AC_PREFIX_DEFAULT([`pwd`/taskworks])
 
-AH_TEMPLATE([ENABLE_PARALLEL], [Enable MPI support.])
-AH_TEMPLATE([ENABLE_DEBUG], [Debug build.])
-AH_TEMPLATE([ENABLE_ABT], [Enable Argobots integration.])
-AH_TEMPLATE([ENABLE_LIBEVENT], [Enable libevent integration.])
+AH_TEMPLATE([HAVE_MPI], [Enable MPI support.])
+AH_TEMPLATE([TWI_DEBUG], [Debug build.])
+AH_TEMPLATE([HAVE_ABT], [Enable Argobots integration.])
+AH_TEMPLATE([HAVE_LIBEVENT], [Enable libevent integration.])
 
 # Make tests
 AM_EXTRA_RECURSIVE_TARGETS([tests])
@@ -192,8 +192,8 @@ AC_DISABLE_SHARED
 LT_INIT
 
 # Check if we can compile MPI program
-ENABLE_PARALLEL=no
-HAVE_MPI="#undefine TW_HAVE_MPI"
+HAVE_MPI=no
+MPI_DEF="#undef"
 if test "x$enable_parallel" = "xyes"; then
 	echo "enable_parallel=$enable_parallel"
 	AC_MSG_CHECKING([whether a simple MPI-IO C program can be linked])
@@ -225,14 +225,16 @@ if test "x$enable_parallel" = "xyes"; then
 										Parallel writes of filtered data will be disabled.])])
 
 	# We are building a parallel library
-	ENABLE_PARALLEL=yes
-	AC_DEFINE(ENABLE_PARALLEL, 1)
-	HAVE_MPI="#define TW_HAVE_MPI 1"
+	HAVE_MPI=yes
+	AC_DEFINE(HAVE_MPI, 1)
+	MPI_DEF="#define"
 fi
-AM_CONDITIONAL(ENABLE_PARALLEL, [test x$enable_parallel = xyes])
+AM_CONDITIONAL(HAVE_MPI, [test x$enable_parallel = xyes])
 
 # ----------------------------------------------------------------------
 # Check headers
+HAVE_MPI=no
+MPI_DEF="#undef"
 AC_CHECK_HEADERS([pthread.h], [], [
 		echo "Required headers missing!"
 		exit 1
@@ -324,7 +326,7 @@ AC_ARG_ENABLE([debug], [AS_HELP_STRING([--enable-debug], [Search for MPI-IO and 
 if test "x$enable_debug" = "xyes"; then
    CFLAGS=`echo $CFLAGS | ${SED} 's/-O. *//g' | ${SED} 's/-fast *//g'`
    CFLAGS+=" -O0 -g"
-   AC_DEFINE(ENABLE_DEBUG, 1)
+   AC_DEFINE(TWI_DEBUG, 1)
 fi
 # ----------------------------------------------------------------------
 
@@ -369,13 +371,13 @@ if test "x$enable_abt" = "xyes"; then
 				CPPFLAGS="$CPPFLAGS -I$abt_inc"
 			fi
 
-			AC_CHECK_HEADERS([abt.h],, [unset ENABLE_ABT])
+			AC_CHECK_HEADERS([abt.h],, [unset HAVE_ABT])
 
 			if test -n "$abt_lib"; then
 				LDFLAGS="$LDFLAGS -L$abt_lib"
 			fi
 
-			AC_CHECK_LIB([abt], [ABT_init],, [unset ENABLE_ABT])
+			AC_CHECK_LIB([abt], [ABT_init],, [unset HAVE_ABT])
 
 			if test -z "$HAVE_ABT"; then
 				AC_MSG_ERROR([could not find opa library])
@@ -383,19 +385,21 @@ if test "x$enable_abt" = "xyes"; then
 			;;
 	esac
 fi
+ABT_DEF="#undef"
 if test "x$enable_abt" = "xyes"; then
-	ENABLE_ABT="yes"
+	HAVE_ABT="yes"
 
-	AC_CHECK_HEADERS([abt.h],, [unset ENABLE_ABT])
-	AC_CHECK_LIB([abt], [ABT_init],, [unset ENABLE_ABT])
+	AC_CHECK_HEADERS([abt.h],, [unset HAVE_ABT])
+	AC_CHECK_LIB([abt], [ABT_init],, [unset HAVE_ABT])
 
-	if test -z "$ENABLE_ABT"; then
+	if test -z "$HAVE_ABT"; then
 		AC_MSG_ERROR([could not find argobots library])
 	fi
 
-	AC_DEFINE(ENABLE_ABT, 1)
+	AC_DEFINE(HAVE_ABT, 1)
+	ABT_DEF="#define"
 fi
-AM_CONDITIONAL(ENABLE_ABT, [test x$enable_abt = xyes])
+AM_CONDITIONAL(HAVE_ABT, [test x$enable_abt = xyes])
 
 # Whether to enable argobots
 enable_libevent=no
@@ -452,19 +456,22 @@ if test "x$enable_libevent" = "xyes"; then
 			;;
 	esac
 fi
+
+LIBEVENT_DEF="#undef"
 if test "x$enable_libevent" = "xyes"; then
-	ENABLE_LIBEVENT="yes"
+	HAVE_LIBEVENT="yes"
 
-	AC_CHECK_HEADERS([event.h],, [unset ENABLE_LIBEVENT])
-	AC_CHECK_LIB([event], [event_init],, [unset ENABLE_LIBEVENT])
+	AC_CHECK_HEADERS([event.h],, [unset HAVE_LIBEVENT])
+	AC_CHECK_LIB([event], [event_init],, [unset HAVE_LIBEVENT])
 
-	if test -z "$ENABLE_LIBEVENT"; then
+	if test -z "$HAVE_LIBEVENT"; then
 		AC_MSG_ERROR([could not find libevent library])
 	fi
 
-	AC_DEFINE(ENABLE_LIBEVENT, 1)
+	AC_DEFINE(HAVE_LIBEVENT, 1)
+	LIBEVENT_DEF="#define"
 fi
-AM_CONDITIONAL(ENABLE_LIBEVENT, [test x$enable_libevent = xyes])
+AM_CONDITIONAL(HAVE_LIBEVENT, [test x$enable_libevent = xyes])
 
 
 echo "TW_CFLAGS=$TW_CFLAGS"
@@ -490,11 +497,13 @@ AC_SUBST([AM_CFLAGS])
 AC_SUBST([enable_shared])
 AC_SUBST([enable_static])
 
-AC_SUBST([ENABLE_PARALLEL])
-AC_SUBST([ENABLE_ABT])
-AC_SUBST([ENABLE_LIBEVENT])
-
 AC_SUBST([HAVE_MPI])
+AC_SUBST([HAVE_ABT])
+AC_SUBST([HAVE_LIBEVENT])
+
+AC_SUBST([MPI_DEF])
+AC_SUBST([ABT_DEF])
+AC_SUBST([LIBEVENT_DEF])
 
 AC_CONFIG_FILES([
 		Makefile 
@@ -506,6 +515,8 @@ AC_CONFIG_FILES([
 		src/driver/libevent/Makefile 
 		src/common/Makefile 
 		src/dispatcher/Makefile 
+		src/tal/Makefile 
+		src/tal/posix/Makefile 
 		examples/Makefile
 		test/Makefile
 		test/common/Makefile

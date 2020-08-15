@@ -8,9 +8,14 @@
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* TaskWroks thread driver */
+/* Pthread thread driver rwlock */
 
-#pragma once
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
+#include "twposix.h"
+
+#define TWPOSIX_Tls_cb \
+	{ TWPOSIX_Tls_create, TWPOSIX_Tls_free, TWPOSIX_Tls_store, TWPOSIX_Tls_load }
+
+terr_t TWPOSIX_Tls_create (TW_handle_t *k);
+void TWPOSIX_Tls_free (TW_handle_t k);
+void *TWPOSIX_Tls_load (TW_handle_t k);
+void TWPOSIX_Tls_store (TW_handle_t k, void *data);

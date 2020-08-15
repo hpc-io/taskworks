@@ -14,7 +14,7 @@
 
 #include <stdlib.h>
 #include <taskworks_internal.h>
-#ifdef ENABLE_DEBUG
+#ifdef TWI_DEBUG
 #define DEBUG_PRINTF(L, M, ...)                         \
 	{                                                   \
 		if (TWI_Debug_level >= L) {                     \

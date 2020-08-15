@@ -26,8 +26,7 @@
 
 #include <twtest.h>
 
-#define NUM_WORKERS 1
-#define NUM_TASKS	1
+#define NUM_WORKERS 4
 
 #define PORT	16385
 #define BUFSIZE 2048
@@ -177,6 +176,7 @@ int main (int argc, char **argv) {
 	terr_t err = TW_SUCCESS;
 	int nerr   = 0;
 	int ret;
+	int nworker		   = NUM_WORKERS;
 	atomic_int evtnerr = 0;
 	TW_Socket_t frecv, fsend;
 	char msg[] = "test_msg";
@@ -185,14 +185,18 @@ int main (int argc, char **argv) {
 	TW_Engine_handle_t eng;
 #ifdef _WIN32
 	WSADATA wsa;
+#endif
 
+	PRINT_TEST_MSG ("Check if file event triggers correctly");
+
+	if (argc > 1) { nworker = atoi (argv[1]); }
+
+#ifdef _WIN32
 	if (WSAStartup (MAKEWORD (2, 2), &wsa) != 0) {
 		RAISE_ERR ("WSAStartup failed");
 		goto fn_exit;
 	}
 #endif
-
-	PRINT_TEST_MSG ("Check if file event triggers correctly");
 
 	err = TWT_Sem_create (&sem);
 	CHECK_ERR
@@ -203,7 +207,7 @@ int main (int argc, char **argv) {
 	err = TW_Init (TW_Backend_argobots, TW_Event_backend_libevent, &argc, &argv);
 	CHECK_ERR
 
-	err = TW_Engine_create (2, &eng);
+	err = TW_Engine_create (nworker, &eng);
 	CHECK_ERR
 
 	err = TW_Event_arg_set_socket (&arg, frecv, TW_EVENT_SOCKET_READY_FOR_READ);

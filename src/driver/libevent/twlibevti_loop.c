@@ -24,7 +24,7 @@ terr_t TWLIBEVTI_Check_for_single_unmanaged_event (TWLIBEVT_Loop_t *lp, TWI_Bool
 	size = (int)TWI_Ts_vector_size (lp->unmanaged_events);
 	for (i = 0; i < size; i++) {
 		ep = (TWLIBEVT_Event_t *)lp->unmanaged_events->data[i];
-#ifdef ENABLE_PARALLEL
+#ifdef HAVE_MPI
 		if (ep->args.type == TW_Event_type_mpi) {
 			int mpierr;
 			int flag;

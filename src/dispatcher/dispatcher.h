@@ -10,6 +10,8 @@
 
 /* Dispatcher related functiona and type */
 
+#include "driver.h"
+#include "tal.h"
 #include "taskworks_internal.h"
 
 #define CHK_HANDLE(H, T)                                                                \

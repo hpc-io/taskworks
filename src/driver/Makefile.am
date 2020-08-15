@@ -9,12 +9,12 @@
 SUBDIRS = 
 DIST_SUBDIRS = 
 
-if ENABLE_ABT
+if HAVE_ABT
    SUBDIRS += argobots
    DIST_SUBDIRS += argobots
 endif
 
-if ENABLE_LIBEVENT
+if HAVE_LIBEVENT
    SUBDIRS += libevent
    DIST_SUBDIRS += libevent
 endif

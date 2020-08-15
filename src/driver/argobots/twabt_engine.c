@@ -155,8 +155,8 @@ terr_t TWABT_Engine_do_work (TW_Handle_t engine, ttime_t timeout) {
 
 	TWI_Nb_list_inc_ref (ep->tasks);
 
-	for (i = TWI_Nb_list_begin (ep->tasks);
-		 i != TWI_Nb_list_end (ep->tasks) && TWI_Time_now () < stoptime; i = TWI_Nb_list_next (i)) {
+	for (i = TWI_Nb_list_begin (ep->tasks); i != TWI_Nb_list_end (ep->tasks);
+		 i = TWI_Nb_list_next (i)) {
 		tp = (TWABT_Task_t *)i->data;
 
 		if (OPA_load_int (&(tp->status)) == TW_TASK_STAT_QUEUE) {
@@ -164,7 +164,10 @@ terr_t TWABT_Engine_do_work (TW_Handle_t engine, ttime_t timeout) {
 			CHECK_ERR
 		}
 
-		if (timeout == TW_ONCE) break;
+		if (timeout == TW_ONCE)
+			break;
+		else if ((timeout != TW_INFINITE) && (TWI_Time_now () > stoptime))
+			break;
 	}
 
 err_out:;

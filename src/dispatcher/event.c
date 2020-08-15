@@ -68,9 +68,8 @@ err_out:;
 	return err;
 }
 
-#ifdef TW_HAVE_MPI
+#ifdef HAVE_MPI
 terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Request req) {
-	terr_t err = TW_SUCCESS;
 	TW_Mpi_event_args_t args;
 
 	args.req = req;
@@ -78,8 +77,7 @@ terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Request req) {
 	harg->type	   = TW_Event_type_mpi;
 	harg->args.mpi = args;
 
-err_out:;
-	return err;
+	return TW_SUCCESS;
 }
 #endif
 

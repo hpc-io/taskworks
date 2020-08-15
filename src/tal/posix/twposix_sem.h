@@ -8,9 +8,19 @@
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* TaskWroks thread driver */
+/* Pthread thread driver mutex */
 
 #pragma once
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
+
+#include <pthread.h>
+
+#include "twposix.h"
+
+#define TWPOSIX_Sem_cb \
+	{ TWPOSIX_Sem_create, TWPOSIX_Sem_free, TWPOSIX_Sem_dec, TWPOSIX_Sem_trydec, TWPOSIX_Sem_inc }
+
+terr_t TWPOSIX_Sem_create (TW_Handle_t *sem);
+void TWPOSIX_Sem_trydec (TW_Handle_t sem, TWI_Bool_t *success);
+void TWPOSIX_Sem_dec (TW_Handle_t sem);
+void TWPOSIX_Sem_inc (TW_Handle_t sem);
+void TWPOSIX_Sem_free (TW_Handle_t sem);

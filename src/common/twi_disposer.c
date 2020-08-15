@@ -50,12 +50,17 @@ terr_t TWI_Disposer_init (TWI_Disposer_handle_t dp) {
 	dp->nt_alloc = 32;
 	dp->tss		 = (int volatile *)TWI_Malloc (sizeof (volatile int) * (size_t) (dp->nt_alloc));
 
+	DEBUG_PRINTF (1, "Initialized disposer %p\n", (void *)(dp));
+
 err_out:;
 	return err;
 }
 
 void TWI_Disposer_finalize (TWI_Disposer_handle_t dp) {
 	TWI_Trash_t *i, *j;
+	void *tmp;
+
+	DEBUG_PRINTF (1, "Finalizing disposer %p\n", (void *)(dp));
 
 	for (i = OPA_load_ptr (&(dp->head)); i; i = j) {
 		j = i->next;
@@ -63,8 +68,9 @@ void TWI_Disposer_finalize (TWI_Disposer_handle_t dp) {
 		i->handler (i->obj);
 		TWI_Free (i);
 	}
-
-	TWI_Free (dp->tss);
+#pragma GCC diagnostic ignored "-Wcast-qual"  // This warning cannot be removed
+	tmp = (void *)(dp->tss);
+	TWI_Free (tmp);
 	TWI_Mutex_free (dp->lock);
 	TWI_Tls_finalize (dp->tid);
 	TWI_Tls_finalize (dp->cnt);
@@ -96,8 +102,10 @@ void TWI_Disposer_join (TWI_Disposer_handle_t dp) {
 
 		if (dp->nt == dp->nt_alloc) {
 			dp->nt_alloc *= 2;
-			dp->tss = (int volatile *)TWI_Realloc (dp->tss,
-												   sizeof (volatile int) * (size_t) (dp->nt_alloc));
+#pragma GCC diagnostic ignored "-Wcast-qual"  // This warning cannot be removed
+			tmp = (void *)(dp->tss);
+			dp->tss =
+				(int volatile *)TWI_Realloc (tmp, sizeof (volatile int) * (size_t) (dp->nt_alloc));
 		}
 
 		dp->tss[id] = OPA_load_int (&(dp->ts));

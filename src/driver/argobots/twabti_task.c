@@ -335,7 +335,7 @@ terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new
 					break;
 				}
 			}
-#ifdef ENABLE_DEBUG
+#ifdef TWI_DEBUG
 			if (cur_stat >= new_stat) {
 				DEBUG_PRINTF (
 					1,

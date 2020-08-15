@@ -18,7 +18,7 @@
 #include "unistd.h"
 #endif
 
-#ifdef TW_HAVE_MPI
+#ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 
@@ -65,7 +65,7 @@ typedef enum TW_Event_type_t {
 	// File related event
 	TW_Event_type_file,
 	TW_Event_type_socket,  // Internet socket related events
-#ifdef TW_HAVE_MPI
+#ifdef HAVE_MPI
 	TW_Event_type_mpi,	// MPI related event
 #endif
 } TW_Event_type_t;
@@ -84,7 +84,7 @@ typedef struct TW_Timer_event_args_t {
 	int repeat_count;
 } TW_Timer_event_args_t;
 
-#ifdef TW_HAVE_MPI
+#ifdef HAVE_MPI
 typedef struct TW_Mpi_event_args_t {
 	MPI_Request req;
 	int flag;
@@ -98,7 +98,7 @@ typedef struct TW_Event_args_t {
 		TW_File_event_args_t file;
 		TW_Socket_event_args_t socket;
 		TW_Timer_event_args_t timer;
-#ifdef TW_HAVE_MPI
+#ifdef HAVE_MPI
 		TW_Mpi_event_args_t mpi;
 #endif
 	} args;
@@ -118,7 +118,7 @@ extern terr_t TW_Event_arg_set_socket (TW_Event_args_handle_t harg, TW_Socket_t 
 extern terr_t TW_Event_arg_set_timer (TW_Event_args_handle_t harg,
 									  int64_t micro_sec,
 									  int repeat_count);
-#ifdef TW_HAVE_MPI
+#ifdef HAVE_MPI
 extern terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Request req);
 #endif
 

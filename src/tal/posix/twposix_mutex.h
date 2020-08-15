@@ -8,9 +8,23 @@
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* TaskWroks thread driver */
+/* Pthread thread driver mutex */
 
 #pragma once
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
+
+#include <pthread.h>
+
+#include "twi_mutex.h"
+#include "twposix.h"
+
+#define TWPOSIX_Mutex_cb                                                                     \
+	{                                                                                        \
+		TWPOSIX_Mutex_create, TWPOSIX_Mutex_free, TWPOSIX_Mutex_lock, TWPOSIX_Mutex_trylock, \
+			TWPOSIX_Mutex_unlock                                                             \
+	}
+
+terr_t TWPOSIX_Mutex_create (TW_handle_t *m);
+void TWPOSIX_Mutex_free (TW_handle_t m);
+void TWPOSIX_Mutex_lock (TW_handle_t m);
+void TWPOSIX_Mutex_trylock (TW_handle_t m, TWI_Bool_t *success);
+void TWPOSIX_Mutex_unlock (TW_handle_t m);

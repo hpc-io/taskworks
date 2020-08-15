@@ -117,10 +117,10 @@ typedef struct TW_Event_driver_t {
 	terr_t (*Event_retract) (TW_Handle_t htask);				   // Remove event from the loop
 } TW_Event_driver_t;
 
-#ifdef ENABLE_ABT
+#ifdef HAVE_ABT
 extern TW_Driver_t TWABT_Driver;
 #endif
 
-#ifdef ENABLE_LIBEVENT
+#ifdef HAVE_LIBEVENT
 extern TW_Event_driver_t TWLIBEVT_Driver;
 #endif

@@ -24,7 +24,7 @@
 
 #define TW_N_ERR_CODE 0x400
 
-#ifdef ENABLE_DEBUG
+#ifdef TWI_DEBUG
 #define PRINT_ERR_MSG(E, M) \
 	{ printf ("Error at line %d in %s: %s (%d)\n", __LINE__, __FILE__, M, E); }
 #ifdef _WIN32
@@ -96,7 +96,7 @@
 		goto err_out;    \
 	}
 
-#ifdef ENABLE_PARALLEL
+#ifdef HAVE_MPI
 #define CHECK_MPIRET(R)         \
 	{                           \
 		if (R != MPI_SUCCESS) { \

@@ -23,7 +23,7 @@
 #include "taskworks_internal.h"
 
 #if !defined _WIN32 && (defined __USE_UNIX98 || defined __USE_XOPEN2K)
-#ifdef ENABLE_DEBUG
+#ifdef TWI_DEBUG
 #define CHECK_MERR               \
 	{                            \
 		if (perr) {              \

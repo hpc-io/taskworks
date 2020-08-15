@@ -12,7 +12,9 @@
 
 #pragma once
 
-@HAVE_MPI@
+@MPI_DEF@ TW_HAVE_MPI
+@ABT_DEF@ TW_HAVE_ABT
+@LIBEVENT_DEF@ TW_HAVE_LIBEVENT
 
 #define TW_INFINITE		 -1
 #define TW_TIMEOUT_NEVER -1LL
@@ -20,7 +22,7 @@
 
 #define TW_HANDLE_NULL NULL
 
-	typedef int terr_t;
+typedef int terr_t;
 
 #include "tw_dispatcher.h"
 #include "tw_engine.h"

@@ -68,19 +68,25 @@ int main (int argc, char *argv[]) {
 	int nerr   = 0;
 	int i, j;
 	int status;
-	task_data datas[NUM_TASKS];
+	int nworker = NUM_WORKERS, ntask = NUM_TASKS;
 	atomic_int ran = 0, running = 0;
 	TW_Task_handle_t handle = TW_HANDLE_NULL;
 	TW_Engine_handle_t eng;
 	TW_Task_dep_handler_t dep;
-	TW_Task_handle_t task[NUM_TASKS];
+	TW_Task_handle_t *task = NULL;
+	task_data *datas	   = NULL;
 
-	PRINT_TEST_MSG ("Check if Taskworks follows customized dependency");
+	PRINT_TEST_MSG ("Check if Taskworks correctly handles customized dependency");
+
+	if (argc > 1) { nworker = atoi (argv[1]); }
+	if (argc > 2) { ntask = atoi (argv[2]); }
+	task  = (TW_Task_handle_t *)malloc (sizeof (TW_Task_handle_t) * (size_t)ntask);
+	datas = (task_data *)malloc (sizeof (task_data) * (size_t)ntask);
 
 	err = TW_Init (TW_Backend_argobots, TW_Event_backend_none, &argc, &argv);
 	CHECK_ERR
 
-	err = TW_Engine_create (NUM_WORKERS, &eng);
+	err = TW_Engine_create (nworker, &eng);
 	CHECK_ERR
 
 	dep.Status_change = Custom_dep_status_change;
@@ -89,15 +95,15 @@ int main (int argc, char *argv[]) {
 	dep.Data		  = &handle;
 	dep.Mask		  = TW_TASK_STAT_COMPLETED | TW_TASK_STAT_IDLE;
 
-	for (i = 0; i < NUM_TASKS; i++) {
+	for (i = 0; i < ntask; i++) {
 		datas[i].tasks_running = &running;
 		datas[i].tasks_ran	   = &ran;
 		err					   = TW_Task_create (task_fn, datas + i, dep, i, task + i);
 		CHECK_ERR
 	}
 	// All to all dep
-	for (i = 0; i < NUM_TASKS; i++) {
-		for (j = 0; j < NUM_TASKS; j++) {
+	for (i = 0; i < ntask; i++) {
+		for (j = 0; j < ntask; j++) {
 			if (i != j) {
 				err = TW_Task_add_dep (task[i], task[j]);
 				CHECK_ERR
@@ -106,29 +112,29 @@ int main (int argc, char *argv[]) {
 	}
 
 	/* Commit all tasks */
-	for (i = 0; i < NUM_TASKS; i++) {
+	for (i = 0; i < ntask; i++) {
 		err = TW_Task_commit (task[i], eng);
 		CHECK_ERR
 	}
 
-	for (i = 0; i < NUM_TASKS; i++) {
+	for (i = 0; i < ntask; i++) {
 		err = TW_Task_wait (task[i], TW_TIMEOUT_NEVER);
 		CHECK_ERR
 	}
 
-	for (i = 0; i < NUM_TASKS; i++) {
+	for (i = 0; i < ntask; i++) {
 		err = TW_Task_get_status (task[i], &status);
 		CHECK_ERR
 
 		EXP_VAL (status, TW_TASK_STAT_COMPLETED, "%d")
 	}
 
-	for (i = 0; i < NUM_TASKS; i++) {
+	for (i = 0; i < ntask; i++) {
 		err = TW_Task_free (task[i]);
 		CHECK_ERR
 	}
 
-	EXP_VAL (ran, NUM_TASKS, "%d");
+	EXP_VAL (ran, ntask, "%d");
 
 	printf ("main thread engine free\n");
 
@@ -137,6 +143,9 @@ int main (int argc, char *argv[]) {
 
 	err = TW_Finalize ();
 	CHECK_ERR
+
+	free (task);
+	free (datas);
 
 	PRINT_TEST_RESULT
 	return nerr;

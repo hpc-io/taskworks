@@ -13,7 +13,8 @@ AM_DEFAULT_SOURCE_EXT = .c
 AM_CPPFLAGS  = -I$(top_srcdir)/src/include
 AM_CPPFLAGS += -I$(top_srcdir)/test/common
 
-LDADD  = $(top_builddir)/src/libtw.la 
+LDADD  =    $(top_builddir)/src/libtw.la \
+            $(top_builddir)/test/common/libtwtestcommon.la
 
 TESTPROGRAMS =  init \
                 engine \
@@ -21,8 +22,18 @@ TESTPROGRAMS =  init \
                 task \
                 task_dep \
                 task_barrier \
-                custom_dep
+                custom_dep \
+                task_status
 # mutual_dep
+
+TEST_DRIVERS=
+
+if HAVE_ABT
+   TEST_DRIVERS += "ABT"
+endif
+
+AM_TESTS_ENVIRONMENT = \
+DRIVERS=${TEST_DRIVERS}
 
 # When we need m4
 # M4FLAGS += -I${top_srcdir}/m4

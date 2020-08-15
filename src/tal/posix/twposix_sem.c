@@ -8,34 +8,44 @@
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Test engine APIs */
+/* Pthread driver implementation */
 
-#include <twtest.h>
+#include "twposix_sem.h"
 
-#define NUM_WORKERS 4
+#include <semaphore.h>
 
-int main (int argc, char *argv[]) {
-	terr_t err	= TW_SUCCESS;
-	int nworker = NUM_WORKERS;
-	TW_Engine_handle_t eng;
-	int nerr = 0;
+terr_t TWPOSIX_Sem_create (TW_Handle_t *sem) {
+	terr_t err = TW_SUCCESS;
+	int perr;
+	sem_t *sp = NULL;
 
-	PRINT_TEST_MSG ("Check if TaskWork can create and free engines");
+	sp = (sem_t *)TWI_Malloc (sizeof (sem_t));
 
-	if (argc > 1) { nworker = atoi (argv[1]); }
+	perr = sem_init (sp, 0, 0);
+	CHECK_PERR
 
-	err = TW_Init (TW_Backend_argobots, TW_Event_backend_none, &argc, &argv);
-	CHECK_ERR
+	*sem = sp;
 
-	err = TW_Engine_create (nworker, &eng);
-	CHECK_ERR
+err_out:;
+	if (err) { TWI_Free (sp); }
+	return err;
+}
 
-	err = TW_Engine_free (eng);
-	CHECK_ERR
+void TWPOSIX_Sem_trydec (TW_Handle_t sem, TWI_Bool_t *success) {
+	int perr;
+	perr = sem_trywait (sem);
+	if (perr == 0) {
+		*success = TWI_TRUE;
+	} else {
+		*success = TWI_FALSE;
+	}
+}
 
-	err = TW_Finalize ();
-	CHECK_ERR
+void TWPOSIX_Sem_dec (TW_Handle_t sem) { sem_wait (sem); }
 
-	PRINT_TEST_RESULT
-	return nerr;
+void TWPOSIX_Sem_inc (TW_Handle_t sem) { sem_post (sem); }
+
+void TWPOSIX_Sem_free (TW_Handle_t sem) {
+	sem_destroy (sem);
+	TWI_Free (sem);
 }

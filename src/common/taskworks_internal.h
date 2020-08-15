@@ -17,7 +17,6 @@
 
 #include "common.h"
 #include "debug.h"
-#include "driver.h"
 #include "twi_disposer.h"
 #include "twi_err.h"
 #include "twi_hash.h"
@@ -31,3 +30,5 @@
 
 #define TWI_TASK_NUM_PRIORITY_LEVEL (TW_TASK_PRIORITY_LAZY + 1)
 #define TW_TASK_PRIORITY_RESERVED	0
+
+typedef void *TW_handle_t;

@@ -40,20 +40,26 @@ int main (int argc, char *argv[]) {
 	int nerr   = 0;
 	int i;
 	int status;
-	task_data datas[NUM_TASKS];
+	int nworker = NUM_WORKERS, ntask = NUM_TASKS;
 	int last = NUM_TASKS;
 	TW_Engine_handle_t eng;
-	TW_Task_handle_t task[NUM_TASKS];
+	task_data *datas	   = NULL;
+	TW_Task_handle_t *task = NULL;
 
 	PRINT_TEST_MSG ("Check if TaskWork follows task dependency");
+
+	if (argc > 1) { nworker = atoi (argv[1]); }
+	if (argc > 2) { ntask = atoi (argv[2]); }
+	task  = (TW_Task_handle_t *)malloc (sizeof (TW_Task_handle_t) * (size_t)ntask);
+	datas = (task_data *)malloc (sizeof (task_data) * (size_t)ntask);
 
 	err = TW_Init (TW_Backend_argobots, TW_Event_backend_none, &argc, &argv);
 	CHECK_ERR
 
-	err = TW_Engine_create (NUM_WORKERS, &eng);
+	err = TW_Engine_create (nworker, &eng);
 	CHECK_ERR
 
-	for (i = 0; i < NUM_TASKS; i++) {
+	for (i = 0; i < ntask; i++) {
 		datas[i].tid = i;
 		datas[i].pre = &last;
 		err			 = TW_Task_create (task_fn, datas + i, TW_TASK_DEP_ALL_COMPLETE, i, task + i);
@@ -66,13 +72,13 @@ int main (int argc, char *argv[]) {
 	}
 
 	/* Commit in reverse order, don't commit task 0 */
-	for (i = NUM_TASKS - 1; i > 0; i--) {
+	for (i = ntask - 1; i > 0; i--) {
 		err = TW_Task_commit (task[i], eng);
 		CHECK_ERR
 	}
 
 	/* No task should run */
-	for (i = 1; i < NUM_TASKS; i++) {
+	for (i = 1; i < ntask; i++) {
 		err = TW_Task_get_status (task[i], &status);
 		CHECK_ERR
 
@@ -83,32 +89,35 @@ int main (int argc, char *argv[]) {
 	err = TW_Task_commit (task[0], eng);
 	CHECK_ERR
 
-	for (i = 0; i < NUM_TASKS; i++) {
+	for (i = 0; i < ntask; i++) {
 		err = TW_Task_wait (task[i], TW_TIMEOUT_NEVER);
 		CHECK_ERR
 	}
 
-	for (i = 0; i < NUM_TASKS; i++) {
+	for (i = 0; i < ntask; i++) {
 		err = TW_Task_get_status (task[i], &status);
 		CHECK_ERR
 
 		EXP_VAL (status, TW_TASK_STAT_COMPLETED, "%d")
 	}
 
-	for (i = 0; i < NUM_TASKS; i++) {
+	for (i = 0; i < ntask; i++) {
 		err = TW_Task_free (task[i]);
 		CHECK_ERR
 	}
 
-	for (i = 0; i < NUM_TASKS; i++) { nerr += datas[i].nerr; }
+	for (i = 0; i < ntask; i++) { nerr += datas[i].nerr; }
 
-	EXP_VAL (last, NUM_TASKS - 1, "%d");
+	EXP_VAL (last, ntask - 1, "%d");
 
 	err = TW_Engine_free (eng);
 	CHECK_ERR
 
 	err = TW_Finalize ();
 	CHECK_ERR
+
+	free (datas);
+	free (task);
 
 	PRINT_TEST_RESULT
 	return nerr;

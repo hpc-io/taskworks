@@ -43,11 +43,15 @@ void TWI_Rwlock_rlock (TWI_Rwlock_handle_t l);
 void TWI_Rwlock_wlock (TWI_Rwlock_handle_t l);
 void TWI_Rwlock_runlock (TWI_Rwlock_handle_t l);
 void TWI_Rwlock_wunlock (TWI_Rwlock_handle_t l);
+void TWI_Rwlock_tryrdlock (TWI_Rwlock_handle_t l, int *success);
+void TWI_Rwlock_trywrlock (TWI_Rwlock_handle_t l, int *success);
 #else
-#define TWI_Rwlock_init		TWI_Mutex_init
-#define TWI_Rwlock_finalize TWI_Mutex_finalize
-#define TWI_Rwlock_rlock	TWI_Mutex_lock
-#define TWI_Rwlock_wlock	TWI_Mutex_lock
-#define TWI_Rwlock_runlock	TWI_Mutex_unlock
-#define TWI_Rwlock_wunlock	TWI_Mutex_unlock
+#define TWI_Rwlock_init		 TWI_Mutex_init
+#define TWI_Rwlock_finalize	 TWI_Mutex_finalize
+#define TWI_Rwlock_rlock	 TWI_Mutex_lock
+#define TWI_Rwlock_wlock	 TWI_Mutex_lock
+#define TWI_Rwlock_runlock	 TWI_Mutex_unlock
+#define TWI_Rwlock_wunlock	 TWI_Mutex_unlock
+#define TWI_Rwlock_tryrdlock TWI_Mutex_trylock
+#define TWI_Rwlock_trywrlock TWI_Mutex_trylock
 #endif

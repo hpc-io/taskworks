@@ -32,6 +32,8 @@
 
 #include <twtest.h>
 
+#define NUM_WORKERS 4
+
 TWT_Semaphore sem;
 
 char msg[] = "test_msg";
@@ -54,6 +56,7 @@ int main (int argc, char **argv) {
 	atomic_int evtnerr = 0;
 	char cmd[256];
 	int rank;
+	int nworker = NUM_WORKERS;
 	MPI_Request req;
 	TW_Event_args_t arg;
 	TW_Event_handle_t evt;
@@ -64,13 +67,15 @@ int main (int argc, char **argv) {
 
 	PRINT_TEST_MSG ("Check if file event triggers correctly");
 
+	if (argc > 1) { nworker = atoi (argv[1]); }
+
 	err = TWT_Sem_create (&sem);
 	CHECK_ERR
 
 	err = TW_Init (TW_Backend_argobots, TW_Event_backend_libevent, &argc, &argv);
 	CHECK_ERR
 
-	err = TW_Engine_create (2, &eng);
+	err = TW_Engine_create (nworker, &eng);
 	CHECK_ERR
 
 	mpierr =

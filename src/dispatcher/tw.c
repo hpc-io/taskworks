@@ -40,7 +40,7 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 	terr_t err = TW_SUCCESS;
 	char *env_val;
 
-#ifdef ENABLE_DEBUG
+#ifdef TWI_DEBUG
 	env_val = getenv ("TW_DEBUG_MSG_LVL");
 	if (env_val) {
 		TWI_Debug_level = atoi (env_val);
@@ -57,8 +57,8 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 		} else if (strcmp (env_val, "NATIVE") == 0) {
 			backend = TW_Backend_native;
 		}
-#ifdef ENABLE_ABT
-		else if (strcmp (env_val, "NATIVE") == 0) {
+#ifdef HAVE_ABT
+		else if (strcmp (env_val, "ABT") == 0) {
 			backend = TW_Backend_argobots;
 		}
 #endif
@@ -72,7 +72,7 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 		case TW_Backend_default:  // Native backend for default
 		case TW_Backend_native:
 			break;
-#ifdef ENABLE_ABT
+#ifdef HAVE_ABT
 		case TW_Backend_argobots:  // Argobots
 			TWI_Active_driver = &TWABT_Driver;
 			break;
@@ -90,7 +90,7 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 		} else if (strcmp (env_val, "NONE") == 0) {
 			event_backend = TW_Event_backend_none;
 		}
-#ifdef ENABLE_LIBEVENT
+#ifdef HAVE_LIBEVENT
 		else if (strcmp (env_val, "LIBEVENT") == 0) {
 			event_backend = TW_Event_backend_libevent;
 		}
@@ -103,7 +103,7 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 	// Set event driver
 	switch (event_backend) {
 		case TW_Event_backend_default:	// The first available backend
-#ifdef ENABLE_LIBEVENT
+#ifdef HAVE_LIBEVENT
 		case TW_Event_backend_libevent:	 // Argobots
 			TWI_Active_evt_driver = &TWLIBEVT_Driver;
 			break;
