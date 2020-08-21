@@ -24,14 +24,10 @@ typedef struct TWI_Ts_vector_t {
 } TWI_Ts_vector_t;
 
 typedef TWI_Ts_vector_t *TWI_Ts_vector_handle_t;
+typedef void **TWI_Ts_vector_itr_t;
 
-#define TWI_Ts_vector_INIT_SIZE		   32
-#define TWI_Ts_vector_ALLOC_MULTIPLIER 20
-
-#define TWI_Ts_vector_STAT_INVAL 0x1  // Not initialized
-#define TWI_Ts_vector_STAT_RDY	 0x2  // No one using
-#define TWI_Ts_vector_STAT_ACC	 0x4  // Accessing, no modify
-#define TWI_Ts_vector_STAT_MOD	 0x8  // Modifying, no other thread allowed
+#define TWI_Ts_vector_INIT_SIZE	 32
+#define TWI_Ts_vector_SHIFT_SIZE 1
 
 TWI_Ts_vector_handle_t TWI_Ts_vector_create (void);
 terr_t TWI_Ts_vector_init (TWI_Ts_vector_handle_t v);
@@ -48,3 +44,6 @@ size_t TWI_Ts_vector_size (TWI_Ts_vector_handle_t v);
 terr_t TWI_Ts_vector_resize (TWI_Ts_vector_handle_t v, size_t size);
 void TWI_Ts_vector_lock (TWI_Ts_vector_handle_t v);
 void TWI_Ts_vector_unlock (TWI_Ts_vector_handle_t v);
+
+TWI_Ts_vector_itr_t TWI_Ts_vector_begin (TWI_Ts_vector_handle_t v);
+TWI_Ts_vector_itr_t TWI_Ts_vector_end (TWI_Ts_vector_handle_t v);

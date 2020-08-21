@@ -52,7 +52,7 @@ int main (int argc, char *argv[]) {
 	err = TWT_Sem_create (&sem);
 	CHECK_ERR
 
-	err = TW_Init (TW_Backend_argobots, TW_Event_backend_none, &argc, &argv);
+	err = TW_Init (TW_Backend_native, TW_Event_backend_none, &argc, &argv);
 	CHECK_ERR
 
 	err = TW_Engine_create (nworker, &eng);
@@ -60,7 +60,7 @@ int main (int argc, char *argv[]) {
 
 	ctr = 0;
 	for (i = 0; i < ntask; i++) {
-		err = TW_Task_create_ex (task_fn, &ctr, TW_TASK_DEP_NULL, 0, TW_TASK_PRIORITY_STANDARD,
+		err = TW_Task_create_ex (task_fn, &ctr, TW_TASK_DEP_NULL, i, TW_TASK_PRIORITY_STANDARD,
 								 event_fn, TW_TASK_STAT_COMPLETED, task + i);
 		CHECK_ERR
 	}

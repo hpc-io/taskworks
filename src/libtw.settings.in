@@ -28,6 +28,6 @@ Languages:
 
 Features:
 ---------
-                     MPI support: @TW_HAVE_MPI@
-                 Argobot backend: @TW_HAVE_ABT@
-                Libevent backend: @TW_HAVE_LIBEVENT@
+                    MPI support: @HAVE_MPI@
+                Argobot backend: @HAVE_ABT@
+               Libevent backend: @HAVE_LIBEVENT@

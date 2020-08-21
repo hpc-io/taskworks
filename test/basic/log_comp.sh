@@ -11,6 +11,8 @@ SEQ_RUN=
 
 #DRIVERS=${DRIVERS} # Set by AM_TESTS_ENVIRONMENT
 
+echo ${DRIVERS}
+
 NWORKERS=(2 4 8)
 NTASKS=(16 64 256)
 
@@ -35,6 +37,7 @@ do
                 export TW_DEBUG_MSG_LVL=10
                 echo "${SEQ_RUN} $1 ${NWORKER} ${NTASK}"
                 ${SEQ_RUN} $1 ${NWORKER} ${NTASK}
+                exit $?
             fi
         done
     done

@@ -83,7 +83,7 @@ int main (int argc, char *argv[]) {
 	task  = (TW_Task_handle_t *)malloc (sizeof (TW_Task_handle_t) * (size_t)ntask);
 	datas = (task_data *)malloc (sizeof (task_data) * (size_t)ntask);
 
-	err = TW_Init (TW_Backend_argobots, TW_Event_backend_none, &argc, &argv);
+	err = TW_Init (TW_Backend_native, TW_Event_backend_none, &argc, &argv);
 	CHECK_ERR
 
 	err = TW_Engine_create (nworker, &eng);

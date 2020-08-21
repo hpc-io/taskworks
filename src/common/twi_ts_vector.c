@@ -346,3 +346,9 @@ err_out:;
 void TWI_Ts_vector_lock (TWI_Ts_vector_handle_t v) { TWI_Rwlock_rlock (&(v->lock)); }
 
 void TWI_Ts_vector_unlock (TWI_Ts_vector_handle_t v) { TWI_Rwlock_runlock (&(v->lock)); }
+
+TWI_Ts_vector_itr_t TWI_Ts_vector_begin (TWI_Ts_vector_handle_t v) { return v->data; }
+
+TWI_Ts_vector_itr_t TWI_Ts_vector_end (TWI_Ts_vector_handle_t v) {
+	return v->data + OPA_load_int (&(v->size));
+}

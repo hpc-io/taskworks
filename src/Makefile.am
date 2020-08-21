@@ -14,7 +14,8 @@ lib_LTLIBRARIES=libtw.la
 libtw_la_SOURCES = 
 libtw_la_LIBADD  =  dispatcher/libtwdispatcher.la \
                     common/libtwcommon.la \
-                    tal/posix/libtwposix.la
+                    tal/posix/libtwposix.la \
+                    driver/native/libtwnative.la
 
 if HAVE_ABT
    libtw_la_LIBADD += driver/argobots/libtwabt.la
@@ -22,8 +23,6 @@ endif
 if HAVE_LIBEVENT
    libtw_la_LIBADD += driver/libevent/libtwlibevt.la
 endif
-
-
 
 include_HEADERS =   include/taskworks.h \
                         include/tw_dispatcher.h \

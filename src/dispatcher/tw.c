@@ -71,6 +71,7 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 	switch (backend) {
 		case TW_Backend_default:  // Native backend for default
 		case TW_Backend_native:
+			TWI_Active_driver = &TWNATIVE_Driver;
 			break;
 #ifdef HAVE_ABT
 		case TW_Backend_argobots:  // Argobots

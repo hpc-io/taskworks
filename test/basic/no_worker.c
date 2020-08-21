@@ -36,7 +36,7 @@ int main (int argc, char *argv[]) {
 	if (argc > 2) { ntask = atoi (argv[2]); }
 	task = (TW_Task_handle_t *)malloc (sizeof (TW_Task_handle_t) * (size_t)ntask);
 
-	err = TW_Init (TW_Backend_argobots, TW_Event_backend_none, &argc, &argv);
+	err = TW_Init (TW_Backend_native, TW_Event_backend_none, &argc, &argv);
 	CHECK_ERR
 
 	err = TW_Engine_create (0, &eng);
@@ -44,7 +44,7 @@ int main (int argc, char *argv[]) {
 
 	ctr = 0;
 	for (i = 0; i < ntask; i++) {
-		err = TW_Task_create (task_fn, &ctr, TW_TASK_DEP_ALL_COMPLETE, 0, task + i);
+		err = TW_Task_create (task_fn, &ctr, TW_TASK_DEP_ALL_COMPLETE, i, task + i);
 		CHECK_ERR
 
 		if (i) {

@@ -96,7 +96,9 @@ if test "X$host_config" != "Xnone"; then
   . $host_config
 fi
 
+# ----------------------------------------------------------------------
 ## Source any special site-specific file
+# ----------------------------------------------------------------------
 hname="`hostname`"
 while test -n "$hname"; do
   file=$srcdir/hdf5_config_scripts/site-specific/host-$hname
@@ -111,11 +113,13 @@ while test -n "$hname"; do
   hname="`echo $hname | cut -d. -f2-99`"
   test "$hname_tmp" = "$hname" && break
 done
+# ----------------------------------------------------------------------
 
-# Whether to enable parallel build with mpi
+
+# ----------------------------------------------------------------------
+# Search for mpi compiler if parallel is enabled
+# ----------------------------------------------------------------------
 AC_ARG_ENABLE([parallel], [AS_HELP_STRING([--enable-parallel], [Search for MPI-IO and MPI support files])],[enable_parallel=${enableval}], [enable_parallel=no])
-
-# Search for mpi compiler
 if test "x$enable_parallel" = "xyes"; then
 	AC_ARG_VAR(MPICC,  [MPI C compiler, @<:@default: CC@:>@])
 	AC_ARG_VAR(MPICXX, [MPI C++ compiler, @<:@default: CXX@:>@])
@@ -177,6 +181,7 @@ if test "x$enable_parallel" = "xyes"; then
 	fi
 	CC=${MPICC}
 fi
+# ----------------------------------------------------------------------
 
 # Checks for programs.
 AC_PROG_CC
@@ -191,7 +196,9 @@ AC_DISABLE_SHARED
 # Initialize libtool.
 LT_INIT
 
+# ----------------------------------------------------------------------
 # Check if we can compile MPI program
+# ----------------------------------------------------------------------
 HAVE_MPI=no
 MPI_DEF="#undef"
 if test "x$enable_parallel" = "xyes"; then
@@ -230,26 +237,33 @@ if test "x$enable_parallel" = "xyes"; then
 	MPI_DEF="#define"
 fi
 AM_CONDITIONAL(HAVE_MPI, [test x$enable_parallel = xyes])
+# ----------------------------------------------------------------------
 
 # ----------------------------------------------------------------------
-# Check headers
-HAVE_MPI=no
-MPI_DEF="#undef"
+# Check for pthread, reuqired for posix build
+# ----------------------------------------------------------------------
 AC_CHECK_HEADERS([pthread.h], [], [
 		echo "Required headers missing!"
 		exit 1
 		])
 
-# ----------------------------------------------------------------------
-# Check for pthread
 AC_CHECK_LIB(pthread, pthread_create, [], [
 		echo "pthread not found!"
 		exit 1
 		])
-
+# Check for presence of sched_yield.  If not present, check for pthread_yield.
+AC_CHECK_HEADER(sched.h,
+		[AC_CHECK_FUNCS(sched_yield,
+				,
+				[AC_CHECK_FUNCS(pthread_yield)]
+		)],
+		[AC_CHECK_FUNCS(pthread_yield)]
+)
 # ----------------------------------------------------------------------
 
+# ----------------------------------------------------------------------
 # Check for opa
+# ----------------------------------------------------------------------
 AC_ARG_WITH([opa],
 						[AC_HELP_STRING([--with-opa=DIR],
 														[Use opa library [default=yes]])],,
@@ -309,20 +323,13 @@ case "$withval" in
 		fi
 		;;
 esac
-
 # ----------------------------------------------------------------------
-# Check for presence of sched_yield.  If not present, check for pthread_yield.
-AC_CHECK_HEADER(sched.h,
-		[AC_CHECK_FUNCS(sched_yield,
-				,
-				[AC_CHECK_FUNCS(pthread_yield)]
-		)],
-		[AC_CHECK_FUNCS(pthread_yield)]
-)
+
 
 # ----------------------------------------------------------------------
 # Whether to enable debug build
-AC_ARG_ENABLE([debug], [AS_HELP_STRING([--enable-debug], [Search for MPI-IO and MPI support files])],[enable_debug=${enableval}], [enable_debug=no])
+# ----------------------------------------------------------------------
+AC_ARG_ENABLE([debug], [AS_HELP_STRING([--enable-debug], [Build with debug information. Turn off all optimizations])],[enable_debug=${enableval}], [enable_debug=no])
 if test "x$enable_debug" = "xyes"; then
    CFLAGS=`echo $CFLAGS | ${SED} 's/-O. *//g' | ${SED} 's/-fast *//g'`
    CFLAGS+=" -O0 -g"
@@ -330,7 +337,9 @@ if test "x$enable_debug" = "xyes"; then
 fi
 # ----------------------------------------------------------------------
 
-# Whether to enable argobots
+# ----------------------------------------------------------------------
+# Whether to enable argobots driver
+# ----------------------------------------------------------------------
 enable_abt=no
 AC_ARG_WITH([argobots],
 						[AC_HELP_STRING([--with-argobots=DIR],
@@ -400,8 +409,11 @@ if test "x$enable_abt" = "xyes"; then
 	ABT_DEF="#define"
 fi
 AM_CONDITIONAL(HAVE_ABT, [test x$enable_abt = xyes])
+# ----------------------------------------------------------------------
 
-# Whether to enable argobots
+# ----------------------------------------------------------------------
+# Whether to enable libevent driver
+# ----------------------------------------------------------------------
 enable_libevent=no
 AC_ARG_WITH([libevent],
 						[AC_HELP_STRING([--with-libevent=DIR],
@@ -456,7 +468,6 @@ if test "x$enable_libevent" = "xyes"; then
 			;;
 	esac
 fi
-
 LIBEVENT_DEF="#undef"
 if test "x$enable_libevent" = "xyes"; then
 	HAVE_LIBEVENT="yes"
@@ -472,7 +483,7 @@ if test "x$enable_libevent" = "xyes"; then
 	LIBEVENT_DEF="#define"
 fi
 AM_CONDITIONAL(HAVE_LIBEVENT, [test x$enable_libevent = xyes])
-
+# ----------------------------------------------------------------------
 
 echo "TW_CFLAGS=$TW_CFLAGS"
 
@@ -512,6 +523,7 @@ AC_CONFIG_FILES([
 		src/include/taskworks.h
 		src/driver/Makefile 
 		src/driver/argobots/Makefile 
+		src/driver/native/Makefile 
 		src/driver/libevent/Makefile 
 		src/common/Makefile 
 		src/dispatcher/Makefile 

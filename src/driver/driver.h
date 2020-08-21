@@ -117,6 +117,7 @@ typedef struct TW_Event_driver_t {
 	terr_t (*Event_retract) (TW_Handle_t htask);				   // Remove event from the loop
 } TW_Event_driver_t;
 
+extern TW_Driver_t TWNATIVE_Driver;
 #ifdef HAVE_ABT
 extern TW_Driver_t TWABT_Driver;
 #endif

@@ -155,12 +155,14 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *a
 #else
 	len = recvfrom (arg->args.socket.socket, bufp, sizeof (buf) - 1 - (size_t) (bufp - buf), 0,
 					(struct sockaddr *)&addr, &addrlen);
-
 	if (len > 0) {
-		err = TW_Event_retract (evt);
-		CHECK_ERR
-		err = TWT_Sem_inc (sem);
-		CHECK_ERR
+		bufp += len;
+		if (bufp - buf >= 8) {
+			err = TW_Event_retract (evt);
+			CHECK_ERR
+			err = TWT_Sem_inc (sem);
+			CHECK_ERR
+		}
 	} else if (len < 0) {
 		RAISE_ERR ("recvfrom failed");
 	}

@@ -26,14 +26,14 @@ TESTPROGRAMS =  init \
                 task_status
 # mutual_dep
 
-TEST_DRIVERS=
+TEST_DRIVERS= "NATIVE"
 
 if HAVE_ABT
    TEST_DRIVERS += "ABT"
 endif
 
 AM_TESTS_ENVIRONMENT = \
-DRIVERS=${TEST_DRIVERS}
+DRIVERS="${TEST_DRIVERS}"
 
 # When we need m4
 # M4FLAGS += -I${top_srcdir}/m4
@@ -48,7 +48,7 @@ check_PROGRAMS = $(TESTPROGRAMS)
 TESTS = $(TESTPROGRAMS)
 TEST_EXTENSIONS = .sh
 LOG_COMPILER = $(srcdir)/log_comp.sh
-SH_LOG_COMPILER=bash
+SH_LOG_COMPILER=
 
 # build check targets but not invoke
 tests: all $(check_PROGRAMS)

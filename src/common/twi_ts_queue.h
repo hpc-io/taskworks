@@ -8,29 +8,30 @@
  * tree.                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* Common internal routines */
+/* Thread safe queue */
 
 #pragma once
 
-#include <config.h>
-#include <taskworks.h>
-
 #include "common.h"
-#include "debug.h"
-#include "twi_disposer.h"
-#include "twi_err.h"
-#include "twi_hash.h"
-#include "twi_mem.h"
-#include "twi_mutex.h"
-#include "twi_nb_list.h"
-#include "twi_nb_queue.h"
+#include "taskworks_internal.h"
 #include "twi_rwlock.h"
-#include "twi_time.h"
-#include "twi_tls.h"
-#include "twi_ts_vector.h"
-#include "twi_vector.h"
 
-#define TWI_TASK_NUM_PRIORITY_LEVEL (TW_TASK_PRIORITY_LAZY + 1)
-#define TW_TASK_PRIORITY_RESERVED	0
+typedef struct TWI_Ts_queue_t {
+	TWI_Rwlock_t lock;
+	OPA_int_t start;
+	OPA_int_t end;
+	int mask;
+	size_t nalloc;
+	void **data;
+} TWI_Ts_queue_t;
 
-typedef void *TW_handle_t;
+typedef TWI_Ts_queue_t *TWI_Ts_queue_handle_t;
+
+#define TWI_Ts_queue_INIT_MASK 0xFFF  // 4096 elements
+
+TWI_Ts_queue_handle_t TWI_Ts_queue_create (void);
+terr_t TWI_Ts_queue_init (TWI_Ts_queue_handle_t v);
+void TWI_Ts_queue_finalize (TWI_Ts_queue_handle_t v);
+void TWI_Ts_queue_free (TWI_Ts_queue_handle_t v);
+terr_t TWI_Ts_queue_push (TWI_Ts_queue_handle_t v, void *data);
+void TWI_Ts_queue_pop (TWI_Ts_queue_handle_t v, void **data, TWI_Bool_t *successp);

@@ -22,8 +22,10 @@ libtwcommon_la_SOURCES =    twi_mem.c \
                             twi_mutex.c \
                             twi_rwlock.c \
                             twi_ts_vector.c \
+                            twi_vector.c \
                             twi_hash.c \
                             twi_nb_list.c \
+                            twi_nb_queue.c \
                             twi_tls.c \
                             twi_disposer.c \
                             debug.c

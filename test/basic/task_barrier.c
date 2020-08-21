@@ -76,28 +76,29 @@ int main (int argc, char *argv[]) {
 	task  = (TW_Task_handle_t *)malloc (sizeof (TW_Task_handle_t) * ((size_t)ntask + 1));
 	datas = (task_data *)malloc (sizeof (task_data) * ((size_t)ntask + 1));
 
-	err = TW_Init (TW_Backend_argobots, TW_Event_backend_none, &argc, &argv);
+	err = TW_Init (TW_Backend_native, TW_Event_backend_none, &argc, &argv);
 	CHECK_ERR
 
-	err = TW_Engine_create (NUM_WORKERS, &eng);
+	err = TW_Engine_create (nworker, &eng);
 	CHECK_ERR
 
 	ctr = 0;
 	for (i = 0; i < ntask; i++) {
 		datas[i].ctr  = &ctr;
 		datas[i].nerr = 0;
-		err			  = TW_Task_create (task_fn, datas + i, TW_TASK_DEP_NULL, 0, task + i);
+		err			  = TW_Task_create (task_fn, datas + i, TW_TASK_DEP_NULL, i, task + i);
 		CHECK_ERR
 	}
 
 	// Create barrier task
-	err = TW_Task_create_barrier (NULL, TW_TASK_TAG_ANY, 0, &bar);
+	err = TW_Task_create_barrier (NULL, TW_TASK_TAG_ANY, ntask + 1, &bar);
 	CHECK_ERR
 
 	// Task after barrier
 	datas[ntask].ctr  = &ctr;
 	datas[ntask].nerr = 0;
-	err = TW_Task_create (task_after_fn, datas + ntask, TW_TASK_DEP_ALL_COMPLETE, 0, task + ntask);
+	err = TW_Task_create (task_after_fn, datas + ntask, TW_TASK_DEP_ALL_COMPLETE, ntask + 2,
+						  task + ntask);
 	CHECK_ERR
 	err = TW_Task_add_dep (task[ntask], bar);
 	CHECK_ERR
