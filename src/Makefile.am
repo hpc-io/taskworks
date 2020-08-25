@@ -6,7 +6,7 @@
 # contained in the file COPYING at the root of the source code distribution 
 # tree.                                                                     
 
-SUBDIRS = dispatcher driver common tal
+SUBDIRS = dispatcher driver common tal eal
 DIST_SUBDIRS = ${SUBDIRS}
 
 # Our main target, the task engine library
@@ -20,6 +20,7 @@ libtw_la_LIBADD  =  dispatcher/libtwdispatcher.la \
 if HAVE_ABT
    libtw_la_LIBADD += driver/argobots/libtwabt.la
 endif
+
 if HAVE_LIBEVENT
    libtw_la_LIBADD += driver/libevent/libtwlibevt.la
 endif

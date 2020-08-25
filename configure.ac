@@ -524,7 +524,8 @@ AC_CONFIG_FILES([
 		src/driver/Makefile 
 		src/driver/argobots/Makefile 
 		src/driver/native/Makefile 
-		src/driver/libevent/Makefile 
+		src/eal/Makefile 
+		src/eal/libevent/Makefile 
 		src/common/Makefile 
 		src/dispatcher/Makefile 
 		src/tal/Makefile 
