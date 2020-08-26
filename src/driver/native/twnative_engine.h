@@ -42,6 +42,16 @@ typedef struct TWNATIVE_Thread_arg_t {
 	int id;
 } TWNATIVE_Thread_arg_t;
 
+typedef enum TWNATIVE_Job_type_t {
+	TWNATIVE_Job_type_task,
+	TWNATIVE_Job_type_event
+} TWNATIVE_Job_type_t;
+
+typedef struct TWNATIVE_Job_t {
+	TWNATIVE_Job_type_t type;
+	void *data;
+} TWNATIVE_Job_t;
+
 /* Engine callbacks */
 terr_t TWNATIVE_Engine_create (int num_worker,
 							   void *dispatcher_obj,

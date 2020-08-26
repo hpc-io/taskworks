@@ -157,7 +157,7 @@ int main (int argc, char **argv) {
 	ret = open_file ("file.txt", &fd);
 	EXP_VAL (ret, 0, "%d");
 
-	err = TW_Init (TW_Backend_argobots, TW_Event_backend_libevent, &argc, &argv);
+	err = TW_Init (TW_Backend_native, TW_Event_backend_libevent, &argc, &argv);
 	CHECK_ERR
 
 	err = TW_Engine_create (nworker, &eng);

@@ -26,6 +26,7 @@ terr_t TWNATIVE_Event_create (TW_Event_handler_t evt_cb,
 	ep->handler		   = evt_cb;
 	ep->data		   = evt_data;
 	ep->dispatcher_obj = dispatcher_obj;
+	ep->job			   = NULL;
 	ep->eng			   = NULL;
 	if (args.type == TW_Event_type_timer) {
 		ep->repeat = args.args.timer.repeat_count;

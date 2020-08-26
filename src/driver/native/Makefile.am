@@ -22,7 +22,7 @@ libtwnative_la_SOURCES =    twnative.c \
                                     twnative_engine_int.c \
                                     twnative_engine_sched.c \
                                 twnative_event.c \
-                                twnative_event_int.c \
+                                    twnative_event_int.c \
                                 twnative_task.c \
                                     twnative_task_int.c
                                 

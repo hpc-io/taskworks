@@ -39,5 +39,3 @@ extern TW_Thread_driver_handle_t TWNATIVEI_Driver;
 /* Init callbacks */
 terr_t TWNATIVE_Init (int *argc, char ***argv);
 terr_t TWNATIVE_Finalize (void);
-
-/* Schedulers */

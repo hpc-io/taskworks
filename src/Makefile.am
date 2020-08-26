@@ -22,7 +22,7 @@ if HAVE_ABT
 endif
 
 if HAVE_LIBEVENT
-   libtw_la_LIBADD += driver/libevent/libtwlibevt.la
+   libtw_la_LIBADD += eal/libevent/libtwlibevt.la
 endif
 
 include_HEADERS =   include/taskworks.h \

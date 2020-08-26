@@ -18,7 +18,7 @@ terr_t TWNATIVE_Taski_free (TWNATIVE_Task_t *tp) {	// Free up a task
 	TWI_Rwlock_wlock (&(tp->lock));
 
 	// Prevent it to be ran
-	if (tp->self) { *(tp->self) = NULL; }
+	if (tp->job) { tp->job->data = NULL; }
 
 	// Remove all dependencies
 	TWI_Ts_vector_lock (tp->childs);
@@ -122,12 +122,13 @@ terr_t TWNATIVE_Taski_queue (TWNATIVE_Task_t *tp) {
 	terr_t err = TW_SUCCESS;
 
 	// Invalidate previous queue
-	if (tp->self) { *(tp->self) = NULL; }
+	if (tp->job) { tp->job->data = NULL; }
 
-	tp->self = (TWNATIVE_Task_t **)TWI_Malloc (sizeof (TWNATIVE_Task_t *));
-	CHECK_PTR (tp->self)
-	*(tp->self) = tp;
-	err			= TWI_Nb_queue_push (tp->ep->queue[tp->priority], tp->self);
+	tp->job = (TWNATIVE_Job_t *)TWI_Malloc (sizeof (TWNATIVE_Job_t));
+	CHECK_PTR (tp->job)
+	tp->job->type = TWNATIVE_Job_type_task;
+	tp->job->data = tp;
+	err			  = TWI_Nb_queue_push (tp->ep->queue[tp->priority], tp->job);
 	CHECK_ERR
 	tp->ep->driver->sem.inc (tp->ep->njob);
 

@@ -22,7 +22,7 @@ typedef struct TWNATIVE_Task_t {
 	TW_Task_status_handler_t status_handler;
 	int status_mask;
 	int tag;						 // Tag for the user
-	struct TWNATIVE_Task_t **self;	 // A pointer to self
+	TWNATIVE_Job_t *job;			 // A pointer to self
 	OPA_int_t status;				 // Status of the task
 	int priority;					 // Priority, currently not used
 	TWI_Ts_vector_handle_t parents;	 // Tasks it depends on

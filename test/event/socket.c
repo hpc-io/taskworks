@@ -206,7 +206,7 @@ int main (int argc, char **argv) {
 	ret = create_receiver (&nerr, &frecv);
 	if (ret != 0) goto fn_exit;
 
-	err = TW_Init (TW_Backend_argobots, TW_Event_backend_libevent, &argc, &argv);
+	err = TW_Init (TW_Backend_native, TW_Event_backend_libevent, &argc, &argv);
 	CHECK_ERR
 
 	err = TW_Engine_create (nworker, &eng);

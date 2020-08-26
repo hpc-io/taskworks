@@ -23,7 +23,8 @@ typedef struct TWNATIVE_Event_t {
 	void *dispatcher_obj;
 	TWNATIVE_Engine_t *eng;
 	struct TWNATIVE_Event_t **native_task_ctx;
-	TW_Event_args_t *arg;
+	TW_Event_args_t arg;
+	TWNATIVE_Job_t *job;
 	int repeat;
 	// NATIVE_task native_task;	// Argobot task handle
 } TWNATIVE_Event_t;

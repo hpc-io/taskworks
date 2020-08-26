@@ -45,7 +45,7 @@ terr_t TWNATIVE_Task_create (TW_Task_handler_t task_cb,
 	tp->priority	   = priority;
 	tp->ep			   = NULL;
 	tp->dispatcher_obj = dispatcher_obj;
-	tp->self		   = NULL;
+	tp->job			   = NULL;
 	OPA_store_int (&(tp->status), TW_TASK_STAT_IDLE);
 
 	// Add to opened task list
@@ -361,7 +361,6 @@ terr_t TWNATIVE_Task_rm_dep (TW_Handle_t child, TW_Handle_t parent) {
 	terr_t err = TW_SUCCESS;
 	int i;
 	int ndep;
-	int status;
 	TWNATIVE_Task_t *cp = (TWNATIVE_Task_t *)child;
 	TWNATIVE_Task_t *pp = (TWNATIVE_Task_t *)parent;
 	TWNATIVE_Task_dep_t *dp;
@@ -372,8 +371,6 @@ terr_t TWNATIVE_Task_rm_dep (TW_Handle_t child, TW_Handle_t parent) {
 	TWI_Rwlock_rlock (&(cp->lock));
 
 	if (OPA_load_int (&(cp->status)) != TW_TASK_STAT_IDLE) ASSIGN_ERR (TW_ERR_STATUS)
-
-	if (status != TW_TASK_STAT_IDLE) ASSIGN_ERR (TW_ERR_STATUS)
 
 	// Remove all dependencies
 	TWI_Ts_vector_lock (cp->parents);

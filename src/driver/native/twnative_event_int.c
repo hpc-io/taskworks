@@ -12,24 +12,13 @@
 
 #include "twnative.h"
 
-void TWNATIVE_Eventi_task_cb (void *data) {
-	TWNATIVE_Event_t *ep = *((TWNATIVE_Event_t **)data);
-
-	TWI_Disposer_dispose (TWNATIVEI_Disposer, data, TWI_Free);
-
-	if (ep) {
-		//*(ep->abt_task_ctx) = NULL;
-		TWNATIVE_Eventi_task_run (ep, NULL);
-	}
-}
-
-void TWNATIVE_Eventi_task_run (TWNATIVE_Event_t *ep, TWI_Bool_t *successp) {
+void TWNATIVE_Eventi_run (TWNATIVE_Event_t *ep, TWI_Bool_t *successp) {
 	int ret;
 	TWI_Bool_t success;
 
 	TWNATIVE_Eventi_update_status (ep, TW_EVENT_STAT_TRIGGER, TW_EVENT_STAT_RUNNING, &success);
 	if (success) {
-		ret = ep->handler (ep->dispatcher_obj, ep->arg, ep->data);
+		ret = ep->handler (ep->dispatcher_obj, &(ep->arg), ep->data);
 		if (ret == 0) {
 			TWNATIVE_Eventi_update_status (ep, TW_EVENT_STAT_RUNNING, TW_EVENT_STAT_WATCHING,
 										   &success);
@@ -50,24 +39,27 @@ terr_t TWNATIVE_Eventi_cb (TW_Event_args_t *arg, void *data) {
 	TWI_Bool_t success;
 	TWNATIVE_Event_t *ep = (TWNATIVE_Event_t *)data;
 
-	TWNATIVE_Eventi_update_status (ep, TW_EVENT_STAT_WATCHING, TW_EVENT_STAT_TRANS, &success);
+	TWNATIVE_Eventi_update_status (ep, TW_EVENT_STAT_WATCHING, TW_EVENT_STAT_TRIGGER, &success);
 
 	if (success) {
 		// ep->abt_task_ctx = (TWNATIVE_Event_t **)TWI_Malloc (sizeof (TWNATIVE_Event_t *));
 		// CHECK_PTR (ep->abt_task_ctx);
 
 		//*(ep->abt_task_ctx) = ep;
-		ep->arg = arg;
+		ep->arg = *arg;
+
+		err = TWNATIVE_Eventi_queue (ep);
+		CHECK_ERR
 
 		// abterr =
 		//    NATIVE_task_create (ep->eng->pools[0], TWNATIVE_Eventi_task_cb, ep->abt_task_ctx,
 		//    NULL);
 		// CHECK_NATIVEERR
 
-		TWNATIVE_Eventi_update_status (ep, TW_EVENT_STAT_TRANS, TW_EVENT_STAT_TRIGGER, NULL);
+		// TWNATIVE_Eventi_update_status (ep, TW_EVENT_STAT_TRANS, TW_EVENT_STAT_TRIGGER, NULL);
 	}
 
-	// err_out:;
+err_out:;
 	return err;
 }
 
@@ -128,6 +120,25 @@ terr_t TWNATIVE_Eventi_update_status (TWNATIVE_Event_t *ep,
 	}
 
 	if (successp) { *successp = success; }
+
+err_out:;
+	return err;
+}
+
+terr_t TWNATIVE_Eventi_queue (TWNATIVE_Event_t *ep) {
+	terr_t err = TW_SUCCESS;
+
+	// Invalidate previous queue
+	if (ep->job) { ep->job->data = NULL; }
+
+	ep->job = (TWNATIVE_Job_t *)TWI_Malloc (sizeof (TWNATIVE_Job_t));
+	CHECK_PTR (ep->job)
+
+	ep->job->data = ep;
+	ep->job->type = TWNATIVE_Job_type_event;
+	err			  = TWI_Nb_queue_push (ep->eng->queue[TW_TASK_PRIORITY_URGENT], ep->job);
+	CHECK_ERR
+	ep->eng->driver->sem.inc (ep->eng->njob);
 
 err_out:;
 	return err;

@@ -25,7 +25,7 @@ int main (int argc, char *argv[]) {
 
 	if (argc > 1) { nworker = atoi (argv[1]); }
 
-	err = TW_Init (TW_Backend_argobots, TW_Event_backend_libevent, &argc, &argv);
+	err = TW_Init (TW_Backend_native, TW_Event_backend_libevent, &argc, &argv);
 	CHECK_ERR
 
 	err = TW_Engine_create (nworker, &eng);
