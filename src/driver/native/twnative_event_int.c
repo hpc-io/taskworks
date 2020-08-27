@@ -18,7 +18,7 @@ void TWNATIVE_Eventi_run (TWNATIVE_Event_t *ep, TWI_Bool_t *successp) {
 
 	TWNATIVE_Eventi_update_status (ep, TW_EVENT_STAT_TRIGGER, TW_EVENT_STAT_RUNNING, &success);
 	if (success) {
-		ret = ep->handler (ep->dispatcher_obj, &(ep->arg), ep->data);
+		ret = ep->handler (ep->dispatcher_obj, (TW_Event_args_t *)(&(ep->arg)), ep->data);
 		if (ret == 0) {
 			TWNATIVE_Eventi_update_status (ep, TW_EVENT_STAT_RUNNING, TW_EVENT_STAT_WATCHING,
 										   &success);
@@ -34,7 +34,7 @@ void TWNATIVE_Eventi_run (TWNATIVE_Event_t *ep, TWI_Bool_t *successp) {
 	if (successp) { *successp = success; }
 }
 
-terr_t TWNATIVE_Eventi_cb (TW_Event_args_t *arg, void *data) {
+terr_t TWNATIVE_Eventi_cb (TW_Event_args_imp_t *arg, void *data) {
 	terr_t err = TW_SUCCESS;
 	TWI_Bool_t success;
 	TWNATIVE_Event_t *ep = (TWNATIVE_Event_t *)data;

@@ -11,6 +11,7 @@
 /* Dispatcher related functiona and type */
 
 #include "driver.h"
+#include "eal.h"
 #include "tal.h"
 #include "taskworks_internal.h"
 

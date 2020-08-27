@@ -24,7 +24,7 @@
 #include <event2/event.h>
 #include <event2/util.h>
 
-#include "driver.h"
+#include "eal.h"
 #include "taskworks_internal.h"
 
 #ifdef TWI_DEBUG
@@ -59,11 +59,11 @@
 
 typedef struct TWLIBEVT_Loop_t {
 	struct event_base *base;
-	TWI_Ts_vector_handle_t unmanaged_events;
+	TWI_Ts_vector_handle_t poll_events;	 // events that requires polling
 } TWLIBEVT_Loop_t;
 
 typedef struct TWLIBEVT_Event_t {
-	TW_Event_args_t args;
+	TW_Event_args_imp_t args;
 	TW_Event_driver_handler_t handler;
 	void *data;
 	struct event *event;
@@ -89,7 +89,7 @@ terr_t TWLIBEVT_Loop_check_events (TW_Handle_t engine,
 /* Event callbacks */
 terr_t TWLIBEVT_Event_create (TW_Event_driver_handler_t evt_cb,
 							  void *evt_data,
-							  TW_Event_args_t arg,
+							  TW_Event_args_imp_t arg,
 							  TW_Handle_t *event);					 // Create a new event
 terr_t TWLIBEVT_Event_free (TW_Handle_t event);						 // Free up an event
 terr_t TWLIBEVT_Event_commit (TW_Handle_t event, TW_Handle_t loop);	 // Commit an event
@@ -104,6 +104,7 @@ void TWLIBEVTI_Evt_file_cb (evutil_socket_t socket, short flags, void *data);
 void TWLIBEVTI_Evt_socket_cb (evutil_socket_t socket, short flags, void *data);
 void TWLIBEVTI_Evt_timer_cb (evutil_socket_t socket, short flags, void *data);
 void TWLIBEVTI_Evt_mpi_cb (TWLIBEVT_Event_t *ep, int flag, MPI_Status stat);
+void TWLIBEVTI_Evt_poll_cb (TWLIBEVT_Event_t *ep);
 
 /* Misc */
 terr_t TWLIBEVT_Err_to_tw_err (int TWI_UNUSED abterr);

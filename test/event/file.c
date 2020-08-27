@@ -35,7 +35,8 @@
 
 TWT_Semaphore sem;
 
-int open_file (char *path, TW_Fd_t *fd) {
+int open_file (const char *path, TW_Fd_t *fd);
+int open_file (const char *path, TW_Fd_t *fd) {
 #ifdef _WIN32
 	HANDLE socket;
 	/* Open a file. */
@@ -50,11 +51,8 @@ int open_file (char *path, TW_Fd_t *fd) {
 	if (socket == INVALID_HANDLE_VALUE) return -1;
 
 #else
-	struct event *signal_int;
-	struct stat st;
 	const char *fifo = path;
 	int socket;
-
 #if defined __USE_MISC || defined __USE_XOPEN
 	if (lstat (fifo, &st) == 0) {
 		if ((st.st_mode & S_IFMT) == S_IFREG) {
@@ -88,19 +86,21 @@ int open_file (char *path, TW_Fd_t *fd) {
 
 char buf[255];
 char *bufp = buf;
+int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *arg, void *data);
 int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *arg, void *data) {
 	terr_t err;
 	int nerr   = 0;
 	int *nerrp = (int *)data;
-
+	TW_Fd_t fd;
 	int len;
 #ifdef _WIN32
 	DWORD dwBytesRead;
 #endif
 
+	TW_Event_arg_get_file (arg, &fd, NULL);
+
 #ifdef _WIN32
-	len = ReadFile ((HANDLE)arg->args.file.fd, bufp, sizeof (buf) - 1(size_t) (bufp - buf),
-					&dwBytesRead, NULL);
+	len = ReadFile ((HANDLE)fd bufp, sizeof (buf) - 1(size_t) (bufp - buf), &dwBytesRead, NULL);
 
 	/* Check for end of file. */
 	if (len && dwBytesRead == 0) {
@@ -114,7 +114,7 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *a
 	}
 
 #else
-	len = read (arg->args.file.fd, bufp, sizeof (buf) - 1 - (size_t) (bufp - buf));
+	len = read (fd, bufp, sizeof (buf) - 1 - (size_t) (bufp - buf));
 
 	if (len <= 0) {
 		EXP_VAL (len, 0, "%d")

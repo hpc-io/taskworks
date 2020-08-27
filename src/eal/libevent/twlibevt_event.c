@@ -14,7 +14,7 @@
 
 terr_t TWLIBEVT_Event_create (TW_Event_driver_handler_t evt_cb,
 							  void *evt_data,
-							  TW_Event_args_t arg,
+							  TW_Event_args_imp_t arg,
 							  TW_Handle_t *event) {
 	int err = TW_SUCCESS;
 	TWLIBEVT_Event_t *ep;
@@ -100,12 +100,14 @@ terr_t TWLIBEVT_Event_commit (TW_Handle_t event, TW_Handle_t loop) {
 			break;
 		case TW_Event_type_mpi:;
 			break;
+		case TW_Event_type_poll:;
+			break;
 		default:;
 			ASSIGN_ERR (TW_ERR_INVAL)
 	}
 
-	if (ep->args.type == TW_Event_type_mpi) {
-		err = TWI_Ts_vector_push_back (lp->unmanaged_events, ep);
+	if (ep->args.type == TW_Event_type_mpi || ep->args.type == TW_Event_type_poll) {
+		err = TWI_Ts_vector_push_back (lp->poll_events, ep);
 		CHECK_ERR
 	} else {
 		ep->event = event_new (lp->base, fd, evt_flags, cb, ep);

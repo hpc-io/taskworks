@@ -19,7 +19,7 @@ typedef struct TW_Event_driver_t *TW_Event_driver_handle_t;
 
 extern TW_Event_driver_handle_t TWI_Active_evt_driver;
 
-typedef int (*TW_Event_driver_handler_t) (TW_Event_args_t *arg, void *data);
+typedef int (*TW_Event_driver_handler_t) (TW_Event_args_imp_t *arg, void *data);
 
 typedef struct TW_Event_driver_t {
 	/* Init */
@@ -37,7 +37,7 @@ typedef struct TW_Event_driver_t {
 	/* Event callbacks */
 	terr_t (*Event_create) (TW_Event_driver_handler_t evt_cb,
 							void *evt_data,
-							TW_Event_args_t arg,
+							TW_Event_args_imp_t arg,
 							TW_Handle_t *event);  // Create a new event
 
 	terr_t (*Event_free) (TW_Handle_t event);					   // Free up an event

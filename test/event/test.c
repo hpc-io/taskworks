@@ -31,7 +31,7 @@
 
 #include <twtest.h>
 
-int event_cb (TW_Event_handle_t evt, TW_Event_args_t *arg, void *data) {
+int event_cb (TW_Event_handle_t evt, TW_Event_args_imp_t *arg, void *data) {
 	terr_t err;
 	int nerr   = 0;
 	int *nerrp = (int *)data;
@@ -130,7 +130,7 @@ int main (int argc, char **argv) {
 	atomic_int evtnerr = 0;
 	int ret;
 	TW_Fd_t fd;
-	TW_Event_args_t arg;
+	TW_Event_args_imp_t arg;
 	TW_Event_handle_t evt;
 	TW_Engine_handle_t eng;
 

@@ -35,7 +35,7 @@
 #define NTICK		2
 
 TWT_Semaphore sem;
-
+int event_cb (TW_Event_handle_t evt, TW_Event_args_t *arg, void *data);
 int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt,
 			  TW_Event_args_t __attribute__ ((unused)) * arg,
 			  void *data) {
@@ -45,7 +45,7 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt,
 
 	err = TWT_Sem_inc (sem);
 	CHECK_ERR
-end:;
+
 	*nerrp += nerr;
 	return 0;
 }
@@ -56,8 +56,6 @@ int main (int argc, char **argv) {
 	int i;
 	int nworker		   = NUM_WORKERS;
 	atomic_int evtnerr = 0;
-	int ret;
-	TW_Fd_t fd;
 	TW_Event_args_t arg;
 	TW_Event_handle_t evt;
 	TW_Engine_handle_t eng;

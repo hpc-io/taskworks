@@ -5,7 +5,7 @@ typedef struct TWI_Event_t {
 
 terr_t TWI_Event_create (TW_Event_handler_t TWI_UNUSED evt_cb,
 						 void TWI_UNUSED *evt_data,
-						 TW_Event_args_t TWI_UNUSED args,
+						 TW_Event_args_imp_t TWI_UNUSED args,
 						 void TWI_UNUSED *dispatcher_obj,
 						 TW_Handle_t TWI_UNUSED *hevt) {
 	TWI_Event_t *ep = (TWI_Event_t *)TWI_Malloc (sizeof (TWI_Event_t));

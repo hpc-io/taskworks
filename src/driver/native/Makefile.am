@@ -12,7 +12,8 @@ AM_CPPFLAGS  =  -I${top_srcdir}/src \
                 -I${top_srcdir}/src/include \
                 -I${top_srcdir}/src/common \
                 -I${top_srcdir}/src/driver \
-                -I${top_srcdir}/src/tal
+                -I${top_srcdir}/src/tal\
+                -I${top_srcdir}/src/eal
 
 
 # Argobots driver

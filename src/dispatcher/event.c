@@ -22,38 +22,62 @@
 terr_t TW_Event_arg_set_file (TW_Event_args_handle_t harg, TW_Fd_t fd, int events) {
 	terr_t err = TW_SUCCESS;
 	TW_File_event_args_t args;
+	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
 
 	if ((events | TW_EVENT_FILE_ALL) != TW_EVENT_FILE_ALL) ASSIGN_ERR (TW_ERR_INVAL);
 
 	args.fd		= fd;
 	args.events = events;
 
-	harg->type		= TW_Event_type_file;
-	harg->args.file = args;
+	argp->type		= TW_Event_type_file;
+	argp->args.file = args;
 
 err_out:;
 	return err;
 }
 
+terr_t TW_Event_arg_get_file (TW_Event_args_handle_t harg, TW_Fd_t *fd, int *events) {
+	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
+
+	if (argp->type != TW_Event_type_file) RET_ERR (TW_ERR_INVAL)
+
+	if (fd) { *fd = argp->args.file.fd; }
+	if (events) { *events = argp->args.file.events; }
+
+	return TW_SUCCESS;
+}
+
 terr_t TW_Event_arg_set_socket (TW_Event_args_handle_t harg, TW_Socket_t socket, int events) {
 	terr_t err = TW_SUCCESS;
 	TW_Socket_event_args_t args;
+	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
 
 	if ((events | TW_EVENT_SOCKET_ALL) != TW_EVENT_SOCKET_ALL) ASSIGN_ERR (TW_ERR_INVAL);
 
 	args.socket = socket;
 	args.events = events;
 
-	harg->type		  = TW_Event_type_socket;
-	harg->args.socket = args;
+	argp->type		  = TW_Event_type_socket;
+	argp->args.socket = args;
 
 err_out:;
 	return err;
+}
+terr_t TW_Event_arg_get_socket (TW_Event_args_handle_t harg, TW_Socket_t *socket, int *events) {
+	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
+
+	if (argp->type != TW_Event_type_socket) RET_ERR (TW_ERR_INVAL)
+
+	if (socket) { *socket = argp->args.socket.socket; }
+	if (events) { *events = argp->args.socket.events; }
+
+	return TW_SUCCESS;
 }
 
 terr_t TW_Event_arg_set_timer (TW_Event_args_handle_t harg, int64_t micro_sec, int repeat_count) {
 	terr_t err = TW_SUCCESS;
 	TW_Timer_event_args_t args;
+	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
 
 	if (repeat_count < 0 && repeat_count != TW_INFINITE) ASSIGN_ERR (TW_ERR_INVAL);
 	if (micro_sec < 0) ASSIGN_ERR (TW_ERR_INVAL);
@@ -61,21 +85,65 @@ terr_t TW_Event_arg_set_timer (TW_Event_args_handle_t harg, int64_t micro_sec, i
 	args.micro_sec	  = micro_sec;
 	args.repeat_count = repeat_count;
 
-	harg->type		 = TW_Event_type_timer;
-	harg->args.timer = args;
+	argp->type		 = TW_Event_type_timer;
+	argp->args.timer = args;
 
 err_out:;
 	return err;
+}
+terr_t TW_Event_arg_get_timer (TW_Event_args_handle_t harg, int64_t *micro_sec, int *repeat_count) {
+	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
+
+	if (argp->type != TW_Event_type_timer) RET_ERR (TW_ERR_INVAL)
+
+	if (micro_sec) { *micro_sec = argp->args.timer.micro_sec; }
+	if (repeat_count) { *repeat_count = argp->args.timer.repeat_count; }
+
+	return TW_SUCCESS;
+}
+
+terr_t TW_Event_arg_set_poll (TW_Event_args_handle_t harg, TW_Event_poll_t poll_fn, void *data) {
+	terr_t err = TW_SUCCESS;
+	TW_Poll_event_args_t args;
+	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
+
+	args.poll = poll_fn;
+	args.data = data;
+
+	argp->type		= TW_Event_type_poll;
+	argp->args.poll = args;
+
+	return err;
+}
+terr_t TW_Event_arg_get_poll (TW_Event_args_handle_t harg, TW_Event_poll_t *poll_fn, void **data) {
+	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
+
+	if (argp->type != TW_Event_type_poll) RET_ERR (TW_ERR_INVAL)
+
+	if (poll_fn) { *poll_fn = argp->args.poll.poll; }
+	if (data) { *data = argp->args.poll.data; }
+
+	return TW_SUCCESS;
 }
 
 #ifdef HAVE_MPI
 terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Request req) {
 	TW_Mpi_event_args_t args;
+	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
 
 	args.req = req;
 
-	harg->type	   = TW_Event_type_mpi;
-	harg->args.mpi = args;
+	argp->type	   = TW_Event_type_mpi;
+	argp->args.mpi = args;
+
+	return TW_SUCCESS;
+}
+terr_t TW_Event_arg_get_mpi (TW_Event_args_handle_t harg, MPI_Request *req) {
+	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
+
+	if (argp->type != TW_Event_type_mpi) RET_ERR (TW_ERR_INVAL)
+
+	*req = argp->args.mpi.req;
 
 	return TW_SUCCESS;
 }
@@ -88,13 +156,15 @@ terr_t TW_Event_create (TW_Event_handler_t evt_cb,
 						TW_Event_handle_t *event) {
 	terr_t err = TW_SUCCESS;
 	TW_Obj_handle_t ep;
+	TW_Event_args_imp_t *arg_int;
 
 	ep = (TW_Obj_handle_t)TWI_Malloc (sizeof (TW_Obj_t));
 	CHECK_PTR (ep)
 	ep->objtype = TW_Obj_type_event;
 	ep->driver	= TWI_Active_driver;
 
-	err = ep->driver->Event_create (evt_cb, evt_data, arg, ep, &(ep->driver_obj));
+	arg_int = (TW_Event_args_imp_t *)(&arg);
+	err		= ep->driver->Event_create (evt_cb, evt_data, *arg_int, ep, &(ep->driver_obj));
 	CHECK_ERR
 
 	*event = ep;

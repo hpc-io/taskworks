@@ -31,6 +31,7 @@
 #define TW_ERR_STATUS			   0x106 /* Wrong status */
 #define TW_ERR_TIMEOUT			   0x107 /* Timeout */
 #define TW_ERR_DEP_INIT			   0x108 /* Dependency state initializer returns non-zero */
+#define TW_ERR_POLL				   0x109 /* Event poll function returns negative */
 
 /* Engine driver related */
 #define TW_ERR_THREAD_CREATE 0x200 /* Cannot create thread */

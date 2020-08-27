@@ -20,12 +20,23 @@ terr_t TWLIBEVTI_Check_for_single_unmanaged_event (TWLIBEVT_Loop_t *lp, TWI_Bool
 
 	*success = TWI_FALSE;
 
-	TWI_Ts_vector_lock (lp->unmanaged_events);
-	size = (int)TWI_Ts_vector_size (lp->unmanaged_events);
+	TWI_Ts_vector_lock (lp->poll_events);
+	size = (int)TWI_Ts_vector_size (lp->poll_events);
 	for (i = 0; i < size; i++) {
-		ep = (TWLIBEVT_Event_t *)lp->unmanaged_events->data[i];
+		ep = (TWLIBEVT_Event_t *)lp->poll_events->data[i];
+		if (ep->args.type == TW_Event_type_poll) {
+			int ret;
+
+			ret = ep->args.args.poll.poll (ep->args.args.poll.data);
+			if (ret < 0) {
+				ASSIGN_ERR (TW_ERR_POLL)
+			} else if (ret) {
+				TWLIBEVTI_Evt_poll_cb (ep);
+				break;
+			}
+		}
 #ifdef HAVE_MPI
-		if (ep->args.type == TW_Event_type_mpi) {
+		else if (ep->args.type == TW_Event_type_mpi) {
 			int mpierr;
 			int flag;
 			MPI_Status status;
@@ -40,10 +51,10 @@ terr_t TWLIBEVTI_Check_for_single_unmanaged_event (TWLIBEVT_Loop_t *lp, TWI_Bool
 		}
 #endif
 	}
-	TWI_Ts_vector_unlock (lp->unmanaged_events);
+	TWI_Ts_vector_unlock (lp->poll_events);
 
 	// Remove from event queue
-	if (ep && i < size) { TWI_Ts_vector_swap_erase (lp->unmanaged_events, ep); }
+	if (ep && i < size) { TWI_Ts_vector_swap_erase (lp->poll_events, ep); }
 
 err_out:;
 

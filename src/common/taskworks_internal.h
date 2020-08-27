@@ -13,6 +13,11 @@
 #pragma once
 
 #include <config.h>
+
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
+
 #include <taskworks.h>
 
 #include "common.h"
@@ -34,3 +39,55 @@
 #define TW_TASK_PRIORITY_RESERVED	0
 
 typedef void *TW_handle_t;
+
+typedef enum TW_Event_type_t {
+	TW_Event_type_timer,  // The task hasn't been commited, user can modify the
+						  // task
+	// File related event
+	TW_Event_type_file,
+	TW_Event_type_socket,  // Internet socket related events
+	TW_Event_type_poll,
+#ifdef HAVE_MPI
+	TW_Event_type_mpi,	// MPI related event
+#endif
+} TW_Event_type_t;
+
+typedef struct TW_File_event_args_t {
+	TW_Fd_t fd;
+	int events;
+} TW_File_event_args_t;
+typedef struct TW_Socket_event_args_t {
+	TW_Socket_t socket;
+	int events;
+} TW_Socket_event_args_t;
+
+typedef struct TW_Timer_event_args_t {
+	int64_t micro_sec;
+	int repeat_count;
+} TW_Timer_event_args_t;
+
+typedef struct TW_Poll_event_args_t {
+	TW_Event_poll_t poll;
+	void *data;
+} TW_Poll_event_args_t;
+
+#ifdef HAVE_MPI
+typedef struct TW_Mpi_event_args_t {
+	MPI_Request req;
+	int flag;
+	MPI_Status stat;
+} TW_Mpi_event_args_t;
+#endif
+
+typedef struct TW_Event_args_imp_t {
+	TW_Event_type_t type;
+	union args {
+		TW_File_event_args_t file;
+		TW_Socket_event_args_t socket;
+		TW_Timer_event_args_t timer;
+		TW_Poll_event_args_t poll;
+#ifdef HAVE_MPI
+		TW_Mpi_event_args_t mpi;
+#endif
+	} args;
+} TW_Event_args_imp_t;

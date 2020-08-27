@@ -59,49 +59,8 @@
 #define TW_EVENT_SOCKET_READY_FOR_WRITE 0x8
 #define TW_EVENT_SOCKET_ALL				0xF
 
-typedef enum TW_Event_type_t {
-	TW_Event_type_timer,  // The task hasn't been commited, user can modify the
-						  // task
-	// File related event
-	TW_Event_type_file,
-	TW_Event_type_socket,  // Internet socket related events
-#ifdef HAVE_MPI
-	TW_Event_type_mpi,	// MPI related event
-#endif
-} TW_Event_type_t;
-
-typedef struct TW_File_event_args_t {
-	TW_Fd_t fd;
-	int events;
-} TW_File_event_args_t;
-typedef struct TW_Socket_event_args_t {
-	TW_Socket_t socket;
-	int events;
-} TW_Socket_event_args_t;
-
-typedef struct TW_Timer_event_args_t {
-	int64_t micro_sec;
-	int repeat_count;
-} TW_Timer_event_args_t;
-
-#ifdef HAVE_MPI
-typedef struct TW_Mpi_event_args_t {
-	MPI_Request req;
-	int flag;
-	MPI_Status stat;
-} TW_Mpi_event_args_t;
-#endif
-
 typedef struct TW_Event_args_t {
-	TW_Event_type_t type;
-	union args {
-		TW_File_event_args_t file;
-		TW_Socket_event_args_t socket;
-		TW_Timer_event_args_t timer;
-#ifdef HAVE_MPI
-		TW_Mpi_event_args_t mpi;
-#endif
-	} args;
+	char data[32];
 } TW_Event_args_t;
 
 typedef TW_Event_args_t *TW_Event_args_handle_t;
@@ -109,8 +68,7 @@ typedef TW_Event_args_t *TW_Event_args_handle_t;
 typedef struct TW_Obj_t *TW_Event_handle_t;
 
 typedef int (*TW_Event_handler_t) (TW_Event_handle_t evt, TW_Event_args_t *arg, void *data);
-
-typedef enum TW_Event_socket_event_type { TW_Event_socket_event_data } TW_Event_socket_event_type;
+typedef int (*TW_Event_poll_t) (void *data);
 
 // Set event arg
 extern terr_t TW_Event_arg_set_file (TW_Event_args_handle_t harg, TW_Fd_t fd, int events);
@@ -118,8 +76,22 @@ extern terr_t TW_Event_arg_set_socket (TW_Event_args_handle_t harg, TW_Socket_t 
 extern terr_t TW_Event_arg_set_timer (TW_Event_args_handle_t harg,
 									  int64_t micro_sec,
 									  int repeat_count);
+extern terr_t TW_Event_arg_set_poll (TW_Event_args_handle_t harg,
+									 TW_Event_poll_t poll_fn,
+									 void *data);
+extern terr_t TW_Event_arg_get_file (TW_Event_args_handle_t harg, TW_Fd_t *fd, int *events);
+extern terr_t TW_Event_arg_get_socket (TW_Event_args_handle_t harg,
+									   TW_Socket_t *socket,
+									   int *events);
+extern terr_t TW_Event_arg_get_timer (TW_Event_args_handle_t harg,
+									  int64_t *micro_sec,
+									  int *repeat_count);
+extern terr_t TW_Event_arg_get_poll (TW_Event_args_handle_t harg,
+									 TW_Event_poll_t *poll_fn,
+									 void **data);
 #ifdef HAVE_MPI
 extern terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Request req);
+extern terr_t TW_Event_arg_get_mpi (TW_Event_args_handle_t harg, MPI_Request *req);
 #endif
 
 // Create, free

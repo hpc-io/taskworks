@@ -16,12 +16,10 @@
 #include "twi_time.h"
 
 typedef struct TW_Driver_t *TW_Driver_handle_t;
-typedef struct TW_Event_driver_t *TW_Event_driver_handle_t;
 
 // extern TW_Event_driver_handle_t evt_driver;
 // extern TW_Driver_handle_t driver;
 
-extern TW_Event_driver_handle_t TWI_Active_evt_driver;
 extern TW_Driver_handle_t TWI_Active_driver;
 
 typedef enum TW_Task_inq_type_t {
@@ -82,7 +80,7 @@ typedef struct TW_Driver_t {
 	/* Event callbacks */
 	terr_t (*Event_create) (TW_Event_handler_t evt_cb,
 							void *evt_data,
-							TW_Event_args_t attr,
+							TW_Event_args_imp_t attr,
 							void *dispatcher_obj,
 							TW_Handle_t *hevt);	 // Create a new event
 	terr_t (*Event_free) (TW_Handle_t hevt);
@@ -91,37 +89,7 @@ typedef struct TW_Driver_t {
 	terr_t (*Event_retract) (TW_Handle_t hevt);	  // Stop watching
 } TW_Driver_t;
 
-typedef int (*TW_Event_driver_handler_t) (TW_Event_args_t *arg, void *data);
-
-typedef struct TW_Event_driver_t {
-	/* Init */
-	terr_t (*Init) (int *argc,
-					char ***argv);	// Iinitialize the driver
-	terr_t (*Finalize) (void);		// Finalize the driver
-
-	/* Loop callbacks */
-	terr_t (*Loop_create) (TW_Handle_t *loop);	// Initialize the task engine
-												// with num_worker workers
-	terr_t (*Loop_free) (TW_Handle_t engine);	// Finalize the task engine
-	terr_t (*Loop_check_events) (TW_Handle_t engine,
-								 ttime_t timeout);	// Check for a single event
-
-	/* Event callbacks */
-	terr_t (*Event_create) (TW_Event_driver_handler_t evt_cb,
-							void *evt_data,
-							TW_Event_args_t arg,
-							TW_Handle_t *event);  // Create a new event
-
-	terr_t (*Event_free) (TW_Handle_t event);					   // Free up an event
-	terr_t (*Event_commit) (TW_Handle_t event, TW_Handle_t loop);  // Commit an event
-	terr_t (*Event_retract) (TW_Handle_t htask);				   // Remove event from the loop
-} TW_Event_driver_t;
-
 extern TW_Driver_t TWNATIVE_Driver;
 #ifdef HAVE_ABT
 extern TW_Driver_t TWABT_Driver;
-#endif
-
-#ifdef HAVE_LIBEVENT
-extern TW_Event_driver_t TWLIBEVT_Driver;
 #endif

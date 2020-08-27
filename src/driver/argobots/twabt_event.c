@@ -15,7 +15,7 @@
 // Create a new event
 terr_t TWABT_Event_create (TW_Event_handler_t evt_cb,
 						   void *evt_data,
-						   TW_Event_args_t args,
+						   TW_Event_args_imp_t args,
 						   void *dispatcher_obj,
 						   TW_Handle_t *hevt) {
 	terr_t err		  = TW_SUCCESS;

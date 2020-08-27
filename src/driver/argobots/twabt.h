@@ -18,6 +18,7 @@
 #include <abt.h>
 
 #include "driver.h"
+#include "eal.h"
 #include "taskworks_internal.h"
 #include "twabt_engine.h"
 #include "twabt_event.h"

@@ -13,6 +13,7 @@
 #pragma once
 
 #include "driver.h"
+#include "eal.h"
 #include "tal.h"
 #include "taskworks_internal.h"
 #include "twnative_engine.h"

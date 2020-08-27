@@ -26,8 +26,8 @@ terr_t TWLIBEVT_Loop_create (TW_Handle_t *loop) {
 	event_config_free (config);
 
 	// List of commited events no managed by libevent
-	lp->unmanaged_events = TWI_Ts_vector_create ();
-	CHECK_PTR (lp->unmanaged_events);
+	lp->poll_events = TWI_Ts_vector_create ();
+	CHECK_PTR (lp->poll_events);
 
 	*loop = lp;
 
@@ -37,7 +37,7 @@ err_out:;
 terr_t TWLIBEVT_Loop_free (TW_Handle_t loop) {
 	TWLIBEVT_Loop_t *lp = (TWLIBEVT_Loop_t *)loop;
 
-	TWI_Ts_vector_free (lp->unmanaged_events);
+	TWI_Ts_vector_free (lp->poll_events);
 
 	event_base_free (lp->base);
 

@@ -14,8 +14,7 @@
 
 int main (int argc, char *argv[]) {
 	terr_t err = TW_SUCCESS;
-	TW_Engine_handle_t eng;
-	int nerr = 0;
+	int nerr   = 0;
 
 	PRINT_TEST_MSG ("Check if TaskWork can be initialized with event backend");
 

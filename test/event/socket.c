@@ -131,6 +131,7 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *a
 	terr_t err;
 	int nerr   = 0;
 	int *nerrp = (int *)data;
+	TW_Socket_t socket;
 	int len;
 #ifdef _WIN32
 	DWORD dwBytesRead;
@@ -139,10 +140,12 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *a
 	socklen_t addrlen = sizeof (addr);
 #endif
 
+	TW_Event_arg_get_socket (arg, &socket, NULL);
+
 	memset (buf, 0, sizeof (buf));
 
 #ifdef _WIN32
-	if ((len = recvfrom (arg->args.socket.socket, bufp, sizeof (buf) - 1 - (size_t) (bufp - buf), 0,
+	if ((len = recvfrom (socket, bufp, sizeof (buf) - 1 - (size_t) (bufp - buf), 0,
 						 (struct sockaddr *)&addr, &addrlen)) == SOCKET_ERROR) {
 		RAISE_ERR ("recvfrom failed");
 		goto fn_exit;
@@ -153,8 +156,8 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *a
 	err = TWT_Sem_inc (sem);
 	CHECK_ERR
 #else
-	len = recvfrom (arg->args.socket.socket, bufp, sizeof (buf) - 1 - (size_t) (bufp - buf), 0,
-					(struct sockaddr *)&addr, &addrlen);
+	len				  = recvfrom (socket, bufp, sizeof (buf) - 1 - (size_t) (bufp - buf), 0,
+					  (struct sockaddr *)&addr, &addrlen);
 	if (len > 0) {
 		bufp += len;
 		if (bufp - buf >= 8) {

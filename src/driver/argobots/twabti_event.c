@@ -29,7 +29,7 @@ void TWABTI_Event_task_run (TWABT_Event_t *ep, TWI_Bool_t *successp) {
 
 	TWABTI_Event_update_status (ep, TW_EVENT_STAT_TRIGGER, TW_EVENT_STAT_RUNNING, &success);
 	if (success) {
-		ret = ep->handler (ep->dispatcher_obj, ep->arg, ep->data);
+		ret = ep->handler (ep->dispatcher_obj, (TW_Event_args_t *)(ep->arg), ep->data);
 		if (ret == 0) {
 			TWABTI_Event_update_status (ep, TW_EVENT_STAT_RUNNING, TW_EVENT_STAT_WATCHING,
 										&success);
@@ -44,7 +44,7 @@ void TWABTI_Event_task_run (TWABT_Event_t *ep, TWI_Bool_t *successp) {
 	if (successp) { *successp = success; }
 }
 
-terr_t TWABTI_Event_cb (TW_Event_args_t *arg, void *data) {
+terr_t TWABTI_Event_cb (TW_Event_args_imp_t *arg, void *data) {
 	terr_t err = TW_SUCCESS;
 	int abterr;
 	TWI_Bool_t success;
@@ -69,7 +69,7 @@ terr_t TWABTI_Event_cb (TW_Event_args_t *arg, void *data) {
 			TWABTI_Event_update_status (ep, TW_EVENT_STAT_TRANS, TW_EVENT_STAT_RUNNING, &success);
 			if (success) {
 				int ret;
-				ret = ep->handler (ep->dispatcher_obj, arg, ep->data);
+				ret = ep->handler (ep->dispatcher_obj, (TW_Event_args_t *)arg, ep->data);
 				if (ret == 0) {
 					TWABTI_Event_update_status (ep, TW_EVENT_STAT_RUNNING, TW_EVENT_STAT_WATCHING,
 												&success);
