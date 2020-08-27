@@ -52,7 +52,7 @@ terr_t TWNATIVE_Engine_create (int num_worker, void *dispatcher_obj, TW_Handle_t
 	if (ep->evt_driver) {
 		err = ep->evt_driver->Loop_create (&(ep->evt_loop));
 		CHECK_ERR
-		ep->driver->sem.inc (ta->ep->njob);	 // Release one thread to check for events
+		ep->driver->sem.inc (ep->njob);	 // Release one thread to check for events
 	}
 
 	// Init job queue

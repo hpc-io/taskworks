@@ -70,10 +70,13 @@ void *TWNATIVE_Engine_scheduler (void *data) {
 			if (locked) {
 				err = ta->ep->evt_driver->Loop_check_events (ta->ep->evt_loop, 100000);
 				CHECK_ERR
+
 				TWI_Mutex_unlock (&(ta->ep->evt_lock));
+
+				ta->ep->driver->sem.inc (
+					ta->ep->njob);	// Release another thread to check for events
+				continue;
 			}
-			ta->ep->driver->sem.inc (ta->ep->njob);	 // Release another thread to check for events
-			continue;
 		}
 
 		TWNATIVE_Engine_scheduler_core (ta->ep, NULL);

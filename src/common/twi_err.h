@@ -25,6 +25,12 @@
 #define TW_N_ERR_CODE 0x400
 
 #ifdef TWI_DEBUG
+#define DEBUG_ABORT                      \
+	{                                    \
+		char *env;                       \
+		env = getenv ("TW_DEBUG_ABORT"); \
+		if (env) { abort (); }           \
+	}
 #define PRINT_ERR_MSG(E, M) \
 	{ printf ("Error at line %d in %s: %s (%d)\n", __LINE__, __FILE__, M, E); }
 #ifdef _WIN32
@@ -47,6 +53,8 @@
 	{ printf ("POSIX error: %s", strerror (R)); }
 #endif
 #else
+#define DEBUG_ABORT \
+	{}
 #define PRINT_ERR_MSG(E, M)
 #define PRINT_OS_ERR(R)
 #endif
@@ -56,6 +64,7 @@
 	{                          \
 		if (R != TW_SUCCESS) { \
 			PRINT_ERR (R)      \
+			DEBUG_ABORT        \
 			goto err_out;      \
 		}                      \
 	}
@@ -63,6 +72,7 @@
 	{                          \
 		if (R != TW_SUCCESS) { \
 			PRINT_ERR (R)      \
+			DEBUG_ABORT        \
 			return err_out;    \
 		}                      \
 	}
@@ -72,11 +82,13 @@
 	{                 \
 		err = R;      \
 		PRINT_ERR (R) \
+		DEBUG_ABORT   \
 		goto err_out; \
 	}
 #define RET_ERR(R)    \
 	{                 \
 		PRINT_ERR (R) \
+		DEBUG_ABORT   \
 		return R;     \
 	}
 
@@ -85,6 +97,7 @@
 		if (P == NULL) {      \
 			err = TW_ERR_MEM; \
 			PRINT_ERR (err)   \
+			DEBUG_ABORT       \
 			goto err_out;     \
 		}                     \
 	}
@@ -93,6 +106,7 @@
 	{                    \
 		err = TW_ERR_OS; \
 		PRINT_OS_ERR (R) \
+		DEBUG_ABORT      \
 		goto err_out;    \
 	}
 
@@ -101,6 +115,7 @@
 	{                           \
 		if (R != MPI_SUCCESS) { \
 			PRINT_ERR (R)       \
+			DEBUG_ABORT         \
 			goto err_out;       \
 		}                       \
 	}

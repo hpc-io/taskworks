@@ -14,13 +14,16 @@
 
 terr_t TWLIBEVT_Loop_create (TW_Handle_t *loop) {
 	int err = TW_SUCCESS;
+	struct event_config *config;
 	TWLIBEVT_Loop_t *lp;
 
 	lp = (TWLIBEVT_Loop_t *)TWI_Malloc (sizeof (TWLIBEVT_Loop_t));
 	CHECK_PTR (lp);
 
-	lp->base = event_base_new ();
+	config	 = event_config_new ();
+	lp->base = event_base_new_with_config (config);
 	CHECK_LIBEVTPTR (lp->base);
+	event_config_free (config);
 
 	// List of commited events no managed by libevent
 	lp->unmanaged_events = TWI_Ts_vector_create ();

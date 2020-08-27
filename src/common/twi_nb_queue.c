@@ -69,6 +69,8 @@ terr_t TWI_Nb_queue_init (TWI_Nb_queue_handle_t q) {
 	DEBUG_ENTER_FUNC (3)
 
 	OPA_store_ptr (&(q->head.next), NULL);
+	q->head.pre	 = NULL;
+	q->head.data = NULL;
 	OPA_store_ptr (&(q->tail), &(q->head));
 	OPA_store_ptr (&(q->recycle), NULL);
 	q->free = NULL;

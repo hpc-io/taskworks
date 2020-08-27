@@ -40,7 +40,8 @@ build:
     - pushd libevent && ./autogen.sh && ./configure --prefix=${PWD}/../tw_deps && make -j 64 && make -j 64  install && popd
   script:
     - autoreconf -i
-    - CC=cc ./configure --with-opa=${PWD}/tw_deps --enable-parallel --with-argobots=${PWD}/tw_deps --with-libevent=${PWD}/tw_deps
+    # - CC=cc ./configure --with-opa=${PWD}/tw_deps --enable-parallel --with-argobots=${PWD}/tw_deps --with-libevent=${PWD}/tw_deps
+    - CC=cc ./configure --with-opa=${PWD}/tw_deps --enable-parallel --with-libevent=${PWD}/tw_deps
     - make -j 64 
   tags:
     - cori

@@ -69,6 +69,8 @@ typedef struct TWLIBEVT_Event_t {
 	struct event *event;
 	TWLIBEVT_Loop_t *lp;
 	OPA_int_t status;
+	OPA_ptr_t nlp;	// Pending commits, we allow one more commit while event is still running so the
+					// handler can recommit the event
 } TWLIBEVT_Event_t;
 
 extern TWI_Ts_vector_handle_t TWLIBEVTI_Loops;

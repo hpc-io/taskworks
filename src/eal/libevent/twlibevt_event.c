@@ -27,6 +27,7 @@ terr_t TWLIBEVT_Event_create (TW_Event_driver_handler_t evt_cb,
 	ep->lp		= NULL;
 	ep->event	= NULL;
 	OPA_store_int (&(ep->status), EVT_STATUS_PENDING);
+	OPA_store_ptr (&(ep->nlp), NULL);
 
 	*event = ep;
 
@@ -54,8 +55,27 @@ terr_t TWLIBEVT_Event_commit (TW_Handle_t event, TW_Handle_t loop) {
 	TWLIBEVT_Event_t *ep = (TWLIBEVT_Event_t *)event;
 	TWLIBEVT_Loop_t *lp	 = (TWLIBEVT_Loop_t *)loop;
 
-	if (OPA_cas_int (&(ep->status), EVT_STATUS_PENDING, EVT_STATUS_COMMITED) != EVT_STATUS_PENDING)
-		ASSIGN_ERR (TW_ERR_STATUS)
+	if (OPA_cas_int (&(ep->status), EVT_STATUS_PENDING, EVT_STATUS_COMMITED) !=
+		EVT_STATUS_PENDING) {
+		// ASSIGN_ERR (TW_ERR_STATUS)
+
+		if (OPA_cas_ptr (&(ep->nlp), NULL, loop) == NULL) {	 // Put in pending slot
+			if (OPA_load_int (&(ep->status)) ==
+				EVT_STATUS_PENDING) {  // The other thread may not see the epending slot in time
+									   // when status changes to pending
+				if (OPA_cas_ptr (&(ep->nlp), loop, NULL) == loop) {
+					if (OPA_cas_int (&(ep->status), EVT_STATUS_PENDING, EVT_STATUS_COMMITED) !=
+						EVT_STATUS_PENDING) {  // Retry case, this time should success
+						ASSIGN_ERR (TW_ERR_STATUS)
+					}
+				} else {  // If the other thread already took the poitner, we quit
+					goto err_out;
+				}
+			}
+		} else {
+			ASSIGN_ERR (TW_ERR_STATUS)
+		}
+	}
 
 	evutil_timerclear (&tv);
 	switch (ep->args.type) {
@@ -103,6 +123,7 @@ err_out:;
 terr_t TWLIBEVT_Event_retract (TW_Handle_t hevt) {
 	int err = TW_SUCCESS;
 	int evterr;
+	int commit;
 	TWLIBEVT_Event_t *ep = (TWLIBEVT_Event_t *)hevt;
 
 	evterr = event_del (ep->event);
