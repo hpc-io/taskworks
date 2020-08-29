@@ -31,7 +31,10 @@
 #define TW_ERR_STATUS			   0x106 /* Wrong status */
 #define TW_ERR_TIMEOUT			   0x107 /* Timeout */
 #define TW_ERR_DEP_INIT			   0x108 /* Dependency state initializer returns non-zero */
-#define TW_ERR_POLL				   0x109 /* Event poll function returns negative */
+#define TW_ERR_POLL_CHECK		   0x109 /* Event poll function returns negative */
+#define TW_ERR_POLL_INIT		   0x110 /* Event poll function initializer returns non-zero */
+#define TW_ERR_POLL_RESET		   0x111 /* Event poll reset function returns non-zero */
+#define TW_ERR_POLL_FIN			   0x112 /* Event poll function finalizer returns non-zero */
 
 /* Engine driver related */
 #define TW_ERR_THREAD_CREATE 0x200 /* Cannot create thread */

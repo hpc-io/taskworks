@@ -27,9 +27,9 @@ terr_t TWLIBEVTI_Check_for_single_unmanaged_event (TWLIBEVT_Loop_t *lp, TWI_Bool
 		if (ep->args.type == TW_Event_type_poll) {
 			int ret;
 
-			ret = ep->args.args.poll.poll (ep->args.args.poll.data);
+			ret = ep->args.args.poll.poll.Check (ep->args.args.poll.data);
 			if (ret < 0) {
-				ASSIGN_ERR (TW_ERR_POLL)
+				ASSIGN_ERR (TW_ERR_POLL_CHECK)
 			} else if (ret) {
 				TWLIBEVTI_Evt_poll_cb (ep);
 				break;

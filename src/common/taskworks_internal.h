@@ -67,8 +67,9 @@ typedef struct TW_Timer_event_args_t {
 } TW_Timer_event_args_t;
 
 typedef struct TW_Poll_event_args_t {
-	TW_Event_poll_t poll;
+	TW_Event_poll_handler_t poll;
 	void *data;
+	void *init_data;
 } TW_Poll_event_args_t;
 
 #ifdef HAVE_MPI
@@ -80,7 +81,6 @@ typedef struct TW_Mpi_event_args_t {
 #endif
 
 typedef struct TW_Event_args_imp_t {
-	TW_Event_type_t type;
 	union args {
 		TW_File_event_args_t file;
 		TW_Socket_event_args_t socket;
@@ -89,5 +89,7 @@ typedef struct TW_Event_args_imp_t {
 #ifdef HAVE_MPI
 		TW_Mpi_event_args_t mpi;
 #endif
+		char data[32];
 	} args;
+	TW_Event_type_t type;
 } TW_Event_args_imp_t;

@@ -25,6 +25,7 @@ libtwdispatcher_la_SOURCES =    tw.c \
                                     dep.c \
                                     err.c \
                                     event.c
+                                    poll.c 
 
 # M4 hook
 # M4_SRCS  = 

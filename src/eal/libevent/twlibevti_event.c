@@ -42,7 +42,7 @@ void TWLIBEVTI_Evt_file_cb (evutil_socket_t socket, short flags, void *data) {
 		arg.args.file.fd	 = socket;
 		if (flags & EV_READ) arg.args.file.events |= TW_EVENT_FILE_READY_FOR_READ;
 		if (flags & EV_WRITE) arg.args.file.events |= TW_EVENT_FILE_READY_FOR_WRITE;
-		ep->handler ((TW_Event_args_handle_t) (&arg), ep->data);
+		ep->handler (&arg, ep->data);
 
 		TWLIBEVTI_Evt_stat_reset (ep);
 	}
@@ -60,13 +60,15 @@ void TWLIBEVTI_Evt_socket_cb (evutil_socket_t socket, short flags, void *data) {
 		arg.args.socket.socket = socket;
 		if (flags & EV_READ) arg.args.socket.events |= TW_EVENT_FILE_READY_FOR_READ;
 		if (flags & EV_WRITE) arg.args.socket.events |= TW_EVENT_FILE_READY_FOR_WRITE;
-		ep->handler ((TW_Event_args_handle_t) (&arg), ep->data);
+		ep->handler (&arg, ep->data);
 
 		TWLIBEVTI_Evt_stat_reset (ep);
 	}
 }
 
-void TWLIBEVTI_Evt_timer_cb (evutil_socket_t TWI_UNUSED socket, short flags, void *data) {
+void TWLIBEVTI_Evt_timer_cb (evutil_socket_t TWI_UNUSED socket,
+							 short TWI_UNUSED flags,
+							 void *data) {
 	TWLIBEVT_Event_t *ep = (TWLIBEVT_Event_t *)data;
 	TW_Event_args_imp_t arg;
 
@@ -74,7 +76,7 @@ void TWLIBEVTI_Evt_timer_cb (evutil_socket_t TWI_UNUSED socket, short flags, voi
 		EVT_STATUS_COMMITED) {
 		arg		 = ep->args;
 		arg.type = TW_Event_type_timer;
-		ep->handler ((TW_Event_args_handle_t) (&arg), ep->data);
+		ep->handler (&arg, ep->data);
 
 		TWLIBEVTI_Evt_stat_reset (ep);
 	}
@@ -89,7 +91,7 @@ void TWLIBEVTI_Evt_mpi_cb (TWLIBEVT_Event_t *ep, int flag, MPI_Status stat) {
 		arg.type		  = TW_Event_type_mpi;
 		arg.args.mpi.flag = flag;
 		arg.args.mpi.stat = stat;
-		ep->handler ((TW_Event_args_handle_t) (&arg), ep->data);
+		ep->handler (&arg, ep->data);
 
 		TWLIBEVTI_Evt_stat_reset (ep);
 	}
@@ -103,8 +105,7 @@ void TWLIBEVTI_Evt_poll_cb (TWLIBEVT_Event_t *ep) {
 		arg			  = ep->args;
 		arg.type	  = TW_Event_type_poll;
 		arg.args.poll = ep->args.args.poll;
-
-		ep->handler ((TW_Event_args_handle_t) (&arg), ep->data);
+		ep->handler (&arg, ep->data);
 
 		TWLIBEVTI_Evt_stat_reset (ep);
 	}

@@ -102,32 +102,59 @@ terr_t TW_Event_arg_get_timer (TW_Event_args_handle_t harg, int64_t *micro_sec, 
 	return TW_SUCCESS;
 }
 
-terr_t TW_Event_arg_set_poll (TW_Event_args_handle_t harg, TW_Event_poll_t poll_fn, void *data) {
+terr_t TW_Event_arg_set_poll (TW_Event_args_handle_t harg,
+							  TW_Event_poll_handler_t poll,
+							  void *data) {
 	terr_t err = TW_SUCCESS;
 	TW_Poll_event_args_t args;
 	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
 
-	args.poll = poll_fn;
-	args.data = data;
+	args.poll	   = poll;
+	args.init_data = data;
 
 	argp->type		= TW_Event_type_poll;
 	argp->args.poll = args;
 
 	return err;
 }
-terr_t TW_Event_arg_get_poll (TW_Event_args_handle_t harg, TW_Event_poll_t *poll_fn, void **data) {
+terr_t TW_Event_arg_get_poll (TW_Event_args_handle_t harg, void **data) {
 	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
 
 	if (argp->type != TW_Event_type_poll) RET_ERR (TW_ERR_INVAL)
 
-	if (poll_fn) { *poll_fn = argp->args.poll.poll; }
 	if (data) { *data = argp->args.poll.data; }
 
 	return TW_SUCCESS;
 }
 
 #ifdef HAVE_MPI
-terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Request req) {
+terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Comm comm, int src, int tag) {
+	terr_t err = TW_SUCCESS;
+	TW_Event_poll_mpi_data *dp;
+
+	dp = (TW_Event_poll_mpi_data *)TWI_Malloc (sizeof (TW_Event_poll_mpi_data));
+	CHECK_PTR (dp)
+
+	dp->comm = comm;
+	dp->src	 = src;
+	dp->tag	 = tag;
+
+	err = TW_Event_arg_set_poll (harg, TWI_Event_poll_mpi, dp);
+	CHECK_ERR
+
+err_out:;
+	return err;
+}
+terr_t TW_Event_arg_get_mpi (TW_Event_args_handle_t harg, MPI_Comm *comm, int src, int tag) {
+	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
+
+	if (argp->type != TW_Event_type_mpi) RET_ERR (TW_ERR_INVAL)
+
+	*req = argp->args.mpi.req;
+
+	return TW_SUCCESS;
+}
+terr_t TW_Event_arg_set_mpi_req (TW_Event_args_handle_t harg, MPI_Request req) {
 	TW_Mpi_event_args_t args;
 	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
 
@@ -138,7 +165,7 @@ terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Request req) {
 
 	return TW_SUCCESS;
 }
-terr_t TW_Event_arg_get_mpi (TW_Event_args_handle_t harg, MPI_Request *req) {
+terr_t TW_Event_arg_get_mpi_req (TW_Event_args_handle_t harg, MPI_Request *req) {
 	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
 
 	if (argp->type != TW_Event_type_mpi) RET_ERR (TW_ERR_INVAL)

@@ -16,7 +16,8 @@ terr_t TWLIBEVT_Event_create (TW_Event_driver_handler_t evt_cb,
 							  void *evt_data,
 							  TW_Event_args_imp_t arg,
 							  TW_Handle_t *event) {
-	int err = TW_SUCCESS;
+	terr_t err = TW_SUCCESS;
+	int ret;
 	TWLIBEVT_Event_t *ep;
 
 	ep = (TWLIBEVT_Event_t *)TWI_Malloc (sizeof (TWLIBEVT_Event_t));
@@ -28,6 +29,10 @@ terr_t TWLIBEVT_Event_create (TW_Event_driver_handler_t evt_cb,
 	ep->event	= NULL;
 	OPA_store_int (&(ep->status), EVT_STATUS_PENDING);
 	OPA_store_ptr (&(ep->nlp), NULL);
+	if ((arg.type == TW_Event_type_poll) && ep->args.args.poll.poll.Init) {
+		ret = ep->args.args.poll.poll.Init (ep->args.args.poll.init_data, &ep->args.args.poll.data);
+		if (ret) ASSIGN_ERR (err)
+	}
 
 	*event = ep;
 
@@ -36,18 +41,27 @@ err_out:;
 }
 
 terr_t TWLIBEVT_Event_free (TW_Handle_t event) {
+	terr_t err = TW_SUCCESS;
+	int ret;
 	TWLIBEVT_Event_t *ep = (TWLIBEVT_Event_t *)event;
 
 	if (ep->event) { event_free (ep->event); }
 
+	if ((ep->args.type == TW_Event_type_poll) && ep->args.args.poll.poll.Finalize) {
+		ret = ep->args.args.poll.poll.Finalize (ep->args.args.poll.data);
+		if (ret) ASSIGN_ERR (TW_ERR_POLL_FIN)
+	}
+
 	TWI_Free (ep);
 
-	return TW_SUCCESS;
+err_out:;
+	return err;
 }
 
 terr_t TWLIBEVT_Event_commit (TW_Handle_t event, TW_Handle_t loop) {
 	int err = TW_SUCCESS;
 	int evterr;
+	int ret;
 	short evt_flags = 0;
 	evutil_socket_t fd;
 	struct timeval tv, *tvp = NULL;
@@ -101,6 +115,10 @@ terr_t TWLIBEVT_Event_commit (TW_Handle_t event, TW_Handle_t loop) {
 		case TW_Event_type_mpi:;
 			break;
 		case TW_Event_type_poll:;
+			if (ep->args.args.poll.poll.Reset) {
+				ret = ep->args.args.poll.poll.Reset (ep->args.args.poll.data);
+				if (ret) ASSIGN_ERR (TW_ERR_POLL_RESET)
+			}
 			break;
 		default:;
 			ASSIGN_ERR (TW_ERR_INVAL)
@@ -125,7 +143,6 @@ err_out:;
 terr_t TWLIBEVT_Event_retract (TW_Handle_t hevt) {
 	int err = TW_SUCCESS;
 	int evterr;
-	int commit;
 	TWLIBEVT_Event_t *ep = (TWLIBEVT_Event_t *)hevt;
 
 	evterr = event_del (ep->event);

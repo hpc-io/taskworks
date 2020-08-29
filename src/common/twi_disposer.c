@@ -68,8 +68,10 @@ void TWI_Disposer_finalize (TWI_Disposer_handle_t dp) {
 		i->handler (i->obj);
 		TWI_Free (i);
 	}
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"  // This warning cannot be removed
 	tmp = (void *)(dp->tss);
+#pragma GCC diagnostic pop
 	TWI_Free (tmp);
 	TWI_Mutex_free (dp->lock);
 	TWI_Tls_finalize (dp->tid);
@@ -102,10 +104,12 @@ void TWI_Disposer_join (TWI_Disposer_handle_t dp) {
 
 		if (dp->nt == dp->nt_alloc) {
 			dp->nt_alloc *= 2;
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"  // This warning cannot be removed
 			tmp = (void *)(dp->tss);
 			dp->tss =
 				(int volatile *)TWI_Realloc (tmp, sizeof (volatile int) * (size_t) (dp->nt_alloc));
+#pragma GCC diagnostic pop
 		}
 
 		dp->tss[id] = OPA_load_int (&(dp->ts));

@@ -20,7 +20,8 @@ TESTPROGRAMS =  init \
                 engine \
                 file \
                 timer \
-                socket
+                socket \
+                poll
 
 if HAVE_MPI
    TESTPROGRAMS += mpi

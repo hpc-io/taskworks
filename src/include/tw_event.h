@@ -60,15 +60,21 @@
 #define TW_EVENT_SOCKET_ALL				0xF
 
 typedef struct TW_Event_args_t {
-	char data[32];
+	char data[64];
 } TW_Event_args_t;
+
+typedef struct TW_Event_poll_handler_t {
+	int (*Init) (void *in, void **data);
+	int (*Finalize) (void *data);
+	int (*Check) (void *data);
+	int (*Reset) (void *data);
+} TW_Event_poll_handler_t;
 
 typedef TW_Event_args_t *TW_Event_args_handle_t;
 
 typedef struct TW_Obj_t *TW_Event_handle_t;
 
 typedef int (*TW_Event_handler_t) (TW_Event_handle_t evt, TW_Event_args_t *arg, void *data);
-typedef int (*TW_Event_poll_t) (void *data);
 
 // Set event arg
 extern terr_t TW_Event_arg_set_file (TW_Event_args_handle_t harg, TW_Fd_t fd, int events);
@@ -77,8 +83,9 @@ extern terr_t TW_Event_arg_set_timer (TW_Event_args_handle_t harg,
 									  int64_t micro_sec,
 									  int repeat_count);
 extern terr_t TW_Event_arg_set_poll (TW_Event_args_handle_t harg,
-									 TW_Event_poll_t poll_fn,
-									 void *data);
+									 TW_Event_poll_handler_t poll,
+									 void *in);
+
 extern terr_t TW_Event_arg_get_file (TW_Event_args_handle_t harg, TW_Fd_t *fd, int *events);
 extern terr_t TW_Event_arg_get_socket (TW_Event_args_handle_t harg,
 									   TW_Socket_t *socket,
@@ -86,9 +93,7 @@ extern terr_t TW_Event_arg_get_socket (TW_Event_args_handle_t harg,
 extern terr_t TW_Event_arg_get_timer (TW_Event_args_handle_t harg,
 									  int64_t *micro_sec,
 									  int *repeat_count);
-extern terr_t TW_Event_arg_get_poll (TW_Event_args_handle_t harg,
-									 TW_Event_poll_t *poll_fn,
-									 void **data);
+extern terr_t TW_Event_arg_get_poll (TW_Event_args_handle_t harg, void **data);
 #ifdef HAVE_MPI
 extern terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Request req);
 extern terr_t TW_Event_arg_get_mpi (TW_Event_args_handle_t harg, MPI_Request *req);
