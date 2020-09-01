@@ -76,7 +76,7 @@ terr_t TWI_Nb_queue_init (TWI_Nb_queue_handle_t q) {
 	q->free = NULL;
 	OPA_store_int (&(q->ref), 0);
 
-	DEBUG_PRINTF (2, "Created non-blocking queue %p\n", (void *)q);
+	DEBUG_PRINTF (3, "Created non-blocking queue %p\n", (void *)q);
 
 	DEBUG_EXIT_FUNC (3)
 	return err;
@@ -86,7 +86,7 @@ void TWI_Nb_queue_finalize (TWI_Nb_queue_handle_t q) {
 
 	DEBUG_ENTER_FUNC (3)
 
-	DEBUG_PRINTF (2, "Finaling non-blocking list %p\n", (void *)q);
+	DEBUG_PRINTF (3, "Finaling non-blocking list %p\n", (void *)q);
 
 	// Free nodes
 	for (i = OPA_load_ptr (&(q->head.next)); i; i = j) {

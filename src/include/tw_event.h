@@ -18,7 +18,7 @@
 #include "unistd.h"
 #endif
 
-#ifdef HAVE_MPI
+#ifdef TW_HAVE_MPI
 #include <mpi.h>
 #endif
 
@@ -59,16 +59,30 @@
 #define TW_EVENT_SOCKET_READY_FOR_WRITE 0x8
 #define TW_EVENT_SOCKET_ALL				0xF
 
+/* Predefined poll handler */
+#define TW_EVENT_POLL_MPI	  TW_Event_poll_mpi
+#define TW_EVENT_POLL_MPI_REQ TW_Event_poll_mpi
+
 typedef struct TW_Event_args_t {
 	char data[64];
 } TW_Event_args_t;
 
+/*
 typedef struct TW_Event_poll_handler_t {
 	int (*Init) (void *in, void **data);
 	int (*Finalize) (void *data);
 	int (*Check) (void *data);
 	int (*Reset) (void *data);
 } TW_Event_poll_handler_t;
+*/
+
+typedef enum TW_Event_poll_response_t {
+	TW_Event_poll_response_pending,
+	TW_Event_poll_response_trigger,
+	TW_Event_poll_response_err
+} TW_Event_poll_response_t;
+
+typedef TW_Event_poll_response_t (*TW_Event_poll_handler_t) (void *data);
 
 typedef TW_Event_args_t *TW_Event_args_handle_t;
 
@@ -94,9 +108,15 @@ extern terr_t TW_Event_arg_get_timer (TW_Event_args_handle_t harg,
 									  int64_t *micro_sec,
 									  int *repeat_count);
 extern terr_t TW_Event_arg_get_poll (TW_Event_args_handle_t harg, void **data);
-#ifdef HAVE_MPI
-extern terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Request req);
-extern terr_t TW_Event_arg_get_mpi (TW_Event_args_handle_t harg, MPI_Request *req);
+
+#ifdef TW_HAVE_MPI
+extern terr_t TW_Event_poll_mpi_data_create (MPI_Comm comm, int src, int tag, void **data);
+extern terr_t TW_Event_poll_mpi_req_data_create (MPI_Request req, void **data);
+
+extern terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Comm comm, int src, int tag);
+extern terr_t TW_Event_arg_set_mpi_req (TW_Event_args_handle_t harg, MPI_Request req);
+extern terr_t TW_Event_arg_get_mpi (TW_Event_args_handle_t harg, int *flag, MPI_Status *stat);
+extern terr_t TW_Event_arg_get_mpi_req (TW_Event_args_handle_t harg, int *flag, MPI_Status *stat);
 #endif
 
 // Create, free
@@ -113,3 +133,9 @@ extern terr_t TW_Event_retract (TW_Event_handle_t event);	// Stop watching
 
 // Misc
 extern const char *TW_Event_status_str (int status);
+
+// Built-in event poll handler
+#ifdef TW_HAVE_MPI
+extern TW_Event_poll_handler_t TW_Event_poll_mpi;
+extern TW_Event_poll_handler_t TW_Event_poll_mpi_req;
+#endif

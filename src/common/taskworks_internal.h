@@ -47,9 +47,11 @@ typedef enum TW_Event_type_t {
 	TW_Event_type_file,
 	TW_Event_type_socket,  // Internet socket related events
 	TW_Event_type_poll,
+	/*
 #ifdef HAVE_MPI
 	TW_Event_type_mpi,	// MPI related event
 #endif
+*/
 } TW_Event_type_t;
 
 typedef struct TW_File_event_args_t {
@@ -69,9 +71,10 @@ typedef struct TW_Timer_event_args_t {
 typedef struct TW_Poll_event_args_t {
 	TW_Event_poll_handler_t poll;
 	void *data;
-	void *init_data;
+	// void *init_data;
 } TW_Poll_event_args_t;
 
+/*
 #ifdef HAVE_MPI
 typedef struct TW_Mpi_event_args_t {
 	MPI_Request req;
@@ -79,17 +82,14 @@ typedef struct TW_Mpi_event_args_t {
 	MPI_Status stat;
 } TW_Mpi_event_args_t;
 #endif
+*/
 
 typedef struct TW_Event_args_imp_t {
+	TW_Event_type_t type;
 	union args {
 		TW_File_event_args_t file;
 		TW_Socket_event_args_t socket;
 		TW_Timer_event_args_t timer;
 		TW_Poll_event_args_t poll;
-#ifdef HAVE_MPI
-		TW_Mpi_event_args_t mpi;
-#endif
-		char data[32];
 	} args;
-	TW_Event_type_t type;
 } TW_Event_args_imp_t;

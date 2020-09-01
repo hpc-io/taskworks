@@ -40,17 +40,40 @@
 
 #define TWI_VECTOR_INIT_SIZE		32
 #define TWI_VECTOR_ALLOC_MULTIPLIER 20
-
+#ifdef TWI_DEBUG
+#define SET_OWNER                   \
+	{                               \
+		v->owner = TWI_Get_tid ();  \
+		backtrace (v->trace, 1024); \
+	}
+#define CLR_OWNER \
+	{ v->owner = -1; }
+#define CHK_OWNER                                     \
+	{                                                 \
+		if (v->owner == TWI_Get_tid ()) { abort (); } \
+	}
+#else
+#define SET_OWNER \
+	{}
+#define CHK_OWNER \
+	{}
+#define CLR_OWNER \
+	{}
+#endif
 #define RLOCK                          \
 	{                                  \
+		CHK_OWNER                      \
 		TWI_Rwlock_rlock (&(v->lock)); \
 		locked = 1;                    \
+		SET_OWNER                      \
 	}
 
 #define WLOCK                          \
 	{                                  \
-		TWI_Rwlock_rlock (&(v->lock)); \
+		CHK_OWNER                      \
+		TWI_Rwlock_wlock (&(v->lock)); \
 		locked = 2;                    \
+		SET_OWNER                      \
 	}
 
 #define RUNLOCK                              \
@@ -58,6 +81,7 @@
 		if (locked == 1) {                   \
 			TWI_Rwlock_runlock (&(v->lock)); \
 			locked = 0;                      \
+			CLR_OWNER                        \
 		}                                    \
 	}
 
@@ -66,6 +90,7 @@
 		if (locked == 2) {                   \
 			TWI_Rwlock_wunlock (&(v->lock)); \
 			locked = 0;                      \
+			CLR_OWNER                        \
 		}                                    \
 	}
 
@@ -74,12 +99,16 @@
 		switch (locked) {                        \
 			case 1:                              \
 				TWI_Rwlock_runlock (&(v->lock)); \
+				locked = 0;                      \
 				break;                           \
 			case 2:                              \
 				TWI_Rwlock_wunlock (&(v->lock)); \
+				locked = 0;                      \
 				break;                           \
 			default:;                            \
+				abort ();                        \
 		}                                        \
+		CLR_OWNER                                \
 	}
 
 /*
@@ -164,6 +193,9 @@ terr_t TWI_Ts_vector_init (TWI_Ts_vector_handle_t v) {
 	v->nalloc = TWI_VECTOR_INIT_SIZE;
 	v->data	  = TWI_Malloc (v->nalloc * sizeof (TW_Handle_t));
 	CHECK_PTR (v->data)
+#ifdef TWI_DEBUG
+	v->owner = -1;
+#endif
 
 err_out:;
 	if (err) {
@@ -343,9 +375,16 @@ err_out:;
 	return err;
 }
 
-void TWI_Ts_vector_lock (TWI_Ts_vector_handle_t v) { TWI_Rwlock_rlock (&(v->lock)); }
+void TWI_Ts_vector_lock (TWI_Ts_vector_handle_t v) {
+	CHK_OWNER;
+	TWI_Rwlock_rlock (&(v->lock));
+	SET_OWNER;
+}
 
-void TWI_Ts_vector_unlock (TWI_Ts_vector_handle_t v) { TWI_Rwlock_runlock (&(v->lock)); }
+void TWI_Ts_vector_unlock (TWI_Ts_vector_handle_t v) {
+	TWI_Rwlock_runlock (&(v->lock));
+	CLR_OWNER;
+}
 
 TWI_Ts_vector_itr_t TWI_Ts_vector_begin (TWI_Ts_vector_handle_t v) { return v->data; }
 

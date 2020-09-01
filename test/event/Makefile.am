@@ -24,14 +24,15 @@ TESTPROGRAMS =  init \
                 poll
 
 if HAVE_MPI
-   TESTPROGRAMS += mpi
+   TESTPROGRAMS +=   mpi \
+                     mpi_req
 endif
 
 TEST_DRIVERS= "NATIVE"
 TEST_EVTDRIVERS=
 
 if HAVE_ABT
-   TEST_DRIVERS += "ABT"
+   # TEST_DRIVERS += "ABT"
 endif
 
 if HAVE_LIBEVENT

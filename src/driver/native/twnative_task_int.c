@@ -48,7 +48,7 @@ void TWNATIVE_Taski_free_core (void *obj) {	 // Free up a task
 
 	TWI_Rwlock_wlock (&(tp->lock));
 
-	DEBUG_PRINTF (1, "Freeing task %p\n", (void *)tp);
+	DEBUG_PRINTF (2, "Freeing task %p\n", (void *)tp);
 
 	// Remove all dependencies
 	TWI_Ts_vector_lock (tp->childs);
@@ -97,7 +97,7 @@ terr_t TWNATIVE_Taski_run (TWNATIVE_Task_t *tp, TWI_Bool_t *successp) {
 	CHECK_ERR
 
 	if (success == TWI_TRUE) {
-		DEBUG_PRINTF (1, "Running task %p\n", (void *)tp);
+		DEBUG_PRINTF (2, "Running task %p\n", (void *)tp);
 
 		// Only run if there is callback function
 		if (tp->handler) {
@@ -188,7 +188,7 @@ terr_t TWNATIVE_Taski_update_status (TWNATIVE_Task_t *tp,
 	// Old stat need to be different
 	if (old_stat != new_stat) {
 		if (old_stat == OPA_cas_int (&(tp->status), old_stat, new_stat)) {
-			DEBUG_PRINTF (1, "task %p status changed to %s\n", (void *)tp,
+			DEBUG_PRINTF (2, "task %p status changed to %s\n", (void *)tp,
 						  TW_Task_status_str (new_stat));
 
 			// Notify child tasks
@@ -267,7 +267,7 @@ terr_t TWNATIVE_Taski_notify_parent_status (TWNATIVE_Task_t *tp, int old_stat, i
 				if (cur_stat == old_stat) {
 					stat_before = OPA_load_int (&(cp->status));
 					if (stat_before == TW_TASK_STAT_DEPHOLD && (cp->dep_handler.Mask & new_stat)) {
-						DEBUG_PRINTF (1, "notify task %p, status of task %p is %s\n", (void *)(cp),
+						DEBUG_PRINTF (2, "notify task %p, status of task %p is %s\n", (void *)(cp),
 									  (void *)tp,
 									  TW_Task_status_str (OPA_load_int (&(tp->status))));
 						stat_after = cp->dep_handler.Status_change (cp->dispatcher_obj,
@@ -278,7 +278,7 @@ terr_t TWNATIVE_Taski_notify_parent_status (TWNATIVE_Task_t *tp, int old_stat, i
 							CHECK_ERR
 						}
 					} else {
-						DEBUG_PRINTF (3, "child task %p of task %p not interested in status %s\n",
+						DEBUG_PRINTF (4, "child task %p of task %p not interested in status %s\n",
 									  (void *)(cp), (void *)(OPA_load_ptr (&(dp->parent))),
 									  TW_Task_status_str (OPA_load_int (&(dp->status))));
 					}
@@ -297,8 +297,8 @@ terr_t TWNATIVE_Taski_notify_parent_status (TWNATIVE_Task_t *tp, int old_stat, i
 #endif
 		}
 	}
-	TWI_Ts_vector_unlock (tp->childs);
 
 err_out:;
+	TWI_Ts_vector_unlock (tp->childs);
 	return err;
 }

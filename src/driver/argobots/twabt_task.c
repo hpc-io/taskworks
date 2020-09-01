@@ -52,7 +52,7 @@ terr_t TWABT_Task_create (TW_Task_handler_t task_cb,
 
 	*htask = tp;
 
-	DEBUG_PRINTF (1, "Created task %p, handler: %p, data: %p, tag: %d, priority: %d\n", (void *)tp,
+	DEBUG_PRINTF (2, "Created task %p, handler: %p, data: %p, tag: %d, priority: %d\n", (void *)tp,
 				  (void *)(long long)(tp->handler), (void *)(tp->data), tp->tag, tp->priority);
 
 err_out:;
@@ -115,7 +115,7 @@ terr_t TWABT_Task_create_barrier (TW_Handle_t engine,  // Must have option of gl
 
 	*htask = tp;
 
-	DEBUG_PRINTF (1, "Created barrier task %p\n", (void *)tp);
+	DEBUG_PRINTF (2, "Created barrier task %p\n", (void *)tp);
 err_out:;
 	if (err) {
 		if (tp) { TWABT_Task_free (tp); }
@@ -139,7 +139,7 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 
 	DEBUG_ENTER_FUNC (2);
 
-	DEBUG_PRINTF (1, "Committing task %p\n", (void *)tp);
+	DEBUG_PRINTF (2, "Committing task %p\n", (void *)tp);
 
 	err = TWABTI_Task_update_status (tp, TW_TASK_STAT_IDLE, TW_TASK_STAT_DEPHOLD, &success);
 	CHECK_ERR
@@ -186,7 +186,7 @@ terr_t TWABT_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {	// Put the ta
 				dstatus = OPA_load_int (&(dp->status));
 				if (OPA_cas_int (&(dp->status), dstatus, pstatus) == dstatus) {
 					if (tp->dep_handler.Mask & pstatus) {
-						DEBUG_PRINTF (1, "notify task %p, status of task %p is %s\n",
+						DEBUG_PRINTF (2, "notify task %p, status of task %p is %s\n",
 									  (void *)(OPA_load_ptr (&(dp->child))), (void *)(pp),
 									  TW_Task_status_str (pstatus));
 						tstatus =
@@ -236,7 +236,7 @@ terr_t TWABT_Task_retract (TW_Handle_t htask) {
 		}
 	}
 
-	DEBUG_PRINTF (1, "Task %p retracted\n", (void *)tp);
+	DEBUG_PRINTF (2, "Task %p retracted\n", (void *)tp);
 
 err_out:;
 	DEBUG_EXIT_FUNC (2);
@@ -254,7 +254,7 @@ terr_t TWABT_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 
 	DEBUG_ENTER_FUNC (2);
 
-	DEBUG_PRINTF (1, "Waiting for task %p\n", (void *)tp);
+	DEBUG_PRINTF (2, "Waiting for task %p\n", (void *)tp);
 
 	if (timeout == TW_TIMEOUT_NEVER) {
 		while (1) {
@@ -339,7 +339,7 @@ terr_t TWABT_Task_add_dep (TW_Handle_t child, TW_Handle_t parent) {
 	err = TWI_Nb_list_insert_front (cp->parents, dp);
 	CHECK_ERR
 
-	DEBUG_PRINTF (1, "Task %p depends on task %p\n", (void *)cp, (void *)pp);
+	DEBUG_PRINTF (2, "Task %p depends on task %p\n", (void *)cp, (void *)pp);
 
 err_out:;
 	TWI_Rwlock_runlock (&(cp->lock));
@@ -376,7 +376,7 @@ terr_t TWABT_Task_rm_dep (TW_Handle_t child, TW_Handle_t parent) {
 	}
 	if (!itr) { ASSIGN_ERR (TW_ERR_NOT_FOUND) }
 
-	DEBUG_PRINTF (1, "Task %p no longer depends on task %p\n", (void *)cp, (void *)pp);
+	DEBUG_PRINTF (2, "Task %p no longer depends on task %p\n", (void *)cp, (void *)pp);
 
 err_out:;
 	TWI_Nb_list_dec_ref (cp->parents);

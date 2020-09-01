@@ -129,7 +129,7 @@ terr_t TWABTI_Event_update_status (TWABT_Event_t *ep,
 		} while (pre_stat != cur_stat);	 // Wait for our turn
 
 		if (success) {
-			DEBUG_PRINTF (1, "Event %p status changed to %s\n", (void *)ep,
+			DEBUG_PRINTF (2, "Event %p status changed to %s\n", (void *)ep,
 						  TW_Event_status_str (new_stat));
 
 			// Take action based on new status

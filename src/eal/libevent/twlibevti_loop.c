@@ -27,29 +27,40 @@ terr_t TWLIBEVTI_Check_for_single_unmanaged_event (TWLIBEVT_Loop_t *lp, TWI_Bool
 		if (ep->args.type == TW_Event_type_poll) {
 			int ret;
 
-			ret = ep->args.args.poll.poll.Check (ep->args.args.poll.data);
-			if (ret < 0) {
+			ret = ep->args.args.poll.poll (ep->args.args.poll.data);
+			if (ret == TW_Event_poll_response_err) {
 				ASSIGN_ERR (TW_ERR_POLL_CHECK)
-			} else if (ret) {
+			} else if (ret == TW_Event_poll_response_trigger) {
+				/* TWLIBEVTI_Evt_poll_cb can lock lp->poll_events, release lock so it can acquire
+				 * Other thread can change the vector, so rtrive size again once regain lock
+				 */
+				TWI_Ts_vector_unlock (lp->poll_events);
+
 				TWLIBEVTI_Evt_poll_cb (ep);
+
+				TWI_Ts_vector_lock (lp->poll_events);
+				size = (int)TWI_Ts_vector_size (lp->poll_events);
+
 				break;
 			}
 		}
-#ifdef HAVE_MPI
-		else if (ep->args.type == TW_Event_type_mpi) {
-			int mpierr;
-			int flag;
-			MPI_Status status;
+		/*
+		#ifdef HAVE_MPI
+				else if (ep->args.type == TW_Event_type_mpi) {
+					int mpierr;
+					int flag;
+					MPI_Status status;
 
-			mpierr = MPI_Test (&(ep->args.args.mpi.req), &flag, &status);
-			CHECK_MPIERR
+					mpierr = MPI_Test (&(ep->args.args.mpi.req), &flag, &status);
+					CHECK_MPIERR
 
-			if (flag) {
-				TWLIBEVTI_Evt_mpi_cb (ep, flag, status);
-				break;
-			}
-		}
-#endif
+					if (flag) {
+						TWLIBEVTI_Evt_mpi_cb (ep, flag, status);
+						break;
+					}
+				}
+		#endif
+		*/
 	}
 	TWI_Ts_vector_unlock (lp->poll_events);
 

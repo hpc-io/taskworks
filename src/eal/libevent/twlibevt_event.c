@@ -17,7 +17,7 @@ terr_t TWLIBEVT_Event_create (TW_Event_driver_handler_t evt_cb,
 							  TW_Event_args_imp_t arg,
 							  TW_Handle_t *event) {
 	terr_t err = TW_SUCCESS;
-	int ret;
+	// int ret;
 	TWLIBEVT_Event_t *ep;
 
 	ep = (TWLIBEVT_Event_t *)TWI_Malloc (sizeof (TWLIBEVT_Event_t));
@@ -29,10 +29,13 @@ terr_t TWLIBEVT_Event_create (TW_Event_driver_handler_t evt_cb,
 	ep->event	= NULL;
 	OPA_store_int (&(ep->status), EVT_STATUS_PENDING);
 	OPA_store_ptr (&(ep->nlp), NULL);
+
+	/*
 	if ((arg.type == TW_Event_type_poll) && ep->args.args.poll.poll.Init) {
 		ret = ep->args.args.poll.poll.Init (ep->args.args.poll.init_data, &ep->args.args.poll.data);
 		if (ret) ASSIGN_ERR (err)
 	}
+	*/
 
 	*event = ep;
 
@@ -42,26 +45,28 @@ err_out:;
 
 terr_t TWLIBEVT_Event_free (TW_Handle_t event) {
 	terr_t err = TW_SUCCESS;
-	int ret;
+	// int ret;
 	TWLIBEVT_Event_t *ep = (TWLIBEVT_Event_t *)event;
 
 	if (ep->event) { event_free (ep->event); }
 
+	/*
 	if ((ep->args.type == TW_Event_type_poll) && ep->args.args.poll.poll.Finalize) {
 		ret = ep->args.args.poll.poll.Finalize (ep->args.args.poll.data);
 		if (ret) ASSIGN_ERR (TW_ERR_POLL_FIN)
 	}
+	*/
 
 	TWI_Free (ep);
 
-err_out:;
+	// err_out:;
 	return err;
 }
 
 terr_t TWLIBEVT_Event_commit (TW_Handle_t event, TW_Handle_t loop) {
 	int err = TW_SUCCESS;
 	int evterr;
-	int ret;
+	// int ret;
 	short evt_flags = 0;
 	evutil_socket_t fd;
 	struct timeval tv, *tvp = NULL;
@@ -75,16 +80,18 @@ terr_t TWLIBEVT_Event_commit (TW_Handle_t event, TW_Handle_t loop) {
 
 		if (OPA_cas_ptr (&(ep->nlp), NULL, loop) == NULL) {	 // Put in pending slot
 			if (OPA_load_int (&(ep->status)) ==
-				EVT_STATUS_PENDING) {  // The other thread may not see the epending slot in time
+				EVT_STATUS_PENDING) {  // The other thread may not see the pending slot in time
 									   // when status changes to pending
 				if (OPA_cas_ptr (&(ep->nlp), loop, NULL) == loop) {
 					if (OPA_cas_int (&(ep->status), EVT_STATUS_PENDING, EVT_STATUS_COMMITED) !=
 						EVT_STATUS_PENDING) {  // Retry case, this time should success
 						ASSIGN_ERR (TW_ERR_STATUS)
 					}
-				} else {  // If the other thread already took the poitner, we quit
+				} else {  // If the other thread already took the pointer, we quit
 					goto err_out;
 				}
+			} else {
+				goto err_out;
 			}
 		} else {
 			ASSIGN_ERR (TW_ERR_STATUS)
@@ -112,19 +119,19 @@ terr_t TWLIBEVT_Event_commit (TW_Handle_t event, TW_Handle_t loop) {
 			fd		   = -1;
 			cb		   = TWLIBEVTI_Evt_timer_cb;
 			break;
-		case TW_Event_type_mpi:;
-			break;
 		case TW_Event_type_poll:;
+			/*
 			if (ep->args.args.poll.poll.Reset) {
 				ret = ep->args.args.poll.poll.Reset (ep->args.args.poll.data);
 				if (ret) ASSIGN_ERR (TW_ERR_POLL_RESET)
 			}
+			*/
 			break;
 		default:;
 			ASSIGN_ERR (TW_ERR_INVAL)
 	}
 
-	if (ep->args.type == TW_Event_type_mpi || ep->args.type == TW_Event_type_poll) {
+	if (ep->args.type == TW_Event_type_poll) {
 		err = TWI_Ts_vector_push_back (lp->poll_events, ep);
 		CHECK_ERR
 	} else {

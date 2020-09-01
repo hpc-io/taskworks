@@ -40,23 +40,11 @@ char msg[] = "test_msg";
 char buf[256];
 int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *arg, void *data) {
 	terr_t err;
-	int mpierr;
 	int nerr   = 0;
 	int *nerrp = (int *)data;
-	int flag;
-	MPI_Status stat, rstat;
-
-	TW_Event_arg_get_mpi (arg, &flag, &stat);
-
-	mpierr = MPI_Recv (buf, stat._ucount, MPI_CHAR, stat.MPI_SOURCE, stat.MPI_TAG, MPI_COMM_SELF,
-					   &rstat);
-	if (mpierr != MPI_SUCCESS) { nerr++; }
-	EXP_VAL (rstat._ucount, stat._ucount, "%llu");
 
 	err = TWT_Sem_inc (sem);
 	CHECK_ERR
-
-	*nerrp += nerr;
 
 	return 0;
 }
@@ -69,6 +57,7 @@ int main (int argc, char **argv) {
 	char cmd[256];
 	int rank;
 	int nworker = NUM_WORKERS;
+	MPI_Request req;
 	TW_Event_args_t arg;
 	TW_Event_handle_t evt;
 	TW_Engine_handle_t eng;
@@ -89,7 +78,11 @@ int main (int argc, char **argv) {
 	err = TW_Engine_create (nworker, &eng);
 	CHECK_ERR
 
-	err = TW_Event_arg_set_mpi (&arg, MPI_COMM_SELF, MPI_ANY_SOURCE, MPI_ANY_TAG);
+	mpierr =
+		MPI_Irecv (buf, strlen (msg), MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_SELF, &req);
+	EXP_VAL (mpierr, MPI_SUCCESS, "%d");
+
+	err = TW_Event_arg_set_mpi_req (&arg, req);
 	CHECK_ERR
 	err = TW_Event_create (event_cb, &evtnerr, arg, &evt);
 	CHECK_ERR

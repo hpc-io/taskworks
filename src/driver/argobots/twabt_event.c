@@ -29,8 +29,6 @@ terr_t TWABT_Event_create (TW_Event_handler_t evt_cb,
 	ep->eng			   = NULL;
 	if (args.type == TW_Event_type_timer) {
 		ep->repeat = args.args.timer.repeat_count;
-	} else if (args.type == TW_Event_type_mpi) {
-		ep->repeat = 1;
 	} else {
 		ep->repeat = TW_INFINITE;
 	}
@@ -40,7 +38,7 @@ terr_t TWABT_Event_create (TW_Event_handler_t evt_cb,
 
 	*hevt = ep;
 
-	DEBUG_PRINTF (1, "Created event %p, handler: %p, data: %p\n", (void *)ep,
+	DEBUG_PRINTF (2, "Created event %p, handler: %p, data: %p\n", (void *)ep,
 				  (void *)(long long)(ep->handler), (void *)(ep->data));
 
 err_out:;
@@ -68,7 +66,7 @@ terr_t TWABT_Event_free (TW_Handle_t hevt) {
 		ASSIGN_ERR (TW_ERR_STATUS)
 	}
 
-	DEBUG_PRINTF (1, "Freed event %p\n", (void *)ep);
+	DEBUG_PRINTF (2, "Freed event %p\n", (void *)ep);
 
 err_out:;
 	return err;
@@ -91,7 +89,7 @@ terr_t TWABT_Event_commit (TW_Handle_t hevt, TW_Handle_t engine) {
 		err = ep->driver->Event_commit (ep->driver_obj, engp->evt_loop);
 		CHECK_ERR
 
-		DEBUG_PRINTF (1, "Event %p commited to engine %p\n", (void *)ep, (void *)engp);
+		DEBUG_PRINTF (2, "Event %p commited to engine %p\n", (void *)ep, (void *)engp);
 
 		err =
 			TWABTI_Event_update_status (ep, TW_EVENT_STAT_TRANS, TW_EVENT_STAT_WATCHING, &success);
@@ -128,7 +126,7 @@ terr_t TWABT_Event_retract (TW_Handle_t hevt) {
 
 			ep->eng = NULL;
 
-			DEBUG_PRINTF (1, "Retracted event %p\n", (void *)ep);
+			DEBUG_PRINTF (2, "Retracted event %p\n", (void *)ep);
 
 			err =
 				TWABTI_Event_update_status (ep, TW_EVENT_STAT_TRANS, TW_EVENT_STAT_IDLE, &success);

@@ -63,6 +63,7 @@ terr_t TW_Event_arg_set_socket (TW_Event_args_handle_t harg, TW_Socket_t socket,
 err_out:;
 	return err;
 }
+
 terr_t TW_Event_arg_get_socket (TW_Event_args_handle_t harg, TW_Socket_t *socket, int *events) {
 	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
 
@@ -109,8 +110,8 @@ terr_t TW_Event_arg_set_poll (TW_Event_args_handle_t harg,
 	TW_Poll_event_args_t args;
 	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
 
-	args.poll	   = poll;
-	args.init_data = data;
+	args.poll = poll;
+	args.data = data;
 
 	argp->type		= TW_Event_type_poll;
 	argp->args.poll = args;
@@ -130,14 +131,10 @@ terr_t TW_Event_arg_get_poll (TW_Event_args_handle_t harg, void **data) {
 #ifdef HAVE_MPI
 terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Comm comm, int src, int tag) {
 	terr_t err = TW_SUCCESS;
-	TW_Event_poll_mpi_data *dp;
+	void *dp;
 
-	dp = (TW_Event_poll_mpi_data *)TWI_Malloc (sizeof (TW_Event_poll_mpi_data));
-	CHECK_PTR (dp)
-
-	dp->comm = comm;
-	dp->src	 = src;
-	dp->tag	 = tag;
+	err = TW_Event_poll_mpi_data_create (comm, src, tag, &dp);
+	CHECK_ERR
 
 	err = TW_Event_arg_set_poll (harg, TWI_Event_poll_mpi, dp);
 	CHECK_ERR
@@ -145,117 +142,43 @@ terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Comm comm, int src
 err_out:;
 	return err;
 }
-terr_t TW_Event_arg_get_mpi (TW_Event_args_handle_t harg, MPI_Comm *comm, int src, int tag) {
+terr_t TW_Event_arg_get_mpi (TW_Event_args_handle_t harg, int *flag, MPI_Status *stat) {
 	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
+	TW_Event_poll_mpi_data *dp;
 
-	if (argp->type != TW_Event_type_mpi) RET_ERR (TW_ERR_INVAL)
+	if (argp->type != TW_Event_type_poll) RET_ERR (TW_ERR_INVAL)
 
-	*req = argp->args.mpi.req;
+	dp = (TW_Event_poll_mpi_data *)argp->args.poll.data;
+
+	*flag = dp->flag;
+	*stat = dp->status;
 
 	return TW_SUCCESS;
 }
 terr_t TW_Event_arg_set_mpi_req (TW_Event_args_handle_t harg, MPI_Request req) {
-	TW_Mpi_event_args_t args;
-	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
+	terr_t err = TW_SUCCESS;
+	void *dp;
 
-	args.req = req;
+	err = TW_Event_poll_mpi_req_data_create (req, &dp);
+	CHECK_ERR
 
-	argp->type	   = TW_Event_type_mpi;
-	argp->args.mpi = args;
+	err = TW_Event_arg_set_poll (harg, TWI_Event_poll_mpi_req, dp);
+	CHECK_ERR
 
-	return TW_SUCCESS;
+err_out:;
+	return err;
 }
-terr_t TW_Event_arg_get_mpi_req (TW_Event_args_handle_t harg, MPI_Request *req) {
+terr_t TW_Event_arg_get_mpi_req (TW_Event_args_handle_t harg, int *flag, MPI_Status *stat) {
 	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
+	TW_Event_poll_mpi_req_data *dp;
 
-	if (argp->type != TW_Event_type_mpi) RET_ERR (TW_ERR_INVAL)
+	if (argp->type != TW_Event_type_poll) RET_ERR (TW_ERR_INVAL)
 
-	*req = argp->args.mpi.req;
+	dp = (TW_Event_poll_mpi_req_data *)argp->args.poll.data;
+
+	*flag = dp->flag;
+	*stat = dp->status;
 
 	return TW_SUCCESS;
 }
 #endif
-
-// Create, free
-terr_t TW_Event_create (TW_Event_handler_t evt_cb,
-						void *evt_data,
-						TW_Event_args_t arg,
-						TW_Event_handle_t *event) {
-	terr_t err = TW_SUCCESS;
-	TW_Obj_handle_t ep;
-	TW_Event_args_imp_t *arg_int;
-
-	ep = (TW_Obj_handle_t)TWI_Malloc (sizeof (TW_Obj_t));
-	CHECK_PTR (ep)
-	ep->objtype = TW_Obj_type_event;
-	ep->driver	= TWI_Active_driver;
-
-	arg_int = (TW_Event_args_imp_t *)(&arg);
-	err		= ep->driver->Event_create (evt_cb, evt_data, *arg_int, ep, &(ep->driver_obj));
-	CHECK_ERR
-
-	*event = ep;
-
-err_out:;
-	if (err) { TWI_Free (ep); }
-	return err;
-}
-
-terr_t TW_Event_free (TW_Event_handle_t event) {
-	terr_t err = TW_SUCCESS;
-
-	err = event->driver->Event_free (event->driver_obj);
-	CHECK_ERR
-
-err_out:;
-	return err;
-}
-
-// Control
-// Commit event, start watching
-terr_t TW_Event_commit (TW_Event_handle_t event, TW_Engine_handle_t engine) {
-	terr_t err = TW_SUCCESS;
-
-	CHK_HANDLE (event, TW_Obj_type_event)
-	CHK_HANDLE (engine, TW_Obj_type_engine)
-
-	err = event->driver->Event_commit (event->driver_obj, engine->driver_obj);
-	CHECK_ERR
-
-err_out:;
-	return err;
-}
-// Stop watching
-terr_t TW_Event_retract (TW_Event_handle_t event) {
-	terr_t err = TW_SUCCESS;
-
-	CHK_HANDLE (event, TW_Obj_type_event)
-
-	err = event->driver->Event_retract (event->driver_obj);
-	CHECK_ERR
-
-err_out:;
-	return err;
-}
-
-const char *TW_Event_status_str (int status) {
-	if (status & TW_EVENT_STAT_IDLE) {
-		return "idle";
-	} else if (status & TW_EVENT_STAT_WATCHING) {
-		return "watching";
-	} else if (status & TW_EVENT_STAT_TRIGGER) {
-		return "triggered";
-		//} else if (status & TW_EVENT_STAT_QUEUE) {
-		//	return "queuing";
-	} else if (status & TW_EVENT_STAT_RUNNING) {
-		return "running";
-		//} else if (status & TW_EVENT_STAT_COMPLETED) {
-		//	return "completed";
-	} else if (status & TW_EVENT_STAT_FAILED) {
-		return "failed";
-	} else if (status & TW_EVENT_STAT_TRANS) {
-		return "transition";
-	}
-
-	return "unknown";
-}

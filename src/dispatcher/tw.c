@@ -121,9 +121,13 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 
 	// TODO: Init obj list
 
-	/* Assign predefined handlers */
+	/* Assign predefined dependency handlers */
 	TW_Task_dep_null		 = TWI_Task_dep_null;
 	TW_Task_dep_all_complete = TWI_Task_dep_all_complete;
+
+	/* Assign predefined event poll handlers */
+	TW_Event_poll_mpi	  = TWI_Event_poll_mpi;
+	TW_Event_poll_mpi_req = TWI_Event_poll_mpi_req;
 
 	// Initialize the drivers
 	err = TWI_Active_driver->Init (argc, argv);

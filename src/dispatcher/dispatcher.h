@@ -38,6 +38,7 @@ typedef struct TW_Obj_t {
 typedef TW_Obj_t *TW_Obj_handle_t;
 
 #ifdef HAVE_MPI
+
 typedef struct TW_Event_poll_mpi_data {
 	MPI_Comm comm;
 	int src;
@@ -51,10 +52,11 @@ typedef struct TW_Event_poll_mpi_req_data {
 	int flag;
 	MPI_Status status;
 } TW_Event_poll_mpi_req_data;
+
 #endif
 
 extern TW_Task_dep_handler_t TWI_Task_dep_null;
 extern TW_Task_dep_handler_t TWI_Task_dep_all_complete;
 
-extern TW_Event_poll_handler_t TWI_Event_poll_mpi_req;
-extern TW_Event_poll_handler_t TWI_Event_poll_mpi;
+extern TW_Event_poll_response_t TWI_Event_poll_mpi (void *data);
+extern TW_Event_poll_response_t TWI_Event_poll_mpi_req (void *data);

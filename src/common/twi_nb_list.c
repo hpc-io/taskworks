@@ -92,7 +92,7 @@ terr_t TWI_Nb_list_init (TWI_Nb_list_handle_t l) {
 	OPA_store_ptr (&(l->tail.next_free), NULL);
 	OPA_store_int (&(l->ref), 0);
 
-	DEBUG_PRINTF (2, "Created non-blocking list %p\n", (void *)l);
+	DEBUG_PRINTF (3, "Created non-blocking list %p\n", (void *)l);
 
 	DEBUG_EXIT_FUNC (3)
 	return err;
@@ -104,7 +104,7 @@ terr_t TWI_Nb_list_finalize (TWI_Nb_list_handle_t l) {
 
 	DEBUG_ENTER_FUNC (3)
 
-	DEBUG_PRINTF (2, "Finaling non-blocking list %p\n", (void *)l);
+	DEBUG_PRINTF (3, "Finaling non-blocking list %p\n", (void *)l);
 
 	if (!l) { ASSIGN_ERR (TW_ERR_INVAL) }
 

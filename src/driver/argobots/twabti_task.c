@@ -44,7 +44,7 @@ void TWABTI_Task_free_core (void *obj) {  // Free up a task
 
 	TWI_Rwlock_wlock (&(tp->lock));
 
-	DEBUG_PRINTF (1, "Freeing task %p\n", (void *)tp);
+	DEBUG_PRINTF (2, "Freeing task %p\n", (void *)tp);
 
 	// Remove all dependencies
 	TWI_Nb_list_inc_ref (tp->childs);
@@ -142,7 +142,7 @@ static terr_t TWABTI_Task_run_dep_core (TWABT_Task_t *tp,
 	TWABT_Task_t *pp;
 	TWI_Nb_list_itr_t i;
 
-	DEBUG_PRINTF (1, "Trying to run task %p with calling thread\n", (void *)tp);
+	DEBUG_PRINTF (2, "Trying to run task %p with calling thread\n", (void *)tp);
 
 	while (success != TWI_TRUE) {
 		status = OPA_load_int (&(tp->status));
@@ -208,7 +208,7 @@ terr_t TWABTI_Task_update_status (TWABT_Task_t *tp,
 	// Old stat need to be different
 	if (old_stat != new_stat) {
 		if (old_stat == OPA_cas_int (&(tp->status), old_stat, new_stat)) {
-			DEBUG_PRINTF (1, "task %p status changed to %s\n", (void *)tp,
+			DEBUG_PRINTF (2, "task %p status changed to %s\n", (void *)tp,
 						  TW_Task_status_str (new_stat));
 
 			// Notify child tasks
@@ -317,7 +317,7 @@ terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new
 				if (cur_stat == old_stat) {
 					stat_before = OPA_load_int (&(cp->status));
 					if (stat_before == TW_TASK_STAT_DEPHOLD && (cp->dep_handler.Mask & new_stat)) {
-						DEBUG_PRINTF (1, "notify task %p, status of task %p is %s\n", (void *)(cp),
+						DEBUG_PRINTF (2, "notify task %p, status of task %p is %s\n", (void *)(cp),
 									  (void *)tp,
 									  TW_Task_status_str (OPA_load_int (&(tp->status))));
 						stat_after = cp->dep_handler.Status_change (cp->dispatcher_obj,
@@ -328,7 +328,7 @@ terr_t TWABTI_Task_notify_parent_status (TWABT_Task_t *tp, int old_stat, int new
 							CHECK_ERR
 						}
 					} else {
-						DEBUG_PRINTF (1, "child task %p of task %p not interested in status %s\n",
+						DEBUG_PRINTF (2, "child task %p of task %p not interested in status %s\n",
 									  (void *)(cp), (void *)(OPA_load_ptr (&(dp->parent))),
 									  TW_Task_status_str (OPA_load_int (&(dp->status))));
 					}

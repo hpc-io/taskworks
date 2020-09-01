@@ -50,7 +50,7 @@ terr_t TWNATIVE_Engine_scheduler_core (TWNATIVE_Engine_t *ep, TWI_Bool_t *succes
 err_out:;
 	return err;
 }
-
+static volatile int a = 0, b = 0, c = 0, d = 0, e = 0;
 void *TWNATIVE_Engine_scheduler (void *data) {
 	terr_t err = TW_SUCCESS;
 	TWI_Bool_t locked;
@@ -62,19 +62,22 @@ void *TWNATIVE_Engine_scheduler (void *data) {
 	// If number of thread decreases below our id, we quit
 	while (ta->id < ta->ep->nt) {
 		ta->ep->driver->sem.dec (ta->ep->njob);
-
+		a++;
 		if (ta->ep->evt_driver) {
+			b++;
 			TWI_Mutex_trylock (
 				&(ta->ep->evt_lock),
 				&locked);  // posix semaphore don't have dec and fect, so still need lock
 			if (locked) {
+				c++;
 				err = ta->ep->evt_driver->Loop_check_events (ta->ep->evt_loop, 100000);
 				CHECK_ERR
 
 				TWI_Mutex_unlock (&(ta->ep->evt_lock));
-
+				d++;
 				ta->ep->driver->sem.inc (
 					ta->ep->njob);	// Release another thread to check for events
+				e++;
 				continue;
 			}
 		}
@@ -82,7 +85,10 @@ void *TWNATIVE_Engine_scheduler (void *data) {
 		TWNATIVE_Engine_scheduler_core (ta->ep, NULL);
 
 	err_out:;
-		if (err) { err = 0; }
+		if (err) {
+			abort ();
+			err = 0;
+		}
 	}
 
 	TWI_Disposer_leave (TWNATIVEI_Disposer);

@@ -50,7 +50,7 @@ terr_t TWI_Disposer_init (TWI_Disposer_handle_t dp) {
 	dp->nt_alloc = 32;
 	dp->tss		 = (int volatile *)TWI_Malloc (sizeof (volatile int) * (size_t) (dp->nt_alloc));
 
-	DEBUG_PRINTF (1, "Initialized disposer %p\n", (void *)(dp));
+	DEBUG_PRINTF (2, "Initialized disposer %p\n", (void *)(dp));
 
 err_out:;
 	return err;
@@ -60,7 +60,7 @@ void TWI_Disposer_finalize (TWI_Disposer_handle_t dp) {
 	TWI_Trash_t *i, *j;
 	void *tmp;
 
-	DEBUG_PRINTF (1, "Finalizing disposer %p\n", (void *)(dp));
+	DEBUG_PRINTF (2, "Finalizing disposer %p\n", (void *)(dp));
 
 	for (i = OPA_load_ptr (&(dp->head)); i; i = j) {
 		j = i->next;
@@ -114,7 +114,7 @@ void TWI_Disposer_join (TWI_Disposer_handle_t dp) {
 
 		dp->tss[id] = OPA_load_int (&(dp->ts));
 
-		DEBUG_PRINTF (1, "Joins disposer %p as thread %d at timestamp %d\n", (void *)(dp), id,
+		DEBUG_PRINTF (2, "Joins disposer %p as thread %d at timestamp %d\n", (void *)(dp), id,
 					  dp->tss[id]);
 
 		TWI_Mutex_unlock (dp->lock);
@@ -137,7 +137,7 @@ void TWI_Disposer_leave (TWI_Disposer_handle_t dp) {
 
 		dp->tss[id] = INT32_MAX;  // Set our ts to int_max, we always agree
 
-		DEBUG_PRINTF (1, "Thread %d leave disposer %p at timestamp %d\n", id, (void *)(dp),
+		DEBUG_PRINTF (2, "Thread %d leave disposer %p at timestamp %d\n", id, (void *)(dp),
 					  OPA_load_int (&(dp->ts)));
 		TWI_Mutex_unlock (dp->lock);
 	}
@@ -159,7 +159,7 @@ terr_t TWI_Disposer_dispose (TWI_Disposer_handle_t dp, void *obj, TW_Trash_handl
 	} while (OPA_cas_ptr (&(dp->head), tp->next, tp) != tp->next);
 	// TWI_Mutex_runlock (dp->lock);
 
-	DEBUG_PRINTF (1, "Dispose %p in disposer %p at timestamp %d\n", obj, (void *)(dp), tp->ts);
+	DEBUG_PRINTF (2, "Dispose %p in disposer %p at timestamp %d\n", obj, (void *)(dp), tp->ts);
 
 err_out:;
 	return err;
@@ -179,7 +179,7 @@ void TWI_Disposer_flush (TWI_Disposer_handle_t dp) {
 
 	if (dp->tss[id] < tmin) {
 		dp->tss[id] = tmin;
-		DEBUG_PRINTF (1, "Thread %d in disposer %p agree on timestamp %d\n", id, (void *)(dp),
+		DEBUG_PRINTF (2, "Thread %d in disposer %p agree on timestamp %d\n", id, (void *)(dp),
 					  dp->tss[id]);
 
 		// Check for every BIN_SIZE items

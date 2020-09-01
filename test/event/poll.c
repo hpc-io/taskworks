@@ -12,7 +12,6 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <mpi.h>
 #include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,23 +35,32 @@
 
 TWT_Semaphore sem;
 
-char msg[] = "test_msg";
-char buf[256];
-int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *arg, void *data) {
+static volatile int a = 0, b = 0, c = 0;
+
+TW_Event_poll_response_t poll_check (void *data);
+TW_Event_poll_response_t poll_check (void *data) {
+	int *flag = (int *)data;
+
+	if (*flag) {
+		*flag = 0;
+		a++;
+		return TW_Event_poll_response_trigger;
+	}
+	c++;
+	return TW_Event_poll_response_pending;
+}
+
+int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt,
+			  TW_Event_args_t __attribute__ ((unused)) * arg,
+			  void *data);
+int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt,
+			  TW_Event_args_t __attribute__ ((unused)) * arg,
+			  void *data) {
 	terr_t err;
-	int mpierr;
 	int nerr   = 0;
 	int *nerrp = (int *)data;
-	int flag;
-	MPI_Status stat, rstat;
 
-	TW_Event_arg_get_mpi (arg, &flag, &stat);
-
-	mpierr = MPI_Recv (buf, stat._ucount, MPI_CHAR, stat.MPI_SOURCE, stat.MPI_TAG, MPI_COMM_SELF,
-					   &rstat);
-	if (mpierr != MPI_SUCCESS) { nerr++; }
-	EXP_VAL (rstat._ucount, stat._ucount, "%llu");
-
+	b++;
 	err = TWT_Sem_inc (sem);
 	CHECK_ERR
 
@@ -64,19 +72,15 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *a
 int main (int argc, char **argv) {
 	terr_t err = TW_SUCCESS;
 	int nerr   = 0;
-	int ret, mpierr;
+	int i;
 	atomic_int evtnerr = 0;
-	char cmd[256];
-	int rank;
-	int nworker = NUM_WORKERS;
+	int flag		   = 0;
+	int nworker		   = NUM_WORKERS;
 	TW_Event_args_t arg;
 	TW_Event_handle_t evt;
 	TW_Engine_handle_t eng;
 
-	MPI_Init (&argc, &argv);
-	MPI_Comm_rank (MPI_COMM_SELF, &rank);
-
-	PRINT_TEST_MSG ("Check if file event triggers correctly");
+	PRINT_TEST_MSG ("Check if customized polling events triggers correctly");
 
 	if (argc > 1) { nworker = atoi (argv[1]); }
 
@@ -89,25 +93,23 @@ int main (int argc, char **argv) {
 	err = TW_Engine_create (nworker, &eng);
 	CHECK_ERR
 
-	err = TW_Event_arg_set_mpi (&arg, MPI_COMM_SELF, MPI_ANY_SOURCE, MPI_ANY_TAG);
+	err = TW_Event_arg_set_poll (&arg, poll_check, &flag);
 	CHECK_ERR
 	err = TW_Event_create (event_cb, &evtnerr, arg, &evt);
 	CHECK_ERR
 	err = TW_Event_commit (evt, eng);
 	CHECK_ERR
 
-	mpierr = MPI_Send (msg, strlen (msg), MPI_CHAR, rank, 0, MPI_COMM_SELF);
+	for (i = 0; i < 2; i++) {
+		flag = 1;
+		err	 = TWT_Sem_dec (sem);
+		CHECK_ERR
+	}
 
-	err = TWT_Sem_dec (sem);
-	CHECK_ERR
 	err = TWT_Sem_free (sem);
 	CHECK_ERR
 
 	nerr += evtnerr;
-
-	// Avoid comparing '\n' by setting len as strlen(msg)
-	ret = strncmp (buf, msg, strlen (msg));
-	EXP_VAL (ret, 0, "%d");
 
 	err = TW_Engine_free (eng);
 	CHECK_ERR
@@ -117,6 +119,5 @@ int main (int argc, char **argv) {
 
 	PRINT_TEST_RESULT
 
-	MPI_Finalize ();
 	return nerr;
 }

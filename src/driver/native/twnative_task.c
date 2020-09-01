@@ -53,7 +53,7 @@ terr_t TWNATIVE_Task_create (TW_Task_handler_t task_cb,
 
 	*htask = tp;
 
-	DEBUG_PRINTF (1, "Created task %p, handler: %p, data: %p, tag: %d, priority: %d\n", (void *)tp,
+	DEBUG_PRINTF (2, "Created task %p, handler: %p, data: %p, tag: %d, priority: %d\n", (void *)tp,
 				  (void *)(long long)(tp->handler), (void *)(tp->data), tp->tag, tp->priority);
 
 err_out:;
@@ -117,7 +117,7 @@ terr_t TWNATIVE_Task_create_barrier (TW_Handle_t engine,  // Must have option of
 
 	*htask = tp;
 
-	DEBUG_PRINTF (1, "Created barrier task %p\n", (void *)tp);
+	DEBUG_PRINTF (2, "Created barrier task %p\n", (void *)tp);
 err_out:;
 	if (err) {
 		if (tp) { TWNATIVE_Task_free (tp); }
@@ -141,7 +141,7 @@ terr_t TWNATIVE_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {  // Put th
 
 	DEBUG_ENTER_FUNC (2);
 
-	DEBUG_PRINTF (1, "Committing task %p\n", (void *)tp);
+	DEBUG_PRINTF (2, "Committing task %p\n", (void *)tp);
 
 	err = TWNATIVE_Taski_update_status (tp, TW_TASK_STAT_IDLE, TW_TASK_STAT_DEPHOLD, &success);
 	CHECK_ERR
@@ -189,7 +189,7 @@ terr_t TWNATIVE_Task_commit (TW_Handle_t htask, TW_Handle_t engine) {  // Put th
 				dstatus = OPA_load_int (&(dp->status));
 				if (OPA_cas_int (&(dp->status), dstatus, pstatus) == dstatus) {
 					if (tp->dep_handler.Mask & pstatus) {
-						DEBUG_PRINTF (1, "notify task %p, status of task %p is %s\n",
+						DEBUG_PRINTF (2, "notify task %p, status of task %p is %s\n",
 									  (void *)(OPA_load_ptr (&(dp->child))), (void *)(pp),
 									  TW_Task_status_str (pstatus));
 						tstatus =
@@ -237,7 +237,7 @@ terr_t TWNATIVE_Task_retract (TW_Handle_t htask) {
 		}
 	}
 
-	DEBUG_PRINTF (1, "Task %p retracted\n", (void *)tp);
+	DEBUG_PRINTF (2, "Task %p retracted\n", (void *)tp);
 
 err_out:;
 	DEBUG_EXIT_FUNC (2);
@@ -257,7 +257,7 @@ terr_t TWNATIVE_Task_wait_single (TW_Handle_t htask, ttime_t timeout) {
 
 	DEBUG_ENTER_FUNC (2);
 
-	DEBUG_PRINTF (1, "Waiting for task %p\n", (void *)tp);
+	DEBUG_PRINTF (2, "Waiting for task %p\n", (void *)tp);
 
 	// stat = OPA_load_int (&(tp->status));
 
@@ -348,7 +348,7 @@ terr_t TWNATIVE_Task_add_dep (TW_Handle_t child, TW_Handle_t parent) {
 	err = TWI_Ts_vector_push_back (cp->parents, dp);
 	CHECK_ERR
 
-	DEBUG_PRINTF (1, "Task %p depends on task %p\n", (void *)cp, (void *)pp);
+	DEBUG_PRINTF (2, "Task %p depends on task %p\n", (void *)cp, (void *)pp);
 
 err_out:;
 	TWI_Rwlock_runlock (&(cp->lock));
@@ -385,7 +385,7 @@ terr_t TWNATIVE_Task_rm_dep (TW_Handle_t child, TW_Handle_t parent) {
 	TWI_Ts_vector_unlock (cp->parents);
 	if (i == ndep) { ASSIGN_ERR (TW_ERR_INVAL) }
 
-	DEBUG_PRINTF (1, "Task %p no longer depends on task %p\n", (void *)cp, (void *)pp);
+	DEBUG_PRINTF (2, "Task %p no longer depends on task %p\n", (void *)cp, (void *)pp);
 
 err_out:;
 	TWI_Rwlock_runlock (&(cp->lock));
@@ -434,7 +434,7 @@ terr_t TWNATIVE_Task_set_priority (TW_Handle_t task, int priority) {
 			CHECK_ERR
 		}
 	}
-	DEBUG_PRINTF (1, "Task %p priority changed to %d\n", (void *)tp, tp->priority);
+	DEBUG_PRINTF (2, "Task %p priority changed to %d\n", (void *)tp, tp->priority);
 
 err_out:;
 

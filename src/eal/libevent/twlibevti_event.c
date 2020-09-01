@@ -82,6 +82,7 @@ void TWLIBEVTI_Evt_timer_cb (evutil_socket_t TWI_UNUSED socket,
 	}
 }
 
+/*
 void TWLIBEVTI_Evt_mpi_cb (TWLIBEVT_Event_t *ep, int flag, MPI_Status stat) {
 	TW_Event_args_imp_t arg;
 
@@ -96,6 +97,7 @@ void TWLIBEVTI_Evt_mpi_cb (TWLIBEVT_Event_t *ep, int flag, MPI_Status stat) {
 		TWLIBEVTI_Evt_stat_reset (ep);
 	}
 }
+*/
 
 void TWLIBEVTI_Evt_poll_cb (TWLIBEVT_Event_t *ep) {
 	TW_Event_args_imp_t arg;

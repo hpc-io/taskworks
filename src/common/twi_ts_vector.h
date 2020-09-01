@@ -21,6 +21,10 @@ typedef struct TWI_Ts_vector_t {
 	OPA_int_t size;
 	size_t nalloc;
 	void **data;
+#ifdef TWI_DEBUG
+	volatile int owner;
+	void *trace[1024];
+#endif
 } TWI_Ts_vector_t;
 
 typedef TWI_Ts_vector_t *TWI_Ts_vector_handle_t;

@@ -20,12 +20,13 @@ noinst_LTLIBRARIES=libtwdispatcher.la
 
 # library sources
 libtwdispatcher_la_SOURCES =    tw.c \
-                                    engine.c \
-                                    task.c \
-                                    dep.c \
-                                    err.c \
-                                    event.c
-                                    poll.c 
+                                    tw_engine.c \
+                                    tw_task.c \
+                                    tw_task_dep.c \
+                                    tw_err.c \
+                                    tw_event.c \
+                                    tw_event_args.c \
+                                    tw_event_poll.c 
 
 # M4 hook
 # M4_SRCS  = 
