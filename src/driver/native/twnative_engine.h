@@ -18,6 +18,7 @@ typedef struct TWNATIVE_Engine_t {
 	TW_Handle_t lock;
 
 	OPA_int_t cur_nt;	   // Current number of threads
+	OPA_int_t sleep_nt;	   // Number of inactive threads
 	int nt;				   // Desired number of threads
 	int nt_alloc;		   // Size of threads array
 	TW_Handle_t *threads;  // Threads array

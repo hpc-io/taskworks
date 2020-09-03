@@ -38,13 +38,26 @@ TWT_Semaphore sem;
 
 char msg[] = "test_msg";
 char buf[256];
+int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *arg, void *data);
 int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *arg, void *data) {
 	terr_t err;
-	int nerr   = 0;
+	int nerr = 0;
+	int mpierr;
 	int *nerrp = (int *)data;
+	int flag;
+	MPI_Status stat, rstat;
+	MPI_Request req;
+
+	err = TW_Event_arg_get_mpi_req (arg, &req, &flag, &stat);
+	CHECK_ERR
+
+	mpierr = MPI_Wait (&req, &rstat);
+	if (mpierr != MPI_SUCCESS) { RAISE_ERR ("MPI_Wait failed") }
 
 	err = TWT_Sem_inc (sem);
 	CHECK_ERR
+
+	*nerrp += nerr;
 
 	return 0;
 }
@@ -54,7 +67,6 @@ int main (int argc, char **argv) {
 	int nerr   = 0;
 	int ret, mpierr;
 	atomic_int evtnerr = 0;
-	char cmd[256];
 	int rank;
 	int nworker = NUM_WORKERS;
 	MPI_Request req;
@@ -78,8 +90,8 @@ int main (int argc, char **argv) {
 	err = TW_Engine_create (nworker, &eng);
 	CHECK_ERR
 
-	mpierr =
-		MPI_Irecv (buf, strlen (msg), MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_SELF, &req);
+	mpierr = MPI_Irecv (buf, (int)strlen (msg), MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG,
+						MPI_COMM_SELF, &req);
 	EXP_VAL (mpierr, MPI_SUCCESS, "%d");
 
 	err = TW_Event_arg_set_mpi_req (&arg, req);
@@ -89,7 +101,7 @@ int main (int argc, char **argv) {
 	err = TW_Event_commit (evt, eng);
 	CHECK_ERR
 
-	mpierr = MPI_Send (msg, strlen (msg), MPI_CHAR, rank, 0, MPI_COMM_SELF);
+	mpierr = MPI_Send (msg, (int)strlen (msg), MPI_CHAR, rank, 0, MPI_COMM_SELF);
 
 	err = TWT_Sem_dec (sem);
 	CHECK_ERR

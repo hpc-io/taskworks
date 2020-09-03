@@ -6,7 +6,7 @@
 # contained in the file COPYING at the root of the source code distribution 
 # tree.                                                                     
 
-SUBDIRS = common basic
+SUBDIRS = common task advanced wrong
 
 if HAVE_LIBEVENT
    SUBDIRS += event

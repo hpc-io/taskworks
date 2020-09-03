@@ -112,11 +112,18 @@ extern terr_t TW_Event_arg_get_poll (TW_Event_args_handle_t harg, void **data);
 #ifdef TW_HAVE_MPI
 extern terr_t TW_Event_poll_mpi_data_create (MPI_Comm comm, int src, int tag, void **data);
 extern terr_t TW_Event_poll_mpi_req_data_create (MPI_Request req, void **data);
+extern terr_t TW_Free (void *data);
 
 extern terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Comm comm, int src, int tag);
 extern terr_t TW_Event_arg_set_mpi_req (TW_Event_args_handle_t harg, MPI_Request req);
-extern terr_t TW_Event_arg_get_mpi (TW_Event_args_handle_t harg, int *flag, MPI_Status *stat);
-extern terr_t TW_Event_arg_get_mpi_req (TW_Event_args_handle_t harg, int *flag, MPI_Status *stat);
+extern terr_t TW_Event_arg_get_mpi (TW_Event_args_handle_t harg,
+									MPI_Comm *comm,
+									int *flag,
+									MPI_Status *stat);
+extern terr_t TW_Event_arg_get_mpi_req (TW_Event_args_handle_t harg,
+										MPI_Request *req,
+										int *flag,
+										MPI_Status *stat);
 #endif
 
 // Create, free

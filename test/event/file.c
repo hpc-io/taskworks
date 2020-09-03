@@ -100,7 +100,8 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *a
 	TW_Event_arg_get_file (arg, &fd, NULL);
 
 #ifdef _WIN32
-	len = ReadFile ((HANDLE)fd bufp, sizeof (buf) - 1(size_t) (bufp - buf), &dwBytesRead, NULL);
+	len =
+		(int)ReadFile ((HANDLE)fd bufp, sizeof (buf) - 1(size_t) (bufp - buf), &dwBytesRead, NULL);
 
 	/* Check for end of file. */
 	if (len && dwBytesRead == 0) {
@@ -114,7 +115,7 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *a
 	}
 
 #else
-	len = read (fd, bufp, sizeof (buf) - 1 - (size_t) (bufp - buf));
+	len = (int)read (fd, bufp, sizeof (buf) - 1 - (size_t) (bufp - buf));
 
 	if (len <= 0) {
 		EXP_VAL (len, 0, "%d")

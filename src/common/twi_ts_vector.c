@@ -13,6 +13,9 @@
 
 #include <assert.h>
 #include <stdio.h>
+#ifdef TWI_DEBUG
+#include <execinfo.h>
+#endif
 
 #ifdef _WIN32
 #include <windows.h>

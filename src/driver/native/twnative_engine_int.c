@@ -16,9 +16,8 @@ terr_t TWNATIVE_Enginei_free (TWNATIVE_Engine_t *ep) {
 	terr_t err = TW_SUCCESS;
 	int i;
 	int nt;
-	TWI_Bool_t have_task;
-	void *task;
-	TWNATIVE_Task_t *tp;
+	TWI_Bool_t have_job;
+	TWNATIVE_Job_t *jp;
 
 	// Stop all threads
 	nt	   = ep->nt;
@@ -34,14 +33,14 @@ terr_t TWNATIVE_Enginei_free (TWNATIVE_Engine_t *ep) {
 	// Retract all tasks
 	// All commited tasks are either in the queue or connected to queued task via dependency
 	for (i = 0; i < TWI_TASK_NUM_PRIORITY_LEVEL; i++) {
-		TWI_Nb_queue_pop (ep->queue[i], &task, &have_task);
-		while (have_task) {
-			tp = *((TWNATIVE_Task_t **)task);
-			if (tp) {
-				err = TWNATIVE_Enginei_retract_task_r (ep, tp);
+		TWI_Nb_queue_pop (ep->queue[i], (void *)(&jp), &have_job);
+		while (have_job) {
+			if (jp->type == TWNATIVE_Job_type_task && jp->data) {
+				err = TWNATIVE_Enginei_retract_task_r (ep, jp->data);
 				CHECK_ERR
 			}
-			TWI_Nb_queue_pop (ep->queue[i], (void **)&tp, &have_task);
+			TWI_Disposer_dispose (TWNATIVEI_Disposer, jp, TWI_Free);
+			TWI_Nb_queue_pop (ep->queue[i], (void *)(&jp), &have_job);
 		}
 	}
 

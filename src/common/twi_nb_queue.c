@@ -29,16 +29,16 @@ static void TWI_Nb_queue_recycle_node (TWI_Nb_queue_handle_t q, TWI_Nb_queue_nod
 }
 static TWI_Nb_queue_node_t *TWI_Nb_queue_alloc_node (TWI_Nb_queue_handle_t q) {
 	TWI_Nb_queue_node_t *cur, *old;
-
-	if (q->free) {
-		cur = OPA_load_ptr (&(q->free->next_free));
-		while (cur) {
-			old = cur;
-			cur = OPA_cas_ptr (&(q->free->next_free), old, OPA_load_ptr (&(cur->next_free)));
-			if (old == cur) { return old; }
+	/*
+		if (q->free) {
+			cur = OPA_load_ptr (&(q->free->next_free));
+			while (cur) {
+				old = cur;
+				cur = OPA_cas_ptr (&(q->free->next_free), old, OPA_load_ptr (&(cur->next_free)));
+				if (old == cur) { return old; }
+			}
 		}
-	}
-
+	*/
 	return (TWI_Nb_queue_node_t *)TWI_Malloc (sizeof (TWI_Nb_queue_node_t));
 }
 

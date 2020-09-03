@@ -43,6 +43,7 @@ terr_t TWNATIVE_Engine_create (int num_worker, void *dispatcher_obj, TW_Handle_t
 	ep->threads	 = NULL;
 	ep->nt		 = num_worker;
 	OPA_store_int (&(ep->cur_nt), ep->nt);
+	OPA_store_int (&(ep->sleep_nt), 0);
 	ep->nt_alloc	   = ep->nt;
 	ep->dispatcher_obj = dispatcher_obj;
 

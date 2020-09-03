@@ -15,14 +15,21 @@
 terr_t TWNATIVE_Engine_scheduler_core (TWNATIVE_Engine_t *ep, TWI_Bool_t *successp) {
 	terr_t err = TW_SUCCESS;
 	int cur_priority;
+	int max_priority_level;
 	TWI_Bool_t success;
 	void *job;
 	TWNATIVE_Job_t *jp;
 	TWNATIVE_Task_t *tp;
 	TWNATIVE_Event_t *evtp;
 
+	if ((OPA_load_int (&(ep->sleep_nt)) > 0) && (ep->nt > 1)) {
+		max_priority_level = TWI_TASK_NUM_PRIORITY_LEVEL;
+	} else {
+		max_priority_level = TWI_TASK_NUM_PRIORITY_LEVEL - 1;
+	}
+
 	cur_priority = 0;
-	while (cur_priority < TWI_TASK_NUM_PRIORITY_LEVEL) {
+	while (cur_priority < max_priority_level) {
 		TWI_Nb_queue_pop (ep->queue[cur_priority], &job, &success);
 		if (success) {
 			jp = (TWNATIVE_Job_t *)job;
@@ -45,12 +52,12 @@ terr_t TWNATIVE_Engine_scheduler_core (TWNATIVE_Engine_t *ep, TWI_Bool_t *succes
 			cur_priority++;
 		}
 	}
-	if (successp) *successp = (cur_priority < TWI_TASK_NUM_PRIORITY_LEVEL) ? TWI_TRUE : TWI_FALSE;
+	if (successp) *successp = (cur_priority < max_priority_level) ? TWI_TRUE : TWI_FALSE;
 
 err_out:;
 	return err;
 }
-static volatile int a = 0, b = 0, c = 0, d = 0, e = 0;
+
 void *TWNATIVE_Engine_scheduler (void *data) {
 	terr_t err = TW_SUCCESS;
 	TWI_Bool_t locked;
@@ -61,23 +68,22 @@ void *TWNATIVE_Engine_scheduler (void *data) {
 
 	// If number of thread decreases below our id, we quit
 	while (ta->id < ta->ep->nt) {
+		// Count # task and cmp it to # thread
+		OPA_incr_int (&(ta->ep->sleep_nt));
 		ta->ep->driver->sem.dec (ta->ep->njob);
-		a++;
+		OPA_decr_int (&(ta->ep->sleep_nt));
+
 		if (ta->ep->evt_driver) {
-			b++;
 			TWI_Mutex_trylock (
 				&(ta->ep->evt_lock),
 				&locked);  // posix semaphore don't have dec and fect, so still need lock
 			if (locked) {
-				c++;
 				err = ta->ep->evt_driver->Loop_check_events (ta->ep->evt_loop, 100000);
 				CHECK_ERR
 
 				TWI_Mutex_unlock (&(ta->ep->evt_lock));
-				d++;
 				ta->ep->driver->sem.inc (
 					ta->ep->njob);	// Release another thread to check for events
-				e++;
 				continue;
 			}
 		}

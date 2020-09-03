@@ -533,8 +533,10 @@ AC_CONFIG_FILES([
 		examples/Makefile
 		test/Makefile
 		test/common/Makefile
-		test/basic/Makefile
-		test/event/Makefile])
+		test/advanced/Makefile
+		test/task/Makefile
+		test/event/Makefile
+		test/wrong/Makefile])
 
 AC_OUTPUT
 

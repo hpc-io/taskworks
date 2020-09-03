@@ -142,7 +142,10 @@ terr_t TW_Event_arg_set_mpi (TW_Event_args_handle_t harg, MPI_Comm comm, int src
 err_out:;
 	return err;
 }
-terr_t TW_Event_arg_get_mpi (TW_Event_args_handle_t harg, int *flag, MPI_Status *stat) {
+terr_t TW_Event_arg_get_mpi (TW_Event_args_handle_t harg,
+							 MPI_Comm *comm,
+							 int *flag,
+							 MPI_Status *stat) {
 	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
 	TW_Event_poll_mpi_data *dp;
 
@@ -152,6 +155,7 @@ terr_t TW_Event_arg_get_mpi (TW_Event_args_handle_t harg, int *flag, MPI_Status 
 
 	*flag = dp->flag;
 	*stat = dp->status;
+	*comm = dp->comm;
 
 	return TW_SUCCESS;
 }
@@ -168,7 +172,10 @@ terr_t TW_Event_arg_set_mpi_req (TW_Event_args_handle_t harg, MPI_Request req) {
 err_out:;
 	return err;
 }
-terr_t TW_Event_arg_get_mpi_req (TW_Event_args_handle_t harg, int *flag, MPI_Status *stat) {
+terr_t TW_Event_arg_get_mpi_req (TW_Event_args_handle_t harg,
+								 MPI_Request *req,
+								 int *flag,
+								 MPI_Status *stat) {
 	TW_Event_args_imp_t *argp = (TW_Event_args_imp_t *)harg;
 	TW_Event_poll_mpi_req_data *dp;
 
@@ -178,6 +185,7 @@ terr_t TW_Event_arg_get_mpi_req (TW_Event_args_handle_t harg, int *flag, MPI_Sta
 
 	*flag = dp->flag;
 	*stat = dp->status;
+	*req  = dp->req;
 
 	return TW_SUCCESS;
 }

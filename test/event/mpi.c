@@ -38,20 +38,28 @@ TWT_Semaphore sem;
 
 char msg[] = "test_msg";
 char buf[256];
+int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *arg, void *data);
 int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *arg, void *data) {
 	terr_t err;
 	int mpierr;
 	int nerr   = 0;
 	int *nerrp = (int *)data;
-	int flag;
+	int flag, cnt, rcnt;
+	MPI_Comm comm;
 	MPI_Status stat, rstat;
 
-	TW_Event_arg_get_mpi (arg, &flag, &stat);
+	err = TW_Event_arg_get_mpi (arg, &comm, &flag, &stat);
+	CHECK_ERR
+	mpierr = MPI_Get_count (&stat, MPI_CHAR, &cnt);
+	if (mpierr != MPI_SUCCESS) { RAISE_ERR ("MPI_Get_count failed") }
 
-	mpierr = MPI_Recv (buf, stat._ucount, MPI_CHAR, stat.MPI_SOURCE, stat.MPI_TAG, MPI_COMM_SELF,
-					   &rstat);
-	if (mpierr != MPI_SUCCESS) { nerr++; }
-	EXP_VAL (rstat._ucount, stat._ucount, "%llu");
+	mpierr = MPI_Recv (buf, cnt, MPI_CHAR, stat.MPI_SOURCE, stat.MPI_TAG, comm, &rstat);
+	if (mpierr != MPI_SUCCESS) { RAISE_ERR ("MPI_Recv failed") }
+
+	mpierr = MPI_Get_count (&rstat, MPI_CHAR, &rcnt);
+	if (mpierr != MPI_SUCCESS) { RAISE_ERR ("MPI_Get_count failed") }
+
+	EXP_VAL (cnt, rcnt, "%d");
 
 	err = TWT_Sem_inc (sem);
 	CHECK_ERR
@@ -66,7 +74,6 @@ int main (int argc, char **argv) {
 	int nerr   = 0;
 	int ret, mpierr;
 	atomic_int evtnerr = 0;
-	char cmd[256];
 	int rank;
 	int nworker = NUM_WORKERS;
 	TW_Event_args_t arg;
@@ -96,7 +103,7 @@ int main (int argc, char **argv) {
 	err = TW_Event_commit (evt, eng);
 	CHECK_ERR
 
-	mpierr = MPI_Send (msg, strlen (msg), MPI_CHAR, rank, 0, MPI_COMM_SELF);
+	mpierr = MPI_Send (msg, (int)strlen (msg), MPI_CHAR, rank, 0, MPI_COMM_SELF);
 
 	err = TWT_Sem_dec (sem);
 	CHECK_ERR

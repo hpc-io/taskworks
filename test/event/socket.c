@@ -12,12 +12,14 @@
 
 #include <errno.h>
 #include <stdatomic.h>
+#include <string.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #include <winsock2.h>
 #pragma comment(lib, "ws2_32.lib")
 #else
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h> /* superset of previous */
 #include <sys/socket.h>
@@ -29,8 +31,9 @@
 #define NUM_WORKERS 4
 
 #define PORT	16385
-#define BUFSIZE 2048
+#define BUFSIZE 256
 
+int create_receiver (int *nerrp, TW_Socket_t *fd);
 int create_receiver (int *nerrp, TW_Socket_t *fd) {
 	int nerr = 0;
 	struct sockaddr_in addr;
@@ -75,6 +78,7 @@ fn_exit:;
 	return nerr > 0;
 }
 
+int send_msg (int *nerrp, char *msg);
 int send_msg (int *nerrp, char *msg) {
 	int nerr = 0;
 	TW_Socket_t fd;
@@ -103,7 +107,6 @@ int send_msg (int *nerrp, char *msg) {
 		RAISE_ERR ("cannot create socket")
 		goto fn_exit;
 	}
-	char *my_messsage = "this is a test message";
 
 	/* fill in the server's address and data */
 	memset ((char *)&addr, 0, sizeof (addr));
@@ -125,8 +128,9 @@ fn_exit:;
 }
 
 TWT_Semaphore sem;
-char buf[255];
+char buf[BUFSIZE];
 char *bufp = buf;
+int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *arg, void *data);
 int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *arg, void *data) {
 	terr_t err;
 	int nerr   = 0;
@@ -145,8 +149,8 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *a
 	memset (buf, 0, sizeof (buf));
 
 #ifdef _WIN32
-	if ((len = recvfrom (socket, bufp, sizeof (buf) - 1 - (size_t) (bufp - buf), 0,
-						 (struct sockaddr *)&addr, &addrlen)) == SOCKET_ERROR) {
+	if ((len = (int)recvfrom (socket, bufp, sizeof (buf) - 1 - (size_t) (bufp - buf), 0,
+							  (struct sockaddr *)&addr, &addrlen)) == SOCKET_ERROR) {
 		RAISE_ERR ("recvfrom failed");
 		goto fn_exit;
 	}
@@ -156,8 +160,8 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *a
 	err = TWT_Sem_inc (sem);
 	CHECK_ERR
 #else
-	len				  = recvfrom (socket, bufp, sizeof (buf) - 1 - (size_t) (bufp - buf), 0,
-					  (struct sockaddr *)&addr, &addrlen);
+	len				  = (int)recvfrom (socket, bufp, sizeof (buf) - 1 - (size_t) (bufp - buf), 0,
+						   (struct sockaddr *)&addr, &addrlen);
 	if (len > 0) {
 		bufp += len;
 		if (bufp - buf >= 8) {
@@ -168,6 +172,7 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *a
 		}
 	} else if (len < 0) {
 		RAISE_ERR ("recvfrom failed");
+		goto fn_exit;
 	}
 #endif
 
@@ -183,7 +188,7 @@ int main (int argc, char **argv) {
 	int ret;
 	int nworker		   = NUM_WORKERS;
 	atomic_int evtnerr = 0;
-	TW_Socket_t frecv, fsend;
+	TW_Socket_t frecv;
 	char msg[] = "test_msg";
 	TW_Event_args_t arg;
 	TW_Event_handle_t evt;

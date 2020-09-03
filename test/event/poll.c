@@ -35,18 +35,14 @@
 
 TWT_Semaphore sem;
 
-static volatile int a = 0, b = 0, c = 0;
-
 TW_Event_poll_response_t poll_check (void *data);
 TW_Event_poll_response_t poll_check (void *data) {
 	int *flag = (int *)data;
 
 	if (*flag) {
 		*flag = 0;
-		a++;
 		return TW_Event_poll_response_trigger;
 	}
-	c++;
 	return TW_Event_poll_response_pending;
 }
 
@@ -60,7 +56,6 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt,
 	int nerr   = 0;
 	int *nerrp = (int *)data;
 
-	b++;
 	err = TWT_Sem_inc (sem);
 	CHECK_ERR
 
