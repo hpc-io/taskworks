@@ -18,6 +18,7 @@
 #include <mpi.h>
 #endif
 
+#include <opa_primitives.h>
 #include <taskworks.h>
 
 #include "common.h"

@@ -42,6 +42,8 @@ terr_t TWNATIVE_Enginei_free (TWNATIVE_Engine_t *ep) {
 			TWI_Disposer_dispose (TWNATIVEI_Disposer, jp, TWI_Free);
 			TWI_Nb_queue_pop (ep->queue[i], (void *)(&jp), &have_job);
 		}
+
+		TWI_Nb_queue_free (ep->queue[i]);
 	}
 
 	TWI_Disposer_dispose (TWNATIVEI_Disposer, ep, TWNATIVE_Enginei_free_core);
@@ -52,6 +54,10 @@ err_out:;
 
 void TWNATIVE_Enginei_free_core (void *obj) {
 	TWNATIVE_Engine_t *ep = (TWNATIVE_Engine_t *)obj;
+
+	ep->driver->mutex.free (ep->lock);
+	ep->driver->sem.free (ep->njob);
+	TWI_Mutex_finalize (&ep->evt_lock);
 
 	TWI_Free (ep->threads);
 	TWI_Free (ep);

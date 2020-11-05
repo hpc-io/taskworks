@@ -49,6 +49,8 @@ terr_t TW_Event_free (TW_Event_handle_t event) {
 	err = event->driver->Event_free (event->driver_obj);
 	CHECK_ERR
 
+	TWI_Free (event);
+
 err_out:;
 	return err;
 }

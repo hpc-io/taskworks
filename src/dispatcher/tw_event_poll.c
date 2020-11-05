@@ -18,6 +18,8 @@
 #include "dispatcher.h"
 /// \endcond
 
+TWI_Disposer_handle_t TWI_Poll_disposer;
+
 TW_Event_poll_handler_t TW_Event_poll_mpi;
 TW_Event_poll_handler_t TW_Event_poll_mpi_req;
 
@@ -51,6 +53,8 @@ terr_t TW_Event_poll_mpi_data_create (MPI_Comm comm, int src, int tag, void **da
 
 	dp = (TW_Event_poll_mpi_data *)TWI_Malloc (sizeof (TW_Event_poll_mpi_data));
 	CHECK_PTR (dp);
+	// No threads participate in disposer, objects will be freed when the disposer is freed
+	TWI_Disposer_dispose (TWI_Poll_disposer, dp, TWI_Free);
 
 	dp->comm = comm;
 	dp->src	 = src;
@@ -68,6 +72,8 @@ terr_t TW_Event_poll_mpi_req_data_create (MPI_Request req, void **data) {
 
 	dp = (TW_Event_poll_mpi_req_data *)TWI_Malloc (sizeof (TW_Event_poll_mpi_req_data));
 	CHECK_PTR (dp);
+	// No threads participate in disposer, objects will be freed when the disposer is freed
+	TWI_Disposer_dispose (TWI_Poll_disposer, dp, TWI_Free);
 
 	dp->req = req;
 

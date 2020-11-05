@@ -89,6 +89,8 @@ terr_t TW_Task_free (TW_Task_handle_t task) {
 	err = tp->driver->Task_free (tp->driver_obj);
 	CHECK_ERR
 
+	TWI_Free (tp);
+
 err_out:;
 	return err;
 }

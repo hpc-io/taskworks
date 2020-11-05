@@ -55,6 +55,8 @@ typedef struct TW_Event_poll_mpi_req_data {
 
 #endif
 
+extern TWI_Disposer_handle_t TWI_Poll_disposer;
+
 extern TW_Task_dep_handler_t TWI_Task_dep_null;
 extern TW_Task_dep_handler_t TWI_Task_dep_all_complete;
 

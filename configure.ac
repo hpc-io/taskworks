@@ -519,7 +519,7 @@ AC_SUBST([LIBEVENT_DEF])
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile 
-		src/libtw.settings
+		src/include/taskworks.settings
 		src/include/taskworks.h
 		src/driver/Makefile 
 		src/driver/argobots/Makefile 
@@ -540,5 +540,5 @@ AC_CONFIG_FILES([
 
 AC_OUTPUT
 
-cat src/libtw.settings
+cat src/include/taskworks.settings
 

@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include <opa_primitives.h>
 #include <stdint.h>
 
 #include "taskworks.h"

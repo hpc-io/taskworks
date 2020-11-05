@@ -30,7 +30,8 @@ include_HEADERS =   include/taskworks.h \
                         include/tw_engine.h \
                         include/tw_task.h \
                         include/tw_event.h \
-                        include/tw_err.h
+                        include/tw_err.h \
+                        include/taskworks.settings
 
 # Allow running make tests without make
 tests-local: all

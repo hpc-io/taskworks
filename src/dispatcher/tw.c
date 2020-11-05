@@ -137,6 +137,10 @@ terr_t TW_Init (TW_Backend_t backend, TW_Event_backend_t event_backend, int *arg
 		CHECK_ERR
 	}
 
+	// Initialize disposer for built in poll handler data
+	TWI_Poll_disposer = TWI_Disposer_create ();
+	CHECK_PTR (TWI_Poll_disposer)
+
 err_out:;
 	return err;
 }
@@ -156,6 +160,8 @@ terr_t TW_Finalize (void) {
 		err = TWI_Active_evt_driver->Finalize ();
 		CHECK_ERR
 	}
+
+	TWI_Disposer_free (TWI_Poll_disposer);
 
 err_out:;
 	return err;
