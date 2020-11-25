@@ -57,7 +57,7 @@ int Custom_dep_status_change (TW_Task_handle_t task,
 
 	// Try CAS in my own handle if available
 	if (h == TW_HANDLE_NULL || (parent == h && new_status == TW_TASK_STAT_COMPLETED)) {
-		if (atomic_compare_exchange_strong (hp, &h, task)) { return TW_TASK_STAT_READY; }
+		if (atomic_compare_exchange_strong ((_Atomic*)hp, &h, task)) { return TW_TASK_STAT_READY; }
 	}
 
 	return TW_TASK_STAT_DEPHOLD;
