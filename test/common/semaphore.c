@@ -23,7 +23,7 @@ terr_t TWT_Sem_create (TWT_Semaphore *sem) {
 terr_t TWT_Sem_dec (TWT_Semaphore sem) {
 	int ret;
 
-	ret = sem_trywait (sem);
+	ret = sem_wait (sem);
 	if (ret != 0) return TW_ERR_OS;
 
 	return TW_SUCCESS;
@@ -44,7 +44,7 @@ terr_t TWT_Sem_free (TWT_Semaphore sem) {
 	ret = sem_close(sem); //sem_destroy (sem);
 	if (ret != 0) return TW_ERR_OS;
 
-	free (sem);
+	//free (sem);
 
 	return TW_SUCCESS;
 }

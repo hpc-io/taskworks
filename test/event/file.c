@@ -143,7 +143,7 @@ int main (int argc, char **argv) {
 	atomic_int evtnerr = 0;
 	TW_Fd_t fd;
 	char msg[] = "test_msg";
-	char cmd[256];
+	char cmd[256] = {0};
 	TW_Event_args_t arg;
 	TW_Event_handle_t evt;
 	TW_Engine_handle_t eng;
@@ -181,7 +181,7 @@ int main (int argc, char **argv) {
 
 	// echo will add \n after the end of the message
 	sprintf (cmd, "echo \"%s\" >> file.txt", msg);
-	system (cmd);
+	int r = system (cmd);
 
 	err = TWT_Sem_dec (sem);
 	CHECK_ERR

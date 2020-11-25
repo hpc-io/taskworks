@@ -9,20 +9,20 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* Pthread driver implementation */
-
+#include <sys/fcntl.h>
 #include "twposix_sem.h"
 
 #include <semaphore.h>
 sem_t *make_semaphore(int value);
 terr_t TWPOSIX_Sem_create (TW_Handle_t *sem) {
 	terr_t err = TW_SUCCESS;
-	int perr;
+	int perr = TW_SUCCESS;
 	sem_t *sp = NULL;
 
 	sp = (sem_t *)TWI_Malloc (sizeof (sem_t));
 	sp = make_semaphore(0);
 	if(sp == SEM_FAILED)
-	    err = TW_ERR_OS;
+	    perr = TW_ERR_OS;
 	//perr = sem_init (sp, 0, 0);
 	CHECK_PERR
 
@@ -35,7 +35,7 @@ err_out:;
 
 void TWPOSIX_Sem_trydec (TW_Handle_t sem, TWI_Bool_t *success) {
 	int perr;
-	perr = sem_trywait (sem);
+	perr = sem_wait (sem);
 	if (perr == 0) {
 		*success = TWI_TRUE;
 	} else {
@@ -43,7 +43,7 @@ void TWPOSIX_Sem_trydec (TW_Handle_t sem, TWI_Bool_t *success) {
 	}
 }
 
-void TWPOSIX_Sem_dec (TW_Handle_t sem) { sem_trywait (sem); }
+void TWPOSIX_Sem_dec (TW_Handle_t sem) { sem_wait (sem); }
 
 void TWPOSIX_Sem_inc (TW_Handle_t sem) { sem_post (sem); }
 
