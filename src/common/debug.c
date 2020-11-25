@@ -17,14 +17,20 @@
 #define _GNU_SOURCE
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/syscall.h>
 #endif
 
 #include "debug.h"
 
 #ifdef _WIN32
 int TWI_Get_tid (void) { return (int)GetThreadId (); }
+
 #else
-int TWI_Get_tid (void) { return (int)gettid (); }
+pid_t _gettid(void)
+{
+    return syscall(__NR_gettid);
+}
+int TWI_Get_tid (void) { return _gettid(); }
 #endif
 
 int TWI_Debug_level = 0;
