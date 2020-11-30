@@ -20,7 +20,7 @@ terr_t TWPOSIX_Sem_create (TW_Handle_t *sem) {
 	sem_t *sp = NULL;
 
 	sp = (sem_t *)TWI_Malloc (sizeof (sem_t));
-	sp = make_semaphore(0);
+	sp = make_semaphore(1);
 	if(sp == SEM_FAILED)
 	    perr = TW_ERR_OS;
 	//perr = sem_init (sp, 0, 0);

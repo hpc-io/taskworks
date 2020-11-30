@@ -2,7 +2,7 @@
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <errno.h>
 #ifdef _WIN32
 #else
 #endif
