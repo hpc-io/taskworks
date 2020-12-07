@@ -87,30 +87,32 @@ int main (int argc, char *argv[]) {
 	if (argc > 2) { ntask = atoi (argv[2]); }
 	task  = (TW_Task_handle_t *)malloc (sizeof (TW_Task_handle_t) * (size_t)ntask);
 	datas = (task_data *)malloc (sizeof (task_data) * (size_t)ntask);
-
+	DEBUG
 	err = TW_Init (TW_Backend_native, TW_Event_backend_none, &argc, &argv);
 	CHECK_ERR
-
+	DEBUG
 	err = TW_Engine_create (nworker, &eng);
 	CHECK_ERR
-
+	DEBUG
 	dep.Status_change = Custom_dep_status_change;
 	dep.Init		  = NULL;
 	dep.Finalize	  = NULL;
 	dep.Data		  = &handle;
 	dep.Mask		  = TW_TASK_STAT_COMPLETED | TW_TASK_STAT_IDLE;
-
+	DEBUG
 	for (i = 0; i < ntask; i++) {
 		datas[i].tasks_running = &running;
 		datas[i].tasks_ran	   = &ran;
 		err					   = TW_Task_create (task_fn, datas + i, dep, i, task + i);
 		CHECK_ERR
-	}
+	}DEBUG
 	// All to all dep
 	for (i = 0; i < ntask; i++) {
 		for (j = 0; j < ntask; j++) {
 			if (i != j) {
+			    DEBUG
 				err = TW_Task_add_dep (task[i], task[j]);
+			    DEBUG
 				CHECK_ERR
 			}
 		}
@@ -118,17 +120,23 @@ int main (int argc, char *argv[]) {
 
 	/* Commit all tasks */
 	for (i = 0; i < ntask; i++) {
+	    DEBUG
 		err = TW_Task_commit (task[i], eng);
+	    DEBUG
 		CHECK_ERR
 	}
 
 	for (i = 0; i < ntask; i++) {
+	    DEBUG
 		err = TW_Task_wait (task[i], TW_TIMEOUT_NEVER);
+	    DEBUG
 		CHECK_ERR
 	}
 
 	for (i = 0; i < ntask; i++) {
+	    DEBUG
 		err = TW_Task_get_status (task[i], &status);
+	    DEBUG
 		CHECK_ERR
 
 		EXP_VAL (status, TW_TASK_STAT_COMPLETED, "%d")

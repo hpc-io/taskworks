@@ -26,7 +26,7 @@ terr_t TWNATIVE_Engine_create (int num_worker, void *dispatcher_obj, TW_Handle_t
 	int i;
 	TWNATIVE_Thread_arg_t *ta;
 	TWNATIVE_Engine_t *ep = NULL;
-
+	DEBUG
 	// Allocate engine structure
 	ep = (TWNATIVE_Engine_t *)TWI_Malloc (sizeof (TWNATIVE_Engine_t));
 	CHECK_PTR (ep)
@@ -131,22 +131,22 @@ terr_t TWNATIVE_Engine_do_work (TW_Handle_t engine, ttime_t timeout) {
 	TWI_Bool_t have_task;
 
 	TWNATIVE_Engine_t *ep = (TWNATIVE_Engine_t *)engine;
-
+DEBUG
 	stoptime = TWI_Time_now () + timeout;
 
 	TWI_Disposer_join (TWNATIVEI_Disposer);
-
-	if (timeout == TW_ONCE) {
+	DEBUG
+	if (timeout == TW_ONCE) {DEBUG
 		err = TWNATIVE_Engine_scheduler_core (ep, &have_task);
 		CHECK_ERR
-	} else {
+	} else {DEBUG
 		if (timeout == TW_INFINITE) stoptime = INT64_MAX;
-		do {
+		do {DEBUG
 			err = TWNATIVE_Engine_scheduler_core (ep, &have_task);
 			CHECK_ERR
 		} while (have_task && (TWI_Time_now () < stoptime));
 	}
-
+	DEBUG
 err_out:;
 	TWI_Disposer_leave (TWNATIVEI_Disposer);
 	return err;
@@ -166,7 +166,7 @@ terr_t TWNATIVE_Engine_set_num_workers (TW_Handle_t TWI_UNUSED engine, int TWI_U
 	TW_Handle_t tmp;
 	TWNATIVE_Thread_arg_t *ta;
 	TWNATIVE_Engine_t *ep = (TWNATIVE_Engine_t *)engine;
-
+	DEBUG
 	// Write for prev adjustment to finish
 	while (ep->nt != OPA_load_int (&(ep->cur_nt)))
 		;

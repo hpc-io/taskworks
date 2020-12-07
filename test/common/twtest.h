@@ -68,3 +68,6 @@ terr_t TWT_Sem_create (TWT_Semaphore *sem);
 terr_t TWT_Sem_dec (TWT_Semaphore sem);
 terr_t TWT_Sem_inc (TWT_Semaphore sem);
 terr_t TWT_Sem_free (TWT_Semaphore sem);
+int read_sem_val(TWT_Semaphore s);
+#define SEM_VAL(S)  { printf("\nTid = %d, %s:%d sem val = %d\n", pthread_self(), __func__, __LINE__, read_sem_val(S)); }
+#define DEBUG printf("Tid = %d, %s:%s:%d\n", pthread_self(), __FILE__, __func__, __LINE__); usleep(50*1000);

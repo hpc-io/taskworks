@@ -29,7 +29,7 @@
 
 #define DEBUG_ENTER_FUNC(L) DEBUG_PRINTF (L, "Entering %s\n", __func__)
 #define DEBUG_EXIT_FUNC(L)	DEBUG_PRINTF (L, "Leaving %s\n", __func__)
-
+#define DEBUG printf("Tid = %d, %s:%s:%d\n", pthread_self(), __FILE__, __func__, __LINE__); usleep(50*1000);
 extern int TWI_Debug_level;
 
 int TWI_Get_tid (void);

@@ -150,7 +150,7 @@ terr_t TWABT_Engine_do_work (TW_Handle_t engine, ttime_t timeout) {
 	TWI_Nb_list_itr_t i;
 	TWABT_Task_t *tp;
 	TWABT_Engine_t *ep = (TWABT_Engine_t *)engine;
-
+DEBUG
 	stoptime = TWI_Time_now () + timeout;
 
 	TWI_Nb_list_inc_ref (ep->tasks);

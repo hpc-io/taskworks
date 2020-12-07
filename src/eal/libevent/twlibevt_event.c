@@ -73,7 +73,7 @@ terr_t TWLIBEVT_Event_commit (TW_Handle_t event, TW_Handle_t loop) {
 	event_callback_fn cb = NULL;
 	TWLIBEVT_Event_t *ep = (TWLIBEVT_Event_t *)event;
 	TWLIBEVT_Loop_t *lp	 = (TWLIBEVT_Loop_t *)loop;
-
+DEBUG
 	if (OPA_cas_int (&(ep->status), EVT_STATUS_PENDING, EVT_STATUS_COMMITED) !=
 		EVT_STATUS_PENDING) {
 		// ASSIGN_ERR (TW_ERR_STATUS)
@@ -97,21 +97,21 @@ terr_t TWLIBEVT_Event_commit (TW_Handle_t event, TW_Handle_t loop) {
 			ASSIGN_ERR (TW_ERR_STATUS)
 		}
 	}
-
+DEBUG
 	evutil_timerclear (&tv);
 	switch (ep->args.type) {
 		case TW_Event_type_file:;
 			if (ep->args.args.file.events & TW_EVENT_FILE_READY_FOR_READ) evt_flags |= EV_READ;
 			if (ep->args.args.file.events & TW_EVENT_FILE_READY_FOR_WRITE) evt_flags |= EV_WRITE;
 			fd = (evutil_socket_t)ep->args.args.file.fd;
-			cb = TWLIBEVTI_Evt_file_cb;
+			cb = TWLIBEVTI_Evt_file_cb;DEBUG
 			break;
 		case TW_Event_type_socket:;
 			if (ep->args.args.socket.events & TW_EVENT_SOCKET_READY_FOR_READ) evt_flags |= EV_READ;
 			if (ep->args.args.socket.events & TW_EVENT_SOCKET_READY_FOR_WRITE)
 				evt_flags |= EV_WRITE;
 			fd = (evutil_socket_t)ep->args.args.socket.socket;
-			cb = TWLIBEVTI_Evt_socket_cb;
+			cb = TWLIBEVTI_Evt_socket_cb;DEBUG
 			break;
 		case TW_Event_type_timer:;
 			tv.tv_usec = ep->args.args.timer.micro_sec;
@@ -125,7 +125,7 @@ terr_t TWLIBEVT_Event_commit (TW_Handle_t event, TW_Handle_t loop) {
 				ret = ep->args.args.poll.poll.Reset (ep->args.args.poll.data);
 				if (ret) ASSIGN_ERR (TW_ERR_POLL_RESET)
 			}
-			*/
+			*/DEBUG
 			break;
 		default:;
 			ASSIGN_ERR (TW_ERR_INVAL)
@@ -135,6 +135,7 @@ terr_t TWLIBEVT_Event_commit (TW_Handle_t event, TW_Handle_t loop) {
 		err = TWI_Ts_vector_push_back (lp->poll_events, ep);
 		CHECK_ERR
 	} else {
+	    DEBUG
 		ep->event = event_new (lp->base, fd, evt_flags, cb, ep);
 		CHECK_LIBEVTPTR (ep->event)
 

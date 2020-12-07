@@ -162,11 +162,14 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *a
 #else
 	len				  = (int)recvfrom (socket, bufp, sizeof (buf) - 1 - (size_t) (bufp - buf), 0,
 						   (struct sockaddr *)&addr, &addrlen);
+	DEBUG
 	if (len > 0) {
+	    DEBUG
 		bufp += len;
-		if (bufp - buf >= 8) {
+		if (bufp - buf >= 8) {  DEBUG
 			err = TW_Event_retract (evt);
 			CHECK_ERR
+			DEBUG
 			err = TWT_Sem_inc (sem);
 			CHECK_ERR
 		}
@@ -222,13 +225,14 @@ int main (int argc, char **argv) {
 
 	err = TW_Event_arg_set_socket (&arg, frecv, TW_EVENT_SOCKET_READY_FOR_READ);
 	CHECK_ERR
+    DEBUG
 	err = TW_Event_create (event_cb, &evtnerr, arg, &evt);
 	CHECK_ERR
 	err = TW_Event_commit (evt, eng);
 	CHECK_ERR
-
+    DEBUG
 	ret = send_msg (&nerr, msg);
-
+    DEBUG
 	err = TWT_Sem_dec (sem);
 	CHECK_ERR
 	err = TWT_Sem_free (sem);
@@ -237,7 +241,7 @@ int main (int argc, char **argv) {
 	nerr += evtnerr;
 
 	// Avoid comparing '\n' by setting len as strlen(msg)
-	ret = strncmp (buf, msg, strlen (msg));
+	ret = strncmp (buf, msg, strlen (msg));printf("ret = %d, buf = %s, msg = %s\n", ret, buf, msg);
 	EXP_VAL (ret, 0, "%d");
 
 	err = TW_Engine_free (eng);

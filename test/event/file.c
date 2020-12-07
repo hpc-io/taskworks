@@ -89,6 +89,7 @@ char *bufp = buf;
 int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *arg, void *data);
 int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *arg, void *data) {
 	terr_t err;
+	DEBUG
 	int nerr   = 0;
 	int *nerrp = (int *)data;
 	TW_Fd_t fd;
@@ -96,9 +97,9 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *a
 #ifdef _WIN32
 	DWORD dwBytesRead;
 #endif
-
+	DEBUG
 	TW_Event_arg_get_file (arg, &fd, NULL);
-
+	DEBUG
 #ifdef _WIN32
 	len =
 		(int)ReadFile ((HANDLE)fd bufp, sizeof (buf) - 1(size_t) (bufp - buf), &dwBytesRead, NULL);
@@ -115,16 +116,18 @@ int event_cb (TW_Event_handle_t __attribute__ ((unused)) evt, TW_Event_args_t *a
 	}
 
 #else
+	DEBUG
 	len = (int)read (fd, bufp, sizeof (buf) - 1 - (size_t) (bufp - buf));
-
-	if (len <= 0) {
+	printf("Tid = %d, %s:%d: read len = %d, buf = %s\n", pthread_self(), __func__, __LINE__, len, bufp);
+	DEBUG
+	if (len <= 0) {DEBUG
 		EXP_VAL (len, 0, "%d")
-		err = TW_Event_retract (evt);
+		err = TW_Event_retract (evt);DEBUG
 		CHECK_ERR
 		err = TWT_Sem_inc (sem);
 		CHECK_ERR
 		goto end;
-	} else {
+	} else {DEBUG
 		bufp += len;
 	}
 #endif
@@ -149,28 +152,31 @@ int main (int argc, char **argv) {
 	TW_Engine_handle_t eng;
 
 	PRINT_TEST_MSG ("Check if file event triggers correctly");
-
+	DEBUG
 	if (argc > 1) { nworker = atoi (argv[1]); }
-
+	DEBUG
 	err = TWT_Sem_create (&sem);
 	CHECK_ERR
-
-	ret = open_file ("file.txt", &fd);
-	EXP_VAL (ret, 0, "%d");
-
+	DEBUG
+	//ret = open_file ("file.txt", &fd);
+	//EXP_VAL (ret, 0, "%d");
+	fd = open("file.txt", O_NONBLOCK | O_CREAT | O_TRUNC, 0644);
+	DEBUG
 	err = TW_Init (TW_Backend_native, TW_Event_backend_libevent, &argc, &argv);
 	CHECK_ERR
-
+DEBUG
 	err = TW_Engine_create (nworker, &eng);
 	CHECK_ERR
-
+	DEBUG
 	err = TW_Event_arg_set_file (&arg, fd, TW_EVENT_FILE_READY_FOR_READ);
 	CHECK_ERR
-	err = TW_Event_create (event_cb, &evtnerr, arg, &evt);
+	DEBUG
+	err = TW_Event_create (event_cb, &evtnerr, arg, &evt);//the only sem_inc here
 	CHECK_ERR
+	DEBUG
 	err = TW_Event_commit (evt, eng);
 	CHECK_ERR
-
+	DEBUG
 	/* Writing directly don't work for unknown reason
 	{
 		ssize_t ws;
@@ -180,23 +186,27 @@ int main (int argc, char **argv) {
 	*/
 
 	// echo will add \n after the end of the message
-	sprintf (cmd, "echo \"%s\" >> file.txt", msg);
-	int r = system (cmd);
+	sprintf (cmd, "echo \"%s\n\" >> file.txt", msg);
+	//int r = system (cmd); printf("system() ret = %d\n", r);
+	write(fd, msg, sizeof(msg));
 
+	DEBUG
+    printf("%s:%d: buf = %s\n", __func__, __LINE__, buf);
 	err = TWT_Sem_dec (sem);
-	CHECK_ERR
+	DEBUG
+	//CHECK_ERR
 	err = TWT_Sem_free (sem);
 	CHECK_ERR
-
+	DEBUG
 	nerr += evtnerr;
 
 	// Avoid comparing '\n' by setting len as strlen(msg)
 	ret = strncmp (buf, msg, strlen (msg));
 	EXP_VAL (ret, 0, "%d");
-
+	DEBUG
 	err = TW_Engine_free (eng);
 	CHECK_ERR
-
+	DEBUG
 	err = TW_Finalize ();
 	CHECK_ERR
 

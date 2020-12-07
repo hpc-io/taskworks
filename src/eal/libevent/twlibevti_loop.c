@@ -19,9 +19,9 @@ terr_t TWLIBEVTI_Check_for_single_unmanaged_event (TWLIBEVT_Loop_t *lp, TWI_Bool
 	TWLIBEVT_Event_t *ep = NULL;
 
 	*success = TWI_FALSE;
-
+DEBUG
 	TWI_Ts_vector_lock (lp->poll_events);
-	size = (int)TWI_Ts_vector_size (lp->poll_events);
+	size = (int)TWI_Ts_vector_size (lp->poll_events); printf("%s:%d: event cnt = %d\n", __func__, __LINE__, size);
 	for (i = 0; i < size; i++) {
 		ep = (TWLIBEVT_Event_t *)lp->poll_events->data[i];
 		if (ep->args.type == TW_Event_type_poll) {

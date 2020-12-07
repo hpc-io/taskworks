@@ -75,7 +75,7 @@ terr_t TW_Engine_progress (TW_Engine_handle_t engine) {
 	terr_t err = TW_SUCCESS;
 
 	CHK_HANDLE (engine, TW_Obj_type_engine)
-
+DEBUG
 	err = engine->driver->Engine_do_work (engine->driver_obj, TW_ONCE);
 
 err_out:;
@@ -94,7 +94,7 @@ terr_t TW_Engine_progress_until (TW_Engine_handle_t engine, int64_t timeout) {
 	terr_t err = TW_SUCCESS;
 
 	CHK_HANDLE (engine, TW_Obj_type_engine)
-
+DEBUG
 	err = engine->driver->Engine_do_work (engine->driver_obj, (ttime_t)timeout);
 
 err_out:;

@@ -15,7 +15,7 @@ terr_t TWI_Event_create (TW_Event_handler_t TWI_UNUSED evt_cb,
 		return TW_ERR_NOT_SUPPORTED;
 }  // Create a new event
 terr_t TWI_Event_free (TW_Handle_t TWI_UNUSED hevt) { return TW_ERR_NOT_SUPPORTED; }
-terr_t TWI_Event_commit (TW_Handle_t TWI_UNUSED engine, TW_Handle_t TWI_UNUSED hevt) {
+terr_t TWI_Event_commit (TW_Handle_t TWI_UNUSED engine, TW_Handle_t TWI_UNUSED hevt) {DEBUG
 	return TW_ERR_NOT_SUPPORTED;
 }  // Commit event, start watching
 terr_t TWI_Event_retract (TW_Handle_t TWI_UNUSED hevt) {

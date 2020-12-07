@@ -20,7 +20,7 @@ terr_t TWNATIVE_Event_create (TW_Event_handler_t evt_cb,
 							  TW_Handle_t *hevt) {
 	terr_t err			 = TW_SUCCESS;
 	TWNATIVE_Event_t *ep = NULL;
-
+DEBUG
 	ep = (TWNATIVE_Event_t *)TWI_Malloc (sizeof (TWNATIVE_Event_t));
 	CHECK_PTR (ep)
 	ep->handler		   = evt_cb;
@@ -41,7 +41,7 @@ terr_t TWNATIVE_Event_create (TW_Event_handler_t evt_cb,
 
 	DEBUG_PRINTF (2, "Created event %p, handler: %p, data: %p\n", (void *)ep,
 				  (void *)(long long)(ep->handler), (void *)(ep->data));
-
+	DEBUG
 err_out:;
 	if (err) {
 		if (ep) { TWI_Free (ep); }
@@ -79,26 +79,31 @@ terr_t TWNATIVE_Event_commit (TW_Handle_t hevt, TW_Handle_t engine) {
 	TWI_Bool_t success;
 	TWNATIVE_Event_t *ep	= (TWNATIVE_Event_t *)hevt;
 	TWNATIVE_Engine_t *engp = (TWNATIVE_Engine_t *)engine;
-
+	DEBUG
 	err = TWNATIVE_Eventi_update_status (ep, TW_EVENT_STAT_IDLE | TW_EVENT_STAT_FAILED,
 										 TW_EVENT_STAT_TRANS, &success);
 	CHECK_ERR
-
+	DEBUG
 	if (success) {
+	    DEBUG
 		ep->eng = engp;
 		if (engp->evt_driver != ep->driver) ASSIGN_ERR (TW_ERR_INCOMPATIBLE_OBJECT)
-		err = ep->driver->Event_commit (ep->driver_obj, engp->evt_loop);
+        ;printf("%s:%d: before commit event cnt = %d\n", __func__, __LINE__, (int)TWI_Ts_vector_size ((TWI_Ts_vector_handle_t)(engp->evt_loop)));
+        err = ep->driver->Event_commit (ep->driver_obj, engp->evt_loop);
+		printf("%s:%d: after commit event cnt = %d\n", __func__, __LINE__, (int)TWI_Ts_vector_size ((TWI_Ts_vector_handle_t)(engp->evt_loop)));
 		CHECK_ERR
-
+		printf("%s:%s:%d: err = %d, success = %d\n", __FILE__, __func__, __LINE__, err, success);
+		DEBUG
 		DEBUG_PRINTF (2, "Event %p commited to engine %p\n", (void *)ep, (void *)engp);
-
+		DEBUG
 		err = TWNATIVE_Eventi_update_status (ep, TW_EVENT_STAT_TRANS, TW_EVENT_STAT_WATCHING,
 											 &success);
+		DEBUG
 		CHECK_ERR
 	} else {
 		ASSIGN_ERR (TW_ERR_STATUS)
 	}
-
+	DEBUG
 err_out:;
 	if (err) {
 		ep->eng = NULL;
