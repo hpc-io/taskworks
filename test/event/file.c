@@ -147,7 +147,8 @@ int main (int argc, char **argv) {
 	TW_Event_args_t arg;
 	TW_Event_handle_t evt;
 	TW_Engine_handle_t eng;
-	_semaphore_bug_warning();
+
+	SEMAPHORE_BUG_WARNING();
 
 	PRINT_TEST_MSG ("Check if file event triggers correctly");
 

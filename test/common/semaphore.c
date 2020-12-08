@@ -48,3 +48,9 @@ terr_t TWT_Sem_free (TWT_Semaphore sem) {
 
 	return TW_SUCCESS;
 }
+
+void SEMAPHORE_BUG_WARNING(){
+#ifdef __APPLE__
+  assert(0 && "Taskworks has a known bug with semaphore on OSX that may lead to a deadlock, not fixed yet.");
+#endif
+}

@@ -80,7 +80,9 @@ int main (int argc, char *argv[]) {
 	TW_Task_dep_handler_t dep;
 	TW_Task_handle_t *task = NULL;
 	task_data *datas	   = NULL;
-	_semaphore_bug_warning();
+	
+	SEMAPHORE_BUG_WARNING();
+	
 	PRINT_TEST_MSG ("Check if Taskworks correctly handles customized dependency");
 
 	if (argc > 1) { nworker = atoi (argv[1]); }
