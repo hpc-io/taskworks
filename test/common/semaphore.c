@@ -25,7 +25,6 @@ terr_t TWT_Sem_dec (TWT_Semaphore sem) {
 	int ret;
 
 	ret = sem_wait (sem);
-	printf("%s:%d: ret = %d, Errno str = %s\n", __func__, __LINE__, ret, strerror(errno));
 	if (ret != 0) return TW_ERR_OS;
 
 	return TW_SUCCESS;
