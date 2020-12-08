@@ -22,8 +22,8 @@ TESTPROGRAMS =  init \
                 task \
                 task_dep \
                 task_barrier \
-                custom_dep \
-                task_status
+                task_status \
+		 		custom_dep
 # mutual_dep
 
 TEST_DRIVERS= "NATIVE"

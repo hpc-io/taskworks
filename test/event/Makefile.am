@@ -18,11 +18,10 @@ LDADD  =    $(top_builddir)/src/libtw.la \
 
 TESTPROGRAMS =  init \
                 engine \
-                file \
                 timer \
                 socket \
-                poll
-
+                poll \
+				file
 if HAVE_MPI
    TESTPROGRAMS +=   mpi \
                      mpi_req

@@ -20,10 +20,9 @@ terr_t TWPOSIX_Sem_create (TW_Handle_t *sem) {
 	sem_t *sp = NULL;
 
 	sp = (sem_t *)TWI_Malloc (sizeof (sem_t));
-	sp = make_semaphore(1);
+	sp = make_semaphore(0);
 	if(sp == SEM_FAILED)
 	    perr = TW_ERR_OS;
-	//perr = sem_init (sp, 0, 0);
 	CHECK_PERR
 
 	*sem = sp;
@@ -47,15 +46,15 @@ void TWPOSIX_Sem_dec (TW_Handle_t sem) { sem_wait (sem); }
 
 void TWPOSIX_Sem_inc (TW_Handle_t sem) { sem_post (sem); }
 
-void TWPOSIX_Sem_free (TW_Handle_t sem) {
-	sem_close(sem);
-	//sem_destroy (sem);
-	//TWI_Free (sem);
-}
+void TWPOSIX_Sem_free (TW_Handle_t sem) { sem_close(sem); }
 
 sem_t *make_semaphore(int value){
     sem_t *semaphore = (sem_t *) malloc(sizeof(sem_t));
-          semaphore = sem_open("/semaphore", O_CREAT, 0644, value);
-          sem_unlink("/semaphore");
-          return semaphore;
+
+    char sem_name[128] = {};
+    sprintf(sem_name, "sem-%d", pthread_self());
+    semaphore = sem_open(sem_name, O_CREAT, 0644, 0);
+    sem_unlink(sem_name);
+
+    return semaphore;
 }

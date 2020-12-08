@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <assert.h>
 #ifdef _WIN32
 #else
 #endif
@@ -68,3 +69,8 @@ terr_t TWT_Sem_create (TWT_Semaphore *sem);
 terr_t TWT_Sem_dec (TWT_Semaphore sem);
 terr_t TWT_Sem_inc (TWT_Semaphore sem);
 terr_t TWT_Sem_free (TWT_Semaphore sem);
+void _semaphore_bug_warning(){
+#ifdef __APPLE__
+    assert(0 && "Taskworks has a known bug with semaphore on OSX that may lead to a deadlock, not fixed yet.");
+#endif
+}
