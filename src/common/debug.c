@@ -25,7 +25,7 @@
 #ifdef _WIN32
 int TWI_Get_tid (void) { return (int)GetThreadId (); }
 #else
-int TWI_Get_tid (void) { return (int)pthread_self(); }
+int TWI_Get_tid (void) { return (int)pthread_self (); }
 #endif
 
 int TWI_Debug_level = 0;
